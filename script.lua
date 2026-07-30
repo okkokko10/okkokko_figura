@@ -30,7 +30,6 @@ local kineticsPath = {
 local iconsKey = keybinds:newKeybind("show named item icons", "key.keyboard.z", true)
 
 
-
 --entity init event, used for when the avatar entity is loaded for the first time
 function events.entity_init()
   log("init")
@@ -56,13 +55,17 @@ function events.entity_init()
         :setLight(15,15)
         -- :setPos(-vec(1,1,1) * 16 / 2)
         :setScale(.5,.5,.5)
-    main:newText("text")
+    local text = main:newText("text")
       :setLight(15,15)
       -- :setPos(vec(1,1,0) * 16 / 2)
       :setText("NONE")
       :setWidth(16*4*3)
       :setScale(1/4)
-      :setSeeThrough(true):setOpacity(0.5)
+      :setOpacity(0.5)
+    if host:isHost() then
+      text:setSeeThrough(true)
+    end
+
     
   end
   models.pathRoot
@@ -216,22 +219,21 @@ function kineticsPath.updateRender()
 
 
 
-  local worldPath = {}
-  for i = 1, #kineticsPath.sourcePath do
-    worldPath[i] = sableSublevelToWorld(kineticsPath.sourcePath[i].pos + 1/2)
-  end
+  -- local worldPath = {}
+  -- for i = 1, #kineticsPath.sourcePath do
+  --   worldPath[i] = sableSublevelToWorld(kineticsPath.sourcePath[i].pos + 1/2)
+  -- end
   
   local levelRot = levelRotationMatrix(kineticsPath.sourcePath[1].pos)
-  -- local lastNetworkId
 
-
+  -- log("start render")
   for i, value in ipairs(kineticsPath.sourcePath) do
+    -- log("for")
 
     local isLast = i == #kineticsPath.sourcePath
     local isOrigin = isLast and (i < kineticsPath.pathLength)
 
-    local sv = worldPath[i]
-    -- local direction = (worldPath[index+1]) and (worldPath[index+1] - sv) or (sableSublevelToWorld(kineticsPath.sourcePath[index].pos + 1/2 + vec(0,1,0)) - sv)
+    local sv = sableSublevelToWorld(kineticsPath.sourcePath[i].pos + 1/2)
     local localDirection = kineticsPath.sourcePath[i+1] and (kineticsPath.sourcePath[i+1].pos - kineticsPath.sourcePath[i].pos) or (vec(0,0,0))
     local angle = directionToEulerAngle(-localDirection)
     
@@ -248,7 +250,7 @@ function kineticsPath.updateRender()
     models.pathRoot[i]:setPos(sv*16):setVisible(true)
     models.pathRoot[i]:getTask("text")
     :setText(
-
+      -- "please tell okkokko if you can see this\n" ..
       ((netId == 0) and "" or ("(" .. i .. ")\n"..
       (kineticsPath.pretty(value.network,(kineticsPath.sourcePath[i-1] or {}).network) or "") .. 
       (l1distance == 1 and "" or ((isLast and (isOrigin and "origin" or "") or ("distance to next: " .. (l1distance))) .. "\n")) ))
@@ -288,11 +290,25 @@ function kineticsPath.setPath(path)
   kineticsPath.sourcePath = path
 end
 
-function pings.newKineticsPath(firstNBT,...)
+local pingBuffer = {}
+
+function pings.newKineticsPath(isFinal,firstNBT,...)
   local tbl = table.pack(...)
+
+  for i = 1, #tbl do
+    if not tbl[i] then
+      break
+    end
+    pingBuffer[#pingBuffer+1] = tbl[i]
+  end
+  if not isFinal then
+    return
+  end
+
   -- log("if you can see this please tell me this number: " .. #tbl)
   -- logTable(tbl)
-  local path = kineticsPath.unpackPath(tbl)
+  local path = kineticsPath.unpackPath(pingBuffer)
+  pingBuffer = {}
   -- logTable(path,3)
   kineticsPath.setPath(path)
   
@@ -306,14 +322,19 @@ iconsKey:setOnPress(function ()
 
     local block, hitPos, side = host:getPickBlock()
     
-    local blockData = block:getEntityData()
-    local firstNBT = blockData and toJson(blockData.BlockEntityTag)
-    if block:getID() == "minecraft:air" then
-      pings.newKineticsPath()
+    if not block or block:getID() == "minecraft:air" then
+      pings.newKineticsPath(true)
     
     else
+      local blockData = block:getEntityData()
+      local firstNBT = blockData and toJson(blockData.BlockEntityTag)
       local path = kineticsPath.make(block,block:getPos())
-      pings.newKineticsPath(firstNBT, table.unpack(kineticsPath.packPath(path)))
+      local packedPath = kineticsPath.packPath(path)
+      local batch = 5
+      for i = 1, #packedPath, batch do
+        pings.newKineticsPath(false, nil, table.unpack(packedPath,i,i+batch-1))
+      end
+      pings.newKineticsPath(true, firstNBT)
 
     end
     -- kineticsPath.setPath(path)
@@ -329,11 +350,11 @@ end)
 function events.tick()
   --code goes here
   -- kineticsPath.updateRender()
+  kineticsPath.updateRender()
 
 end
 
 function events.world_render(delta)
-  kineticsPath.updateRender()
 end
 
 --render event, called every time your avatar is rendered

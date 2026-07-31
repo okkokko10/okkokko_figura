@@ -6,13 +6,18 @@
 local _sabelSubLevelOffset = vec(0, 10000, 0)
 ---@param pos Vector3
 ---@return Vector3
-local function sableSublevelToWorld(pos)
+function sableSublevelToWorld(pos)
   -- return pos
   local pos1 = pos + _sabelSubLevelOffset
   local pos2 = pos - _sabelSubLevelOffset
   local _, hitPos1 = raycast:block(pos1, pos1)
   local _, hitPos2 = raycast:block(pos2, pos2)
   return (hitPos1 + hitPos2) * 0.5
+end
+-- vec(20534276, 129, 20640776)
+function pings.pingSublevel(pos)
+  return sableSublevelToWorld(pos)
+  
 end
 
 -- copied from https://discord.com/channels/1129805506354085959/1129811275380162730/1501029819964457130 
@@ -22,7 +27,7 @@ end
 
 
 local kineticsPath = {
-  pathLength = 10, 
+  pathLength = 32, 
   ---@type KineticPathNode[]
   sourcePath = {}, -- {x,y,z,type}
 }
@@ -30,9 +35,12 @@ local kineticsPath = {
 local iconsKey = keybinds:newKeybind("show named item icons", "key.keyboard.z", true)
 
 
+
+
+
 --entity init event, used for when the avatar entity is loaded for the first time
 function events.entity_init()
-  log("init")
+  -- log("init")
   --player functions goes here
 
   local pathRoot = models:newPart("pathRoot","World")
@@ -54,8 +62,8 @@ function events.entity_init()
         -- :setBlock("comparator")
         :setLight(15,15)
         -- :setPos(-vec(1,1,1) * 16 / 2)
-        :setScale(.5,.5,.5)
-    local text = main:newText("text")
+        :setScale(.5,.5,1)
+    local text = main:newPart("text","BILLBOARD"):newText("text")
       :setLight(15,15)
       -- :setPos(vec(1,1,0) * 16 / 2)
       :setText("NONE")
@@ -75,24 +83,36 @@ function events.entity_init()
       :setItem("blue_stained_glass")
       :setLight(15,15)
 
+  -- local compass = models:newPart("compassRoot","World"):newPart("compass"):setVisible(true) --:setVisible(false)
+
+  -- compass:newItem("straight")
+  --     :setItem("red_stained_glass")
+  --     :setLight(15,15)
+  --     :setScale(.25,.25,1) --:setVisible(true)
+  --     :setPos(vec(0,0,1)*16)
+      
+
 end
 
 
+-- local compassDirection = vec(0,0,1)
+compassRotation = 0
 
 -- todo: looking at a steering wheel gives an indicator of the direction it's pointing.
 
 
 
 
-function kineticsPath.make(block, hitPos)
+function kineticsPath.make(pos)
 
     -- local block, hitPos, side = host:getPickBlock()
     
     ---@type KineticPathNode[]
     local path = {}
     for i = 1, kineticsPath.pathLength do
-      path[i] = {pos=hitPos}
+      path[i] = {pos=pos}
       
+      local block = world.getBlockState(pos)
       local blockData = block:getEntityData()
       if not blockData then break end
       local network = blockData.Network
@@ -107,8 +127,7 @@ function kineticsPath.make(block, hitPos)
       -- logTable(network,5)
       -- log(speed)
       local source_vec = vec(table.unpack(source))
-      hitPos = source_vec
-      block = world.getBlockState(hitPos)
+      pos = source_vec
 
       -- source_vec = source_vec + 1/2
       -- local sv = sableSublevelToWorld(source_vec)
@@ -213,10 +232,11 @@ function kineticsPath.updateRender()
     return
   end
 
-  local rot = player:isLoaded() and player:getRot() or vec(0,0)
-  local sneaking = false
+  -- local rot = player:isLoaded() and player:getRot() or vec(0,0)
+  -- local sneaking = false
 
 
+  local cameraPos = client.getCameraPos()
 
 
   -- local worldPath = {}
@@ -224,21 +244,29 @@ function kineticsPath.updateRender()
   --   worldPath[i] = sableSublevelToWorld(kineticsPath.sourcePath[i].pos + 1/2)
   -- end
   
-  local levelRot = levelRotationMatrix(kineticsPath.sourcePath[1].pos)
-
+  local levelRot --= levelRotationMatrix(kineticsPath.sourcePath[1].pos)
+  local nextElsewhere = true 
   -- log("start render")
   for i, value in ipairs(kineticsPath.sourcePath) do
+    if nextElsewhere then
+      levelRot = levelRotationMatrix(kineticsPath.sourcePath[i].pos)
+      nextElsewhere = false
+    end
     -- log("for")
 
     local isLast = i == #kineticsPath.sourcePath
     local isOrigin = isLast and (i < kineticsPath.pathLength)
 
     local sv = sableSublevelToWorld(kineticsPath.sourcePath[i].pos + 1/2)
-    local localDirection = kineticsPath.sourcePath[i+1] and (kineticsPath.sourcePath[i+1].pos - kineticsPath.sourcePath[i].pos) or (vec(0,0,0))
+    local nextPos = kineticsPath.sourcePath[i+1] and kineticsPath.sourcePath[i+1].pos
+    local localDirection = nextPos and (nextPos - kineticsPath.sourcePath[i].pos) or (vec(0,0,0))
     local angle = directionToEulerAngle(-localDirection)
     
     
     local l1distance = math.abs(localDirection.x)+math.abs(localDirection.y)+math.abs(localDirection.z)
+    local distance = localDirection:length()
+    nextElsewhere = distance > 1000
+
 
 
     local netId =(value.network and value.network.Id or 0)
@@ -248,23 +276,29 @@ function kineticsPath.updateRender()
 
     -- colo = vec(1,1,0)*0.5
     models.pathRoot[i]:setPos(sv*16):setVisible(true)
-    models.pathRoot[i]:getTask("text")
+    models.pathRoot[i].text:getTask("text")
     :setText(
       -- "please tell okkokko if you can see this\n" ..
       ((netId == 0) and "" or ("(" .. i .. ")\n"..
       (kineticsPath.pretty(value.network,(kineticsPath.sourcePath[i-1] or {}).network) or "") .. 
-      (l1distance == 1 and "" or ((isLast and (isOrigin and "origin" or "") or ("distance to next: " .. (l1distance))) .. "\n")) ))
+      (l1distance == 1 and "" or ((isLast and (isOrigin and "origin" or "") or ("->" .. (l1distance) .. (nextElsewhere and ("\n(" .. nextPos.x .. " " .. nextPos.y .. " " .. nextPos.z .. ")") or ""))) .. "\n")) ))
       -- .."\n" .. (value.distance or "")  
       -- ..(sneaking and ("\nnetwork: " .. netId) or "")
-      .. (i == 1 and ((kineticsPath.firstNBT or "no nbt") .. "\n") or "")
+      .. (i == 1 and ((kineticsPath.firstNBT or "") .. "\n") or "")
     )
-    :setOutlineColor(colo):setRot(rot.x,-rot.y,0)
+    -- :setOutlineColor(colo):setRot(rot.x,-rot.y,0)
     :setBackground(true):setBackgroundColor(colo)
+    :setSeeThrough( (cameraPos - sv):length() < 10)
 
     
 
     models.pathRoot[i].block:setMatrix(levelRot)
     models.pathRoot[i].block.pointing:setRot(angle)
+    if nextElsewhere then
+      models.pathRoot[i].block.pointing:setScale(1,1,1)
+    else
+      models.pathRoot[i].block.pointing:setScale(1,1,distance)
+    end
 
     if isLast then
       models.pathRoot[i].block:setVisible(false)
@@ -281,16 +315,45 @@ function kineticsPath.updateRender()
   end
 end
 
-function kineticsPath.setPath(path)
-  if #path < #kineticsPath.sourcePath then
-    for i = #path+1, #kineticsPath.sourcePath do
+
+
+
+function kineticsPath.setPath(path, oldSize)
+  if #path < (oldSize or #kineticsPath.sourcePath) then
+    for i = #path+1, (oldSize or #kineticsPath.sourcePath) do
       models.pathRoot[i]:setVisible(false)
     end
   end
+  models.pathRoot.last:setVisible(false)
   kineticsPath.sourcePath = path
 end
 
 local pingBuffer = {}
+
+
+local function localKineticsPath(startPos,showNBT)
+  
+  local oldSize = #kineticsPath.sourcePath
+  kineticsPath.sourcePath = {}
+  local path = kineticsPath.make(startPos)
+  -- local path = kineticsPath.make(block:getPos())
+  kineticsPath.setPath(path,oldSize)
+
+  local block = world.getBlockState(startPos)
+  local blockData = block:getEntityData()
+  kineticsPath.firstNBT = (showNBT or nil) and blockData and toJson(blockData.BlockEntityTag)
+
+  -- kineticsPath.updateRender()
+
+end
+
+function pings.dismissSharedKineticsPath(hostToo)
+  if hostToo or not host:isHost() then
+    kineticsPath.setPath({})
+  end
+end
+
+pings.localKineticsPath = localKineticsPath
 
 function pings.newKineticsPath(isFinal,firstNBT,...)
   local tbl = table.pack(...)
@@ -314,10 +377,10 @@ function pings.newKineticsPath(isFinal,firstNBT,...)
   
   kineticsPath.firstNBT = firstNBT
 
-  kineticsPath.updateRender()
+  -- kineticsPath.updateRender()
 end
 
-iconsKey:setOnPress(function ()
+local function pingHeavyKinetics ()
   if host:isHost() then
 
     local block, hitPos, side = host:getPickBlock()
@@ -328,7 +391,7 @@ iconsKey:setOnPress(function ()
     else
       local blockData = block:getEntityData()
       local firstNBT = blockData and toJson(blockData.BlockEntityTag)
-      local path = kineticsPath.make(block,block:getPos())
+      local path = kineticsPath.make(block:getPos())
       local packedPath = kineticsPath.packPath(path)
       local batch = 5
       for i = 1, #packedPath, batch do
@@ -343,14 +406,69 @@ iconsKey:setOnPress(function ()
     
   end
   
-end)
+end
 
+local function pingLightKinetics(shared,showNBT)
+  if host:isHost() then
+    local block, hitPos, side = host:getPickBlock()
+    if shared then
+      pings.localKineticsPath(block:getPos(),showNBT)
+    else
+      localKineticsPath(block:getPos(),showNBT)
+      pings.dismissSharedKineticsPath()
+    end
+
+  end
+end
+
+
+-- iconsKey:setOnPress(function(a,b) 
+--   print(a,b)
+--   pingLightKinetics() end)
+
+local mainPage = action_wheel:newPage()
+action_wheel:setPage(mainPage)
+
+
+mainPage:newAction()
+    :title("Dismiss Kinetic Path")
+    :item("minecraft:red_stained_glass")
+    :hoverColor(0.5, 0.5, 0.75)
+    :onLeftClick(function()
+      pings.dismissSharedKineticsPath(true)
+    end):onRightClick(function()
+      pings.dismissSharedKineticsPath(true)
+    end)
+
+
+mainPage:newAction()
+    :title("Share Kinetic Path")
+    :item("minecraft:orange_stained_glass")
+    :hoverColor(0.5, 0.5, 1)
+    :onLeftClick(function()
+      pingLightKinetics(true,false)
+    end):onRightClick(function()
+      pingLightKinetics(true,true)
+    end)
+
+mainPage:newAction()
+    :title("Kinetic Path")
+    :item("minecraft:blue_stained_glass")
+    :hoverColor(0.5, 0.5, 1)
+    :onLeftClick(function()
+      pingLightKinetics(false,false)
+    end):onRightClick(function()
+      pingLightKinetics(false,true)
+    end)
 
 --tick event, called 20 times per second
 function events.tick()
   --code goes here
   -- kineticsPath.updateRender()
   kineticsPath.updateRender()
+
+  -- models.compassRoot.compass:setPos(16*(player:getPos())):setRot(0,compassRotation,0)
+  -- models.compassRoot.compass
 
 end
 

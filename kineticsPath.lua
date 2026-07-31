@@ -182,6 +182,63 @@ function kineticsPath.pretty(network,oldNetwork,repeats)
   return "()\n"
 end
 
+
+-- should be run when the path is updated.
+function kineticsPath.changeRender()
+
+  
+  for i, value in ipairs(kineticsPath.sourcePath) do
+    
+
+    local isLast = i == #kineticsPath.sourcePath
+    local isOrigin = isLast and (i < kineticsPath.pathLength)
+
+    local nextPos = kineticsPath.sourcePath[i+1] and kineticsPath.sourcePath[i+1].pos
+    local localDirection = nextPos and (nextPos - kineticsPath.sourcePath[i].pos) or (vec(0,0,0))
+    local angle = directionToEulerAngle(-localDirection)
+    
+    
+    local l1distance = math.abs(localDirection.x)+math.abs(localDirection.y)+math.abs(localDirection.z)
+    local distance = localDirection:length()
+    local nextElsewhere = distance > 1000
+
+
+
+    local netId =(value.network and value.network.Id or 0)
+    local colo = vectors.intToRGB(((netId % 0x1001000) * (2654435761 % 0x1000000)))* 0.9
+
+
+    models.pathRoot[i]:setVisible(true)
+
+    models.pathRoot[i].text:getTask("text")
+    :setText(
+      ((netId == 0) and "" or ("(" .. i .. ")\n"..
+      (kineticsPath.pretty(value.network,(kineticsPath.sourcePath[i-1] or {}).network) or "") .. 
+      (l1distance == 1 and "" or ((isLast and (isOrigin and "origin" or "") or ("->" .. (l1distance) .. (nextElsewhere and ("\n(" .. nextPos.x .. " " .. nextPos.y .. " " .. nextPos.z .. ")") or ""))) .. "\n")) ))
+      .. (i == 1 and ((kineticsPath.firstNBT or "") .. "\n") or "")
+    )
+    :setBackground(true):setBackgroundColor(colo)
+
+    
+    models.pathRoot[i].block.pointing:setRot(angle)
+    
+    if nextElsewhere then
+      models.pathRoot[i].block.pointing:setScale(1,1,1)
+    else
+      models.pathRoot[i].block.pointing:setScale(1,1,distance)
+    end
+
+    
+    models.pathRoot[i].block:setVisible(not isLast)
+    if isLast then
+      models.pathRoot.last:setVisible(isOrigin)
+    end
+
+  end
+end
+
+-- just updates the positions
+-- todo: system to have just one part per sublevel that changes position each tick, that is a parent to the rest.
 function kineticsPath.updateRender()
   if #kineticsPath.sourcePath < 1 then
     return
@@ -200,14 +257,12 @@ function kineticsPath.updateRender()
   -- end
   
   local levelRot --= levelRotationMatrix(kineticsPath.sourcePath[1].pos)
-  local nextElsewhere = true 
-  -- log("start render")
-  for i, value in ipairs(kineticsPath.sourcePath) do
+  local nextElsewhere = true
+  for i = 1, #kineticsPath.sourcePath do
     if nextElsewhere then
       levelRot = levelRotationMatrix(kineticsPath.sourcePath[i].pos)
       nextElsewhere = false
     end
-    -- log("for")
 
     local isLast = i == #kineticsPath.sourcePath
     local isOrigin = isLast and (i < kineticsPath.pathLength)
@@ -215,58 +270,24 @@ function kineticsPath.updateRender()
     local sv = sableSublevelToWorld(kineticsPath.sourcePath[i].pos + 1/2)
     local nextPos = kineticsPath.sourcePath[i+1] and kineticsPath.sourcePath[i+1].pos
     local localDirection = nextPos and (nextPos - kineticsPath.sourcePath[i].pos) or (vec(0,0,0))
-    local angle = directionToEulerAngle(-localDirection)
     
     
-    local l1distance = math.abs(localDirection.x)+math.abs(localDirection.y)+math.abs(localDirection.z)
     local distance = localDirection:length()
     nextElsewhere = distance > 1000
 
-
-
-    local netId =(value.network and value.network.Id or 0)
-    -- local colo = vec((netId % 51) / 51, (netId % 17) / 17, (netId % 5) / 5)
-    -- local colo = vectors.intToRGB((netId * 2654435761))
-    local colo = vectors.intToRGB(((netId % 0x1001000) * (2654435761 % 0x1000000)))* 0.9
-
-    -- colo = vec(1,1,0)*0.5
-    models.pathRoot[i]:setPos(sv*16):setVisible(true)
+    models.pathRoot[i]:setPos(sv*16)
     models.pathRoot[i].text:getTask("text")
-    :setText(
-      -- "please tell okkokko if you can see this\n" ..
-      ((netId == 0) and "" or ("(" .. i .. ")\n"..
-      (kineticsPath.pretty(value.network,(kineticsPath.sourcePath[i-1] or {}).network) or "") .. 
-      (l1distance == 1 and "" or ((isLast and (isOrigin and "origin" or "") or ("->" .. (l1distance) .. (nextElsewhere and ("\n(" .. nextPos.x .. " " .. nextPos.y .. " " .. nextPos.z .. ")") or ""))) .. "\n")) ))
-      -- .."\n" .. (value.distance or "")  
-      -- ..(sneaking and ("\nnetwork: " .. netId) or "")
-      .. (i == 1 and ((kineticsPath.firstNBT or "") .. "\n") or "")
-    )
-    -- :setOutlineColor(colo):setRot(rot.x,-rot.y,0)
-    :setBackground(true):setBackgroundColor(colo)
     :setSeeThrough( (cameraPos - sv):length() < 10)
 
     
 
     models.pathRoot[i].block:setMatrix(levelRot)
-    models.pathRoot[i].block.pointing:setRot(angle)
-    if nextElsewhere then
-      models.pathRoot[i].block.pointing:setScale(1,1,1)
-    else
-      models.pathRoot[i].block.pointing:setScale(1,1,distance)
-    end
-
-    if isLast then
-      models.pathRoot[i].block:setVisible(false)
-      if isOrigin then
-        models.pathRoot.last.rot_part:setMatrix(levelRot)
-        models.pathRoot.last:setPos(sv*16):setVisible(true)
-      else
-        models.pathRoot.last:setVisible(false)
-      end
-    else
-      models.pathRoot[i].block:setVisible(true)
-    end
     
+
+    if isLast and isOrigin then
+      models.pathRoot.last.rot_part:setMatrix(levelRot)
+      models.pathRoot.last:setPos(sv*16)
+    end
   end
 end
 
@@ -299,6 +320,7 @@ local function localKineticsPath(startPos,showNBT)
   kineticsPath.firstNBT = (showNBT or nil) and blockData and toJson(blockData.BlockEntityTag)
 
   -- kineticsPath.updateRender()
+  kineticsPath.changeRender()
 
 end
 

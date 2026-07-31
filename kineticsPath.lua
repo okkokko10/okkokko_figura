@@ -1,28 +1,12 @@
 -- Auto generated script file --
 
 
--- copied from https://discord.com/channels/1129805506354085959/1234218592187453452/1499007047818154054 
--- we have to raycast twice because sublevel rotation gives some offset
-local _sabelSubLevelOffset = vec(0, 10000, 0)
----@param pos Vector3
----@return Vector3
-function sableSublevelToWorld(pos)
-  -- return pos
-  local pos1 = pos + _sabelSubLevelOffset
-  local pos2 = pos - _sabelSubLevelOffset
-  local _, hitPos1 = raycast:block(pos1, pos1)
-  local _, hitPos2 = raycast:block(pos2, pos2)
-  return (hitPos1 + hitPos2) * 0.5
-end
+require "utils"
+
 -- vec(20534276, 129, 20640776)
 function pings.pingSublevel(pos)
   return sableSublevelToWorld(pos)
   
-end
-
--- copied from https://discord.com/channels/1129805506354085959/1129811275380162730/1501029819964457130 
-local function directionToEulerAngle(dirVec)
-    return vec(0, 180, 0)-vec(-math.deg(math.atan2(dirVec.y, dirVec.xz:length())), -math.deg(math.atan2(dirVec.x, dirVec.z)), 0)
 end
 
 
@@ -83,22 +67,8 @@ function events.entity_init()
       :setItem("blue_stained_glass")
       :setLight(15,15)
 
-  -- local compass = models:newPart("compassRoot","World"):newPart("compass"):setVisible(true) --:setVisible(false)
-
-  -- compass:newItem("straight")
-  --     :setItem("red_stained_glass")
-  --     :setLight(15,15)
-  --     :setScale(.25,.25,1) --:setVisible(true)
-  --     :setPos(vec(0,0,1)*16)
-      
 
 end
-
-
--- local compassDirection = vec(0,0,1)
-compassRotation = 0
-
--- todo: looking at a steering wheel gives an indicator of the direction it's pointing.
 
 
 
@@ -191,21 +161,6 @@ function kineticsPath.unpackPath(packedPath)
   
 end
 
-local function levelRotationMatrix(pos)
-  if not pos then
-    error("pos not given")
-    return matrices.mat4()
-  end
-  -- log("levelRotationMatrix")
-  local center = sableSublevelToWorld(pos)
-  local x = sableSublevelToWorld(pos + vec(1,0,0))
-  local y = sableSublevelToWorld(pos + vec(0,1,0))
-  local z = sableSublevelToWorld(pos + vec(0,0,1))
-  -- log("levelRotationMatrix end")
-
-  return matrices.mat3(x-center,y-center,z-center):augmented()
-  
-end
 
 -- function kineticsPath.
 
@@ -472,27 +427,27 @@ function events.tick()
 
 end
 
-function events.world_render(delta)
-end
+-- function events.world_render(delta)
+-- end
 
---render event, called every time your avatar is rendered
---it have two arguments, "delta" and "context"
---"delta" is the percentage between the last and the next tick (as a decimal value, 0.0 to 1.0)
---"context" is a string that tells from where this render event was called (the paperdoll, gui, player render, first person)
-function events.render(delta, context)
+-- --render event, called every time your avatar is rendered
+-- --it have two arguments, "delta" and "context"
+-- --"delta" is the percentage between the last and the next tick (as a decimal value, 0.0 to 1.0)
+-- --"context" is a string that tells from where this render event was called (the paperdoll, gui, player render, first person)
+-- function events.render(delta, context)
 
-  -- kineticsPath.updateRender()
+--   -- kineticsPath.updateRender()
 
 
-  -- if iconsKey:isPressed() then
-  --   log(delta,context)
-  -- end
-  -- if context == "MINECRAFT_GUI" then
-  --   local windowScale = client.getScaledWindowSize()/client.getWindowSize()
-  --   local mous = client.getMousePos() * windowScale
-  --   -- models.model.Item:setPos((-mous):augmented(-10000))
+--   -- if iconsKey:isPressed() then
+--   --   log(delta,context)
+--   -- end
+--   -- if context == "MINECRAFT_GUI" then
+--   --   local windowScale = client.getScaledWindowSize()/client.getWindowSize()
+--   --   local mous = client.getMousePos() * windowScale
+--   --   -- models.model.Item:setPos((-mous):augmented(-10000))
 
     
-  -- end
-  --code goes here
-end
+--   -- end
+--   --code goes here
+-- end

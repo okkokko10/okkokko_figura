@@ -19,6 +19,17 @@ function directionToEulerAngle(dirVec)
     return vec(0, 180, 0)-vec(-math.deg(math.atan2(dirVec.y, dirVec.xz:length())), -math.deg(math.atan2(dirVec.x, dirVec.z)), 0)
 end
 
+NewlineLists = true
+
+function prettierLists(str)
+  if NewlineLists then
+  return (str or ""):gsub(",",",\n"):gsub("{","{\n")
+  else
+    return (str or ""):gsub(",", ", "):gsub("{","{ ")
+
+  end
+end
+
 
 function levelRotationMatrix(pos)
   if not pos then
@@ -34,4 +45,11 @@ function levelRotationMatrix(pos)
 
   return matrices.mat3(x-center,y-center,z-center):augmented()
   
+end
+
+PS = 16
+
+-- https://stackoverflow.com/questions/51181222/lua-trailing-space-removal
+function stripWhitespace(str)
+  return string.gsub(str, '^%s*(.-)%s*$', '%1')
 end

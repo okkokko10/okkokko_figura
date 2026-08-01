@@ -10,7 +10,7 @@ function pings.pingSublevel(pos)
 end
 
 
-local kineticsPath = {
+KineticsPath = {
   pathLength = 32, 
   ---@type KineticPathNode[]
   sourcePath = {}, -- {x,y,z,type}
@@ -19,6 +19,17 @@ local kineticsPath = {
 local iconsKey = keybinds:newKeybind("show named item icons", "key.keyboard.z", true)
 
 
+---@return vec3|nil
+function KineticsPath.getFirstPos()
+  return (KineticsPath.sourcePath[1] or {}).pos
+end
+
+---@return any|nil
+---@return vec3|nil
+function KineticsPath.getFirstBlock()
+  local pos = KineticsPath.getFirstPos()
+  return pos and world.getBlockState(pos), pos
+end
 
 
 
@@ -28,7 +39,7 @@ function events.entity_init()
   --player functions goes here
 
   local pathRoot = models:newPart("pathRoot","World")
-  for i = 1, kineticsPath.pathLength do
+  for i = 1, KineticsPath.pathLength do
     -- kineticsPath.modelPath[i] = {} 
     local main = models.pathRoot:newPart(i):setVisible(false)
     
@@ -73,13 +84,13 @@ end
 
 
 
-function kineticsPath.make(pos)
+function KineticsPath.make(pos)
 
     -- local block, hitPos, side = host:getPickBlock()
     
     ---@type KineticPathNode[]
     local path = {}
-    for i = 1, kineticsPath.pathLength do
+    for i = 1, KineticsPath.pathLength do
       path[i] = {pos=pos}
       
       local block = world.getBlockState(pos)
@@ -131,7 +142,7 @@ end
 ---comment
 ---@param node KineticPathNode
 ---@return "mat3"
-function kineticsPath.packNode(node)
+function KineticsPath.packNode(node)
   local network = node.network or {}
   -- return string.pack(kineticsPath.packingString,node.pos.x,node.pos.y,node.pos.z,node.network)
   return matrices.mat3(node.pos,vec(network.Id or 0, network.Stress or 0,network.Capacity or 0),vec(network.Size or 0,0,0))
@@ -139,23 +150,23 @@ end
 
 ---@param matr "mat3"
 ---@return KineticPathNode
-function kineticsPath.unpackNode(matr)
+function KineticsPath.unpackNode(matr)
   return {pos = matr:getColumn(1), network = {Id = matr:getColumn(2)[1],Stress = matr:getColumn(2)[2],Capacity = matr:getColumn(2)[3],Size = matr:getColumn(3)[1]}}
 end
 
-function kineticsPath.packPath(path)
+function KineticsPath.packPath(path)
   local packeds = {}
   for i = 1, #path do
-    packeds[i] = kineticsPath.packNode(path[i])
+    packeds[i] = KineticsPath.packNode(path[i])
   end
   return packeds
   
 end
 
-function kineticsPath.unpackPath(packedPath)
+function KineticsPath.unpackPath(packedPath)
   local path = {}
   for i = 1, #packedPath do
-    path[i] = kineticsPath.unpackNode(packedPath[i])
+    path[i] = KineticsPath.unpackNode(packedPath[i])
   end
   return path
   
@@ -165,7 +176,7 @@ end
 -- function kineticsPath.
 
 
-function kineticsPath.pretty(network,oldNetwork,repeats)
+function KineticsPath.pretty(network,oldNetwork,repeats)
   oldNetwork = oldNetwork or {}
   if network then
     return
@@ -184,17 +195,17 @@ end
 
 
 -- should be run when the path is updated.
-function kineticsPath.changeRender()
+function KineticsPath.changeRender()
 
   
-  for i, value in ipairs(kineticsPath.sourcePath) do
+  for i, value in ipairs(KineticsPath.sourcePath) do
     
 
-    local isLast = i == #kineticsPath.sourcePath
-    local isOrigin = isLast and (i < kineticsPath.pathLength)
+    local isLast = i == #KineticsPath.sourcePath
+    local isOrigin = isLast and (i < KineticsPath.pathLength)
 
-    local nextPos = kineticsPath.sourcePath[i+1] and kineticsPath.sourcePath[i+1].pos
-    local localDirection = nextPos and (nextPos - kineticsPath.sourcePath[i].pos) or (vec(0,0,0))
+    local nextPos = KineticsPath.sourcePath[i+1] and KineticsPath.sourcePath[i+1].pos
+    local localDirection = nextPos and (nextPos - KineticsPath.sourcePath[i].pos) or (vec(0,0,0))
     local angle = directionToEulerAngle(-localDirection)
     
     
@@ -211,12 +222,13 @@ function kineticsPath.changeRender()
     models.pathRoot[i]:setVisible(true)
 
     models.pathRoot[i].text:getTask("text")
-    :setText(
+    :setText(stripWhitespace(
+      (i == 1 and (not host:isHost()) and "okkokko's shared debug\n" or "") ..
       ((netId == 0) and "" or ("(" .. i .. ")\n"..
-      (kineticsPath.pretty(value.network,(kineticsPath.sourcePath[i-1] or {}).network) or "") .. 
+      (KineticsPath.pretty(value.network,(KineticsPath.sourcePath[i-1] or {}).network) or "") .. 
       (l1distance == 1 and "" or ((isLast and (isOrigin and "origin" or "") or ("->" .. (l1distance) .. (nextElsewhere and ("\n(" .. nextPos.x .. " " .. nextPos.y .. " " .. nextPos.z .. ")") or ""))) .. "\n")) ))
-      .. (i == 1 and ((kineticsPath.firstNBT or "") .. "\n") or "")
-    )
+      .. (i == 1 and (((not (GIZMO or {}).noDirectNBT) and KineticsPath.firstNBT or "") .. "\n") or "")
+    ))
     :setBackground(true):setBackgroundColor(colo)
 
     
@@ -239,8 +251,8 @@ end
 
 -- just updates the positions
 -- todo: system to have just one part per sublevel that changes position each tick, that is a parent to the rest.
-function kineticsPath.updateRender()
-  if #kineticsPath.sourcePath < 1 then
+function KineticsPath.updateRender()
+  if #KineticsPath.sourcePath < 1 then
     return
   end
 
@@ -258,18 +270,18 @@ function kineticsPath.updateRender()
   
   local levelRot --= levelRotationMatrix(kineticsPath.sourcePath[1].pos)
   local nextElsewhere = true
-  for i = 1, #kineticsPath.sourcePath do
+  for i = 1, #KineticsPath.sourcePath do
     if nextElsewhere then
-      levelRot = levelRotationMatrix(kineticsPath.sourcePath[i].pos)
+      levelRot = levelRotationMatrix(KineticsPath.sourcePath[i].pos)
       nextElsewhere = false
     end
 
-    local isLast = i == #kineticsPath.sourcePath
-    local isOrigin = isLast and (i < kineticsPath.pathLength)
+    local isLast = i == #KineticsPath.sourcePath
+    local isOrigin = isLast and (i < KineticsPath.pathLength)
 
-    local sv = sableSublevelToWorld(kineticsPath.sourcePath[i].pos + 1/2)
-    local nextPos = kineticsPath.sourcePath[i+1] and kineticsPath.sourcePath[i+1].pos
-    local localDirection = nextPos and (nextPos - kineticsPath.sourcePath[i].pos) or (vec(0,0,0))
+    local sv = sableSublevelToWorld(KineticsPath.sourcePath[i].pos + 1/2)
+    local nextPos = KineticsPath.sourcePath[i+1] and KineticsPath.sourcePath[i+1].pos
+    local localDirection = nextPos and (nextPos - KineticsPath.sourcePath[i].pos) or (vec(0,0,0))
     
     
     local distance = localDirection:length()
@@ -294,14 +306,14 @@ end
 
 
 
-function kineticsPath.setPath(path, oldSize)
-  if #path < (oldSize or #kineticsPath.sourcePath) then
-    for i = #path+1, (oldSize or #kineticsPath.sourcePath) do
+function KineticsPath.setPath(path, oldSize)
+  if #path < (oldSize or #KineticsPath.sourcePath) then
+    for i = #path+1, (oldSize or #KineticsPath.sourcePath) do
       models.pathRoot[i]:setVisible(false)
     end
   end
   models.pathRoot.last:setVisible(false)
-  kineticsPath.sourcePath = path
+  KineticsPath.sourcePath = path
 end
 
 local pingBuffer = {}
@@ -309,29 +321,47 @@ local pingBuffer = {}
 
 local function localKineticsPath(startPos,showNBT)
   
-  local oldSize = #kineticsPath.sourcePath
-  kineticsPath.sourcePath = {}
-  local path = kineticsPath.make(startPos)
+  local oldSize = #KineticsPath.sourcePath
+  KineticsPath.sourcePath = {}
+  local path = KineticsPath.make(startPos)
   -- local path = kineticsPath.make(block:getPos())
-  kineticsPath.setPath(path,oldSize)
+  KineticsPath.setPath(path,oldSize)
 
   local block = world.getBlockState(startPos)
-  local blockData = block:getEntityData()
-  kineticsPath.firstNBT = (showNBT or nil) and blockData and toJson(blockData.BlockEntityTag)
+  -- local blockData = block:getEntityData()
+  -- kineticsPath.firstNBT = (showNBT or nil) and blockData and toJson(blockData.BlockEntityTag)
+  
+  KineticsPath.firstNBT = (showNBT and block or nil) and block:toStateString()
 
   -- kineticsPath.updateRender()
-  kineticsPath.changeRender()
+  KineticsPath.changeRender()
 
 end
 
+function KineticsPath.updateNBT()
+
+  if not KineticsPath.sourcePath[1] then
+    KineticsPath.firstNBT = nil
+    return
+  end
+  
+  local block = world.getBlockState(KineticsPath.sourcePath[1].pos)
+  -- local blockData = block:getEntityData()
+  -- kineticsPath.firstNBT = (showNBT or nil) and blockData and toJson(blockData.BlockEntityTag)
+  
+  KineticsPath.firstNBT = (KineticsPath.firstNBT and block) and prettierLists(block:toStateString())
+end
+
+
 function pings.dismissSharedKineticsPath(hostToo)
   if hostToo or not host:isHost() then
-    kineticsPath.setPath({})
+    KineticsPath.setPath({})
   end
 end
 
 pings.localKineticsPath = localKineticsPath
 
+---@deprecated
 function pings.newKineticsPath(isFinal,firstNBT,...)
   local tbl = table.pack(...)
 
@@ -347,12 +377,12 @@ function pings.newKineticsPath(isFinal,firstNBT,...)
 
   -- log("if you can see this please tell me this number: " .. #tbl)
   -- logTable(tbl)
-  local path = kineticsPath.unpackPath(pingBuffer)
+  local path = KineticsPath.unpackPath(pingBuffer)
   pingBuffer = {}
   -- logTable(path,3)
-  kineticsPath.setPath(path)
+  KineticsPath.setPath(path)
   
-  kineticsPath.firstNBT = firstNBT
+  KineticsPath.firstNBT = firstNBT
 
   -- kineticsPath.updateRender()
 end
@@ -368,8 +398,8 @@ local function pingHeavyKinetics ()
     else
       local blockData = block:getEntityData()
       local firstNBT = blockData and toJson(blockData.BlockEntityTag)
-      local path = kineticsPath.make(block:getPos())
-      local packedPath = kineticsPath.packPath(path)
+      local path = KineticsPath.make(block:getPos())
+      local packedPath = KineticsPath.packPath(path)
       local batch = 5
       for i = 1, #packedPath, batch do
         pings.newKineticsPath(false, nil, table.unpack(packedPath,i,i+batch-1))
@@ -388,6 +418,7 @@ end
 local function pingLightKinetics(shared,showNBT)
   if host:isHost() then
     local block, hitPos, side = host:getPickBlock()
+    if not block then return end
     if shared then
       pings.localKineticsPath(block:getPos(),showNBT)
     else
@@ -403,7 +434,7 @@ end
 --   print(a,b)
 --   pingLightKinetics() end)
 
-local mainPage = action_wheel:newPage()
+local mainPage = action_wheel:newPage("mainPage")
 action_wheel:setPage(mainPage)
 
 
@@ -442,7 +473,9 @@ mainPage:newAction()
 function events.tick()
   --code goes here
   -- kineticsPath.updateRender()
-  kineticsPath.updateRender()
+  KineticsPath.updateNBT()
+  KineticsPath.changeRender()
+  KineticsPath.updateRender()
 
   -- models.compassRoot.compass:setPos(16*(player:getPos())):setRot(0,compassRotation,0)
   -- models.compassRoot.compass

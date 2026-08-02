@@ -272,7 +272,7 @@ function KineticsPath.updateRender()
   local nextElsewhere = true
   for i = 1, #KineticsPath.sourcePath do
     if nextElsewhere then
-      levelRot = levelRotationMatrix(KineticsPath.sourcePath[i].pos)
+      levelRot = sublevelRotationMatrix(KineticsPath.sourcePath[i].pos)
       nextElsewhere = false
     end
 

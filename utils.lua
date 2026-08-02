@@ -30,22 +30,50 @@ function prettierLists(str)
   end
 end
 
-
-function levelRotationMatrix(pos)
+function sublevelRotationMatrix3(pos)
   if not pos then
     error("pos not given")
-    return matrices.mat4()
   end
-  -- log("levelRotationMatrix")
+  if not isInSublevel(pos) then
+    return matrices.mat3()
+  end
   local center = sableSublevelToWorld(pos)
   local x = sableSublevelToWorld(pos + vec(1,0,0))
   local y = sableSublevelToWorld(pos + vec(0,1,0))
   local z = sableSublevelToWorld(pos + vec(0,0,1))
-  -- log("levelRotationMatrix end")
 
-  return matrices.mat3(x-center,y-center,z-center):augmented()
+  return matrices.mat3(x-center,y-center,z-center)
   
 end
+
+function sublevelRotationMatrix(pos)
+  return sublevelRotationMatrix3(pos):augmented()
+end
+
+function sublevelRotationMatrixInv3(pos)
+  if not isInSublevel(pos) then
+    return matrices.mat3()
+  end
+  return sublevelRotationMatrix3(pos):invert()
+end
+
+function sublevelRotationMatrixInv(pos)
+  if not isInSublevel(pos) then
+    return matrices.mat4()
+  end
+  return sublevelRotationMatrix3(pos):invert():augmented()
+end
+
+
+function isInSublevel(pos)
+  return pos.x > 20000000
+end
+
+function nilInAerospace(pos)
+  return (not isInSublevel(pos) or nil) and pos
+end
+
+
 
 PS = 16
 

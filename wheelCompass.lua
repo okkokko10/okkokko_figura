@@ -19,8 +19,8 @@ local COMPASS
 
 GIZMO = {
   offset = -45,
-  eye_height = 0.7,
-  height = 0.1,
+  eye_height = 0.0,
+  height = 1.6,
   speed = 1,
   display = false,
   noDirectNBT = false,
@@ -64,6 +64,15 @@ function events.entity_init()
           local eyeHeight = player:getEyeHeight()
           local dir = vectors.angleToDir(0,playerRot.y+GIZMO.offset)
           part:setPos(PS*(dir*GIZMO.distance + vec(0,1,0) * (eyeHeight*GIZMO.eye_height + GIZMO.height)))
+        end
+      end
+    )
+    :setPostRender(
+      function (delta,ctx,part)
+        if GIZMO.cameraTracking then
+          local pos = part:partToWorldMatrix():apply( vec(0,0,0))
+          
+          renderer:setCameraPivot(nilInAerospace(pos + (vec(0,1,0) * ( - 0.2))))
         end
       end
     )
@@ -192,7 +201,7 @@ function events.entity_init()
           if GIZMO.cameraTracking or not GIZMO.trackingOther then
             if not player:isLoaded() then return end
             local playerRot = player:getRot(delta)
-            part:setRot(0,(GIZMO.cameraTracking and 180 or 0)-playerRot.y,0)
+            part:setRot((GIZMO.cameraTracking and -playerRot.x or 0),(GIZMO.cameraTracking and 180 or 0)-playerRot.y,0)
           end
           local text = part:getTask("text"):setText(KineticsPath.firstNBT or "")
             :setScale(GIZMO.nbtSize*GIZMO.distance) --:setVisible(true)
@@ -227,7 +236,7 @@ end
 function pings.gizmoTrackPos(pos)
   if pos then
     -- log(pos)
-    models.posTrack:setPos(PS*sableSublevelToWorld(pos + vec(0,1,0)))
+    models.posTrack:setPos(PS*sableSublevelToWorld(pos))
     FloatingGizmo:moveTo(models.posTrack)
     GIZMO.trackingOther = pos
   else
@@ -339,8 +348,11 @@ mainPage:newAction()
     :onScroll(
       function (dir)
         if GIZMO.trackingOther then
-        
-          pings.setGizmo("trackingOther",GIZMO.trackingOther + player:getLookDir()*dir*0.2 * GIZMO.distance)
+          if not player:isLoaded() then return end
+
+          local inv = sublevelRotationMatrixInv3(GIZMO.trackingOther)
+          local accountedDir = inv * player:getLookDir()
+          pings.setGizmo("trackingOther",GIZMO.trackingOther + accountedDir *dir * GIZMO.distance)
           
         end
 
@@ -366,6 +378,16 @@ mainPage:newAction()
     end)
     :onScroll(
       function (dir)
+        if dir == 1 then
+          if GIZMO.trackingOther then
+            pings.setGizmo("trackingOther",
+              GIZMO.trackingOther:floor() + 1/2
+            )
+            
+          end
+          oungs.setGizmo("height",0.2)
+          
+        end
       end
 
     )
@@ -405,10 +427,13 @@ function events.tick()
     
     -- log("tracking0")
 
-    if GIZMO.cameraTracking and GIZMO.trackingOther then
-      -- log("tracking")
-      renderer:setCameraPivot(GIZMO.trackingOther + (vec(0,1,0) * (GIZMO.height - 0.2)))
-    end
+    -- if GIZMO.cameraTracking --and GIZMO.trackingOther 
+    --     then
+    --   -- log("tracking")
+    --   local pos = FloatingGizmo:partToWorldMatrix():apply( vec(0,0,0))
+      
+    --   renderer:setCameraPivot(pos + (vec(0,1,0) * ( - 0.2)))
+    -- end
 
     local block, pos = KineticsPath.getFirstBlock()
 

@@ -289,7 +289,7 @@ function KineticsPath.updateRender()
 
     models.pathRoot[i]:setPos(sv*16)
     models.pathRoot[i].text:getTask("text")
-    :setSeeThrough( (cameraPos - sv):length() < 10)
+    :setSeeThrough( (cameraPos - sv):length() < 10 or host:isHost())
 
     
 
@@ -445,7 +445,7 @@ mainPage:newAction()
     :onLeftClick(function()
       pings.dismissSharedKineticsPath(true)
     end):onRightClick(function()
-      pings.dismissSharedKineticsPath(true)
+      host:setClipboard(KineticsPath.firstNBT)
     end)
 
 

@@ -23,13 +23,27 @@ GIZMO = {
   height = 0.1,
   speed = 1,
   display = false,
-  noDirectNBT = false
+  noDirectNBT = false,
+  distance = 2,
+  trackingOther = nil,
+  nbtSize = 0.1
 }
 
+FloatingGizmo = {}
 
 
 
 function events.entity_init()
+
+  models:newPart("posTrack","World") --:newText("check"):setText("test"):setSeeThrough(true)
+    :setPreRender(
+      function(delta, ctx, part)
+        if GIZMO.trackingOther then
+          
+          part:setPos(PS*(sableSublevelToWorld(GIZMO.trackingOther)))
+        end
+      end
+    )
 
   local playerFollow = models:newPart("playerFollow","World")
     :setPreRender(
@@ -39,20 +53,23 @@ function events.entity_init()
       end
     )
 
-  models.playerFollow:newPart("floatingGizmo")
+  FloatingGizmo = models.playerFollow:newPart("floatingGizmo")
     :setPreRender(
       function(delta, ctx, part)
-        if not player:isLoaded() then return end
-        local playerRot = player:getRot(delta)
-        local eyeHeight = player:getEyeHeight()
-        local dir = vectors.angleToDir(0,playerRot.y+GIZMO.offset)
-
-        part:setPos(PS*(dir + vec(0,1,0) * (eyeHeight*GIZMO.eye_height + GIZMO.height)))
+        if GIZMO.trackingOther or not player:isLoaded() then
+          part:setPos(PS*(vec(0,1,0) * (GIZMO.height)))
+        else
+          if not player:isLoaded() then return end
+          local playerRot = player:getRot(delta)
+          local eyeHeight = player:getEyeHeight()
+          local dir = vectors.angleToDir(0,playerRot.y+GIZMO.offset)
+          part:setPos(PS*(dir*GIZMO.distance + vec(0,1,0) * (eyeHeight*GIZMO.eye_height + GIZMO.height)))
+        end
       end
     )
 
     
-  COMPASS = models.playerFollow.floatingGizmo:newPart("compass"):setPos():setVisible(true) --:setVisible(false)
+  COMPASS = FloatingGizmo:newPart("compass")--:setPos():setVisible(true) --:setVisible(false)
 
   COMPASS:setScale(0.25)
 
@@ -167,21 +184,57 @@ function events.entity_init()
       :setSeeThrough(true)
       :setAlignment("CENTER")
 
-  COMPASS:newPart("nbtTextBase"):setPos(PS*vec(0,-0.3,0))
-    :newPart("billboard","BILLBOARD")
+  FloatingGizmo:newPart("nbtTextBase"):setPos(PS*vec(0,-0.1,0))
+    :newPart("billboard")
       :setPreRender(
         function(delta, ctx, part)
-          part:getTask("text"):setText(KineticsPath.firstNBT or "")
+
+          if GIZMO.cameraTracking or not GIZMO.trackingOther then
+            if not player:isLoaded() then return end
+            local playerRot = player:getRot(delta)
+            part:setRot(0,(GIZMO.cameraTracking and 180 or 0)-playerRot.y,0)
+          end
+          local text = part:getTask("text"):setText(KineticsPath.firstNBT or "")
+            :setScale(GIZMO.nbtSize*GIZMO.distance) --:setVisible(true)
+            :setSeeThrough(ctx == "FIRST_PERSON_WORLD")
+            :setVisible(GIZMO.display)
+
+          
+          if GIZMO.trackingOther then
+            part:setParentType("BILLBOARD")
+          else
+            part:setParentType()
+
+          end
+          
+          
+          -- text:setAlignment((ctx == "FIRST_PERSON_WORLD" or GIZMO.trackingOther) and "LEFT" or "RIGHT")
+          
+
         end
       )
     :newText("text")
       :setText("unset")
       :setLight(15,15)
       -- :setPos(PS*vec(0,-0.2,-0.35))
-      :setScale(.2) --:setVisible(true)
-      :setSeeThrough(true)
+      :setScale(GIZMO.nbtSize*GIZMO.distance) --:setVisible(true)
+      -- :setAlignment(host:isHost() and "LEFT" or "RIGHT")
+      :setBackground(true):setBackgroundColor(vec(0.25,0.25,0.5))
+
 end
 
+
+function pings.gizmoTrackPos(pos)
+  if pos then
+    -- log(pos)
+    models.posTrack:setPos(PS*sableSublevelToWorld(pos + vec(0,1,0)))
+    FloatingGizmo:moveTo(models.posTrack)
+    GIZMO.trackingOther = pos
+  else
+    FloatingGizmo:moveTo(models.playerFollow)
+    GIZMO.trackingOther = nil
+  end
+end
 
 
 
@@ -213,7 +266,7 @@ mainPage:newAction()
     end)
     :onScroll(
       function (dir)
-        pings.setGizmo("height",GIZMO.height + dir * 0.1)
+        pings.setGizmo("distance",GIZMO.distance + dir * 0.1)
       end
 
     )
@@ -239,6 +292,83 @@ mainPage:newAction()
 
     )
 
+
+mainPage:newAction()
+    :title("place gizmo")
+    :item("minecraft:stick")
+    :hoverColor(0.9,0.9,0.9)
+    :onLeftClick(function()
+      local block, hitPos, side = host:getPickBlock()
+      pings.gizmoTrackPos(hitPos)
+      pings.setGizmo("display",true)
+    end)
+    :onRightClick(function()
+      pings.gizmoTrackPos(nil)
+    end)
+    :onScroll(
+      function (dir)
+        pings.setGizmo("height",GIZMO.height + dir * 0.1)
+
+      end
+
+    )
+
+
+local bufferTrackingOther = nil
+
+mainPage:newAction()
+    :title("look as gizmo")
+    :item("minecraft:glass_pane")
+    :hoverColor(0.9,0.9,0.9)
+    :onLeftClick(function()
+      pings.setGizmo("cameraTracking",true)
+
+      if GIZMO.trackingOther then
+        -- renderer:setCameraPivot(GIZMO.trackingOther + (vec(0,1,0) * (GIZMO.height)))
+        -- GIZMO.cameraTracking = true
+      end
+      
+    end)
+    :onRightClick(function()
+      renderer:setCameraPivot()
+      -- GIZMO.cameraTracking = false
+      pings.setGizmo("cameraTracking",false)
+
+
+    end)
+    :onScroll(
+      function (dir)
+        if GIZMO.trackingOther then
+        
+          pings.setGizmo("trackingOther",GIZMO.trackingOther + player:getLookDir()*dir*0.2 * GIZMO.distance)
+          
+        end
+
+      end
+
+    )
+
+mainPage:newAction()
+    :title("move tracking to")
+    :item("minecraft:blaze_rod")
+    :hoverColor(0.9,0.9,0.9)
+    :onLeftClick(function()
+      if not player:isLoaded() then return end
+      local piv = renderer:getCameraPivot() or (player:getPos() + vec(0, player:getEyeHeight(), 0))
+      local block, pos, side = raycast:block(piv,piv + player:getLookDir()*1000)
+      if pos then
+        pings.gizmoTrackPos(pos)
+      end
+
+      
+    end)
+    :onRightClick(function()
+    end)
+    :onScroll(
+      function (dir)
+      end
+
+    )
 
 
 
@@ -273,7 +403,12 @@ function events.tick()
   if host:isHost() then
     -- local block, hitPos, side = host:getPickBlock()
     
+    -- log("tracking0")
 
+    if GIZMO.cameraTracking and GIZMO.trackingOther then
+      -- log("tracking")
+      renderer:setCameraPivot(GIZMO.trackingOther + (vec(0,1,0) * (GIZMO.height - 0.2)))
+    end
 
     local block, pos = KineticsPath.getFirstBlock()
 

@@ -23,7 +23,7 @@ NewlineLists = true
 
 function prettierLists(str)
   if NewlineLists then
-  return (str or ""):gsub(",",",\n"):gsub("{","{\n")
+  return (str or ""):gsub(",",",\n"):gsub("{","{ ")
   else
     return (str or ""):gsub(",", ", "):gsub("{","{ ")
 

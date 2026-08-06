@@ -4,8 +4,11 @@
 
 local hitKey = keybinds:newKeybind("Hit", "key.mouse.left", false)
 
+
+STRONG_SUREHIT = 0
+
 function hitKey.press(mods,kb)
-    if (player:getHeldItem().id:match("sword")) and (host:getAttackCharge() < 0.99 or (not host:getPickEntity())) then
+    if (player:getHeldItem().id:match("sword") or STRONG_SUREHIT >=3) and ((STRONG_SUREHIT >= 1 and host:getAttackCharge() < 0.99) or (not host:getPickEntity()) and (STRONG_SUREHIT >= 2)) then
         return true
     end
 end

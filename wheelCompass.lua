@@ -385,7 +385,7 @@ mainPage:newAction()
             )
             
           end
-          oungs.setGizmo("height",0.2)
+          pings.setGizmo("height",0.2)
           
         end
       end

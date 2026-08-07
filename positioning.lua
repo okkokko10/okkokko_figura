@@ -2,6 +2,7 @@
 
 
 ---@class ModelPart
+---@field newPart fun(...): ModelPart
 ---@field [string] any
 
 
@@ -16,10 +17,13 @@ Positioning = {}
 Positioning.functions = {}
 
 --- in preRender, as a root World part.
----@param entity any
----@param followRot nil|number
+---@param entity Entity
+---@param followRot nil|number|"eyes"
 ---@return PreRenderFunction
 function Positioning.functions.followEntity(entity,followRot)
+    if followRot == "eyes" then
+        return Positioning.functions.followEntityEyes(entity)
+    end
     return function(delta, ctx, part)
         if not entity:isLoaded() then return end
         part:setPos(PS*(entity:getPos(delta)))
@@ -30,8 +34,22 @@ function Positioning.functions.followEntity(entity,followRot)
     end
 end
 
+--- in preRender, as a root World part.
+---@param entity Entity
+---@return PreRenderFunction
+function Positioning.functions.followEntityEyes(entity)
+    return function(delta, ctx, part)
+        if not entity:isLoaded() then return end
+        local eyePos = entityEyePos(entity,delta)
+        part:setPos(PS*(eyePos))
+        local rot = entity:getRot(delta)
+        part:setRot(rot.x,-rot.y)
+    end
+end
 
----@param entity any
+
+
+---@param entity Entity
 ---@return PreRenderFunction
 function Positioning.functions.followEntityGeneral(entity)
     return function(delta, ctx, part)
@@ -60,12 +78,17 @@ Positioning.parts = {
     World = models:newPart("World","World"),
 }
 
-
+---comment
+---@param entity Entity
+---@param name any
+---@param followRot nil|number|"eyes"
+---@return ModelPart
 function Positioning.entityFollower(entity,name,followRot)
     return models:newPart(name or entity:getUUID(),"World")
             :setPreRender(Positioning.functions.followEntity(entity,followRot))
 end
 
+Positioning.parts.PlayerFollowerEyes = Positioning.entityFollower(require"playerValues","PlayerFollowerEyes","eyes")
 Positioning.parts.PlayerFollower = Positioning.entityFollower(require"playerValues","PlayerFollower")
 Positioning.parts.PlayerFollowerYaw = Positioning.entityFollower(require"playerValues","PlayerFollowerYaw",1)
 Positioning.parts.PlayerFollowerFull = Positioning.entityFollower(require"playerValues","PlayerFollowerFull",2)

@@ -43,20 +43,31 @@ PointerObject = FloatingObject:create(models:newPart("PointerObject"),
 
 PointerObject.part:newItem("Item2"):setItem("minecraft:orange_stained_glass"):setScale(1/8)
 
+
+local function raycastSelectionCandidates(delta)
+    
+    local eyePos = entityEyePos(player,delta)
+    local dir = player:getLookDir()
+    local rc = FloatingObject.raycastsOriented(eyePos,eyePos+100*dir,Objects.SelectionCandidates)
+    return rc
+end
+
+
+
 PointerObjectP1:setPreRender(
     function(delta, ctx, part)
         if not player:isLoaded() then return end
         
-        local eyePos = entityEyePos(player,delta)
-        local dir = player:getLookDir()
-        local obj, key, pos, side = FloatingObject.raycast(eyePos,eyePos+100*dir,Objects.SelectionCandidates)
+        local rc = raycastSelectionCandidates(delta)
         -- text:setText(pos and (pos.x .. " " .. pos.y .. " " .. pos.z) or ".")
-        if pos then
-            part:setPos(PS*pos)
+        if rc then
+            part:setPos(PS*rc.globalPos)
         end
     end
 )
 
+
+---@type FloatingObject?
 Objects.Selected = nil
 
 Objects.SelectionCandidates = {TestObject}
@@ -110,6 +121,11 @@ toolPage:newAction()
 
     )
 
+function pings.hideToolUse()
+    TestObject.part:setVisible(false)
+    TestCompass:setVisible(false)
+end
+
 
 toolPage:newAction()
     :title("select")
@@ -117,11 +133,10 @@ toolPage:newAction()
     :hoverColor(0.9,0.4,0.9)
     :onLeftClick(function()
         
-    local eyePos = entityEyePos(player)
-    local dir = player:getLookDir()
-    local obj, key, pos, side = FloatingObject.raycast(eyePos,eyePos+100*dir,Objects.SelectionCandidates)
-    if obj then
-        Objects.Selected = obj
+    local rc = raycastSelectionCandidates()
+    -- logTable(rc)
+    if rc then
+        Objects.Selected = rc.obj
     end
     -- text:setText(pos and (pos.x .. " " .. pos.y .. " " .. pos.z) or ".")
     -- if pos then
@@ -132,8 +147,9 @@ toolPage:newAction()
 
 toolPage:newAction()
     :title("go to the previous")
-    :item("minecraft:grass")
+    :item("minecraft:grass_block")
     :hoverColor(0.9,0.4,0.9)
     :onLeftClick(function()
         action_wheel:setPage(action_wheel:getPage("mainPage"))
+        pings.hideToolUse()
     end)

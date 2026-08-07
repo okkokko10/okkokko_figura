@@ -55,12 +55,20 @@ function Positioning.functions.worldRotation()
     return Positioning.functions._worldRotation
 end
 
+--- common parts
+Positioning.parts = {
+    World = models:newPart("World","World"),
+}
+
 
 function Positioning.entityFollower(entity,name,followRot)
     return models:newPart(name or entity:getUUID(),"World")
             :setPreRender(Positioning.functions.followEntity(entity,followRot))
 end
 
+Positioning.parts.PlayerFollower = Positioning.entityFollower(require"playerValues","PlayerFollower")
+Positioning.parts.PlayerFollowerYaw = Positioning.entityFollower(require"playerValues","PlayerFollowerYaw",1)
+Positioning.parts.PlayerFollowerFull = Positioning.entityFollower(require"playerValues","PlayerFollowerFull",2)
 
 
 

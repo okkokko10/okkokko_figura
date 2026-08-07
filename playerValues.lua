@@ -20,3 +20,14 @@ function PlayerValues:getUUID()
     -- if not player:isLoaded() then return end
     return player:getUUID()
 end
+
+
+function entityEyePos(entity,delta)
+    return entity:getPos(delta) + vec(0, entity:getEyeHeight(), 0)
+end
+
+
+
+
+
+return PlayerValues

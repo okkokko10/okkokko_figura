@@ -6,7 +6,7 @@ require "playerValues"
 
 
 Objects = {}
-Objects.PlayerFollow = FloatingPosition.entityFollower(PlayerValues,"PlayerFollow", 2)
+Objects.PlayerFollow = Positioning.entityFollower(PlayerValues,"PlayerFollow", 2)
 
 -- Objects.PlayerFollow = models:newPart("PlayerFollow","World")
 --     :setPreRender(
@@ -25,5 +25,5 @@ TestObject = FloatingObject:create(models:newPart("TestObject","LEFT_ITEM_PIVOT"
 
 TestObject.part:newItem("Item"):setItem("minecraft:glass")
 -- TestObject.part:addChild(vanilla_model.PLAYER)
-TestCompass = FloatingPosition.absoluteRot("wa",TestObject.part)
+TestCompass = Positioning.absoluteRot("wa",TestObject.part)
 TestCompass:newItem("Item"):setItem("minecraft:green_stained_glass")--:setScale(1/16)

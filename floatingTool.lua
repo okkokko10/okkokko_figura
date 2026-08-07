@@ -25,9 +25,9 @@
 
 ---@class FloatingObject
 ---@field part ModelPart
----@field modeParents {[any]: FloatingPosition|ModelPart}
+---@field modeParents {[any]: ModelPart}
 ---@field modeStack any[]
-local FloatingObject = {}
+FloatingObject = {}
 
 
 function FloatingObject:new(o)

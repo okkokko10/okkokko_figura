@@ -5,6 +5,7 @@ require"utils"
 require"kineticsPath"
 
 require"floatingToolUse"
+require "grabFloatingGizmos"
 
 
 -- Tablet = {}
@@ -20,8 +21,8 @@ Tablet:setID("Tablet")
 Tablet:addHitbox(vec(0,0,0),vec(1,1,1/8))
 
 
+Grabbing.addSelectable(Tablet)
 
-Objects.SelectionCandidates[#Objects.SelectionCandidates+1] = Tablet
 
 Tablet.part:newItem("back"):setItem("minecraft:cyan_stained_glass"):setScale(1,1,1/8)
 

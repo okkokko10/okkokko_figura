@@ -335,7 +335,7 @@ local function localKineticsPath(startPos,showNBT)
 
   -- kineticsPath.updateRender()
   KineticsPath.changeRender()
-
+  KineticsPath.updateRender()
 end
 
 function KineticsPath.updateNBT()
@@ -473,8 +473,10 @@ mainPage:newAction()
 function events.tick()
   --code goes here
   -- kineticsPath.updateRender()
-  KineticsPath.updateNBT()
-  KineticsPath.changeRender()
+  if avatar:getPermissionLevel() == "max" then
+    KineticsPath.updateNBT()
+    KineticsPath.changeRender()
+  end
   KineticsPath.updateRender()
 
   -- models.compassRoot.compass:setPos(16*(player:getPos())):setRot(0,compassRotation,0)

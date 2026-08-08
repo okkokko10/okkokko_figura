@@ -4,6 +4,8 @@ require "positioning"
 require "playerValues"
 
 
+require "grabFloatingGizmos"
+
 
 Objects = {}
 -- Objects.PlayerFollow = Positioning.entityFollower(PlayerValues,"PlayerFollow", false)
@@ -82,6 +84,8 @@ Objects.SelectionCandidates = {TestObject}
 --     end
 -- end
 
+
+Grabbing.addSelectable(TestObject)
 
 
 local toolPage = action_wheel:newPage("toolPage")

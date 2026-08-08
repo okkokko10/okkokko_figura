@@ -115,12 +115,13 @@ end
 ---@alias SetMode fun(self: FloatingObject, mode: MultiMode, oldMode: MultiMode?, doPing: boolean?)
 ---@alias PushMode fun(self: FloatingObject, mode: MultiMode, doPing: boolean?):FloatingObject
 ---@alias PopMode fun(self: FloatingObject, mode: MultiMode?, doPing: boolean?)
+---@alias SwapMode fun(self: FloatingObject, mode: MultiMode,oldMode:MultiMode?, doPing: boolean?):FloatingObject
 
 
 function FloatingObject._make_setModePings(moveToMatrix)
     return function (self,mode,doPing)
         local mat = moveToMatrix(self.part,FloatingObject.toPart(self:getModeParent(mode)))
-        if doPing or self:getID() then
+        if doPing then
             
             pings.foSetParentAndMatrix(self:getID(),mode,mat)
         else
@@ -191,15 +192,28 @@ end
 ---@return PopMode
 function FloatingObject._make_popModePings(moveToMatrix)
     local setMode = FloatingObject._make_setModePings(moveToMatrix)
-    return function (self,mode)
+    return function (self,filterOldMode)
         local old = self.modeStack[#self.modeStack]
-        if (mode and self:convertModeKey(mode) ~= old) or #self.modeStack <= 1 then return end
+        if (filterOldMode and self:convertModeKey(filterOldMode) ~= old) or #self.modeStack <= 1 then return end
         self.modeStack[#self.modeStack] = nil
         setMode(self,self.modeStack[#self.modeStack])--,old)
         -- return old
     end
 end
 
+--- directly pops and pushes the stack, moving the parent directly.
+---@return SwapMode
+function FloatingObject._make_swapModePings(moveToMatrix)
+    local setMode = FloatingObject._make_setModePings(moveToMatrix)
+    return function (self,mode,filterOldMode,doPing)
+        local old = self.modeStack[#self.modeStack]
+        if (filterOldMode and self:convertModeKey(filterOldMode) ~= old) then return self end
+        local mode1 = self:convertModeKey(mode)
+        self.modeStack[#self.modeStack] = mode1
+        setMode(self,mode1,doPing)--,self.modeStack[#self.modeStack-1])
+        return self
+    end
+end
 
 
 -- FloatingObject._setModeKeepPos = FloatingObject._make_setMode(FloatingObject.moveToKeepPos)
@@ -211,6 +225,7 @@ FloatingObject.pushMode = FloatingObject._make_pushMode(models.moveTo)
 FloatingObject.popMode = FloatingObject._make_popMode(models.moveTo)
 FloatingObject.pushMode = FloatingObject._make_pushModePings(FloatingObject.moveToMatrix)
 FloatingObject.popMode = FloatingObject._make_popModePings(FloatingObject.moveToMatrix)
+FloatingObject.swapMode = FloatingObject._make_swapModePings(FloatingObject.moveToMatrix)
 
 
 -- FloatingObject._setModeKeepPosParent = FloatingObject._make_setMode(FloatingObject.moveToKeepPosParent)
@@ -218,6 +233,7 @@ FloatingObject.popMode = FloatingObject._make_popModePings(FloatingObject.moveTo
 -- FloatingObject.popModeKeepPosParent = FloatingObject._make_popMode(FloatingObject.moveToKeepPosParent)
 FloatingObject.pushModeKeepPosParent = FloatingObject._make_pushModePings(FloatingObject.moveToKeepPosParentMatrix)
 FloatingObject.popModeKeepPosParent = FloatingObject._make_popModePings(FloatingObject.moveToKeepPosParentMatrix)
+FloatingObject.swapModeKeepPosParent = FloatingObject._make_swapModePings(FloatingObject.moveToKeepPosParentMatrix)
 
 
 
@@ -331,6 +347,15 @@ function FloatingObject:createParentInPlace(root,name)
     self.modeParents[name or p] = p
     self:pushModeKeepPosParent(name or p)
 end
+
+function FloatingObject:createParent(root,key,name)
+    local p = (Utils.fromID(root) or root or Positioning.parts.World):newPart(name or key)
+    -- log(p:partToWorldMatrix())
+    self.modeParents[key] = p
+    return p
+end
+
+
 
 function FloatingObject:changePos(change)
     local par = self.part:getParent()

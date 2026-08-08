@@ -21,7 +21,7 @@ Objects = {}
 TestObject = FloatingObject:create(models:newPart("TestObject","LEFT_ITEM_PIVOT"),
     {
         base = Positioning.parts.PlayerFollower:newPart("TestObjectP1"):setPos(PS*1,PS/2,PS*3),
-    }):pushMode("base")
+    }):pushMode("base"):setID("TestObject")
 
 
 TestObject.part:newItem("Item"):setItem("minecraft:glass")
@@ -46,7 +46,7 @@ PointerObject.part:newItem("Item2"):setItem("minecraft:orange_stained_glass"):se
 
 local function raycastSelectionCandidates(delta)
     
-    local eyePos = entityEyePos(player,delta)
+    local eyePos = entityEyePos(player,delta or client.getFrameTime())
     local dir = player:getLookDir()
     local rc = FloatingObject.raycastsOriented(eyePos,eyePos+100*dir,Objects.SelectionCandidates)
     return rc
@@ -114,9 +114,6 @@ toolPage:newAction()
         -- local inv = sublevelRotationMatrixInv3(GIZMO.trackingOther)
         -- local accountedDir = inv * player:getLookDir()
         -- pings.setGizmo("trackingOther",GIZMO.trackingOther + accountedDir *dir * GIZMO.distance)
-        
-        
-
       end
 
     )

@@ -56,105 +56,169 @@ function FloatingObject:getModeParent(mode)
 end
 
 
+--- if mode is a local mode string, use it as is, otherwise look if it's a global id, and if so, use its value. otherwise use it as is (in this case it should be a part.)
+---@param mode MultiMode
+---@return any
+function FloatingObject:convertModeKey(mode)
+    if self.modeParents[mode] then
+        return mode
+    else
+        return Utils.getID(mode) or mode
+    end
+    -- return (not self.modeParents[mode]) and FloatingObject.getID(mode) or mode
+end
+
+
+
+
+---@alias MoveTo fun(part:ModelPart,to:ModelPart)
+
+---@deprecated
+---@type MoveTo
 function FloatingObject.moveToKeepPos(part,to)
     local o = to:partToWorldMatrix()
     local p = part:partToWorldMatrix()
-    part:moveTo(to)
     part:setMatrix(o:invert() * p)
+    part:moveTo(to)
 end
 
 
-
+---@deprecated
+---@type MoveTo
 function FloatingObject.moveToKeepPosParent2(part,to)
-    local o = to:getParent():partToWorldMatrix()
+    local o = to:getParent():partToWorldMatrix() -- goes wrong when `to` is itself ParentType "World"
     local p = (part:getParent() or part):partToWorldMatrix()
-    part:moveTo(to)
     to:setMatrix(o:invert() * p)
-end
-
-function FloatingObject.moveToKeepPosParent(part,to)
-    local o = to:partToWorldMatrix()
-    local p = (part:getParent() or part):partToWorldMatrix()
     part:moveTo(to)
-    to:setMatrix(to:getPositionMatrix() * o:invert() * p)
 end
 
+---@type MoveTo
+function FloatingObject.moveToKeepPosParent(part,to)
+    local p = part:getParent():partToWorldMatrix()
+    local matr = to:getPositionMatrix() * to:partToWorldMatrix():invert() * p
+    to:setMatrix(matr)
+    part:moveTo(to)
+end
+function FloatingObject.moveToKeepPosParentMatrix(part,to)
+    local p = part:getParent():partToWorldMatrix()
+    return to:getPositionMatrix() * to:partToWorldMatrix():invert() * p
+end
+function FloatingObject.moveToMatrix(part,to)
+    return nil
+end
+
+
+---@class Mode
+
+---@alias MultiMode Mode|ID<ModelPart>|ModelPart|string
+
+---@alias SetMode fun(self: FloatingObject, mode: MultiMode, oldMode: MultiMode?, doPing: boolean?)
+---@alias PushMode fun(self: FloatingObject, mode: MultiMode, doPing: boolean?):FloatingObject
+---@alias PopMode fun(self: FloatingObject, mode: MultiMode?, doPing: boolean?)
+
+
+function FloatingObject._make_setModePings(moveToMatrix)
+    return function (self,mode,doPing)
+        local mat = moveToMatrix(self.part,FloatingObject.toPart(self:getModeParent(mode)))
+        if doPing or self:getID() then
+            
+            pings.foSetParentAndMatrix(self:getID(),mode,mat)
+        else
+            FloatingObject.foSetParentAndMatrix(self:getID() or self,mode,mat)
+        end
+    end
+end
+
+
+---@param moveTo MoveTo
+---@return SetMode
 function FloatingObject._make_setMode(moveTo)
     return function (self,mode,oldMode,doPing)
         moveTo(self.part,FloatingObject.toPart(self:getModeParent(mode)))
     end
 end
 
-FloatingObject._setMode = FloatingObject._make_setMode(models.moveTo)
--- function FloatingObject:_setMode(mode,oldMode)
---     local m = self:getModeParent(mode)
---     self.part:moveTo(m.part or m)
--- end
+function FloatingObject.foSetParentAndMatrix(fID,mode,matrix)
+    local fo = FloatingObject.fromID(fID) or (type(fID) == "table") and fID
+    if not fo then error("not found:" .. (fID or "nil") .. " " .. (mode or "nil")) end
+    local par = FloatingObject.toPart(fo:getModeParent(mode))
+    if matrix then
+        par:setMatrix(matrix)
+    end
+    fo.part:moveTo(par)
+end
 
-FloatingObject._setModeKeepPos = FloatingObject._make_setMode(FloatingObject.moveToKeepPos)
--- function FloatingObject:_setModeKeepPos(mode,oldMode)
---     local m = self:getModeParent(mode)
---     local mm = m.part or m
---     FloatingObject.moveToKeepPos(self.part,mm)
--- end
+pings.foSetParentAndMatrix = FloatingObject.foSetParentAndMatrix
 
-FloatingObject._setModeKeepPosParent = FloatingObject._make_setMode(FloatingObject.moveToKeepPosParent)
--- function FloatingObject:_setModeKeepPosParent(mode,oldMode)
---     local m = self:getModeParent(mode)
---     local mm = m.part or m
---     FloatingObject.moveToKeepPosParent(self.part,mm)
--- end
 
--- if mode is a local mode string, use it as is, otherwise look if it's a global id, and if so, use its value. otherwise use it as is (in this case it should be a part.)
 
-function FloatingObject._make_pushMode(setMode)
+---@param moveTo MoveTo
+---@return PushMode
+function FloatingObject._make_pushMode(moveTo)
+    local setMode = FloatingObject._make_setMode(moveTo)
     return function (self,mode,doPing)
-        local mode1 = (not self.modeParents[mode]) and FloatingObject.getID(mode) or mode
+        local mode1 = self:convertModeKey(mode)
         self.modeStack[#self.modeStack+1] = mode1
-        setMode(self,mode1,self.modeStack[#self.modeStack-1])
+        setMode(self,mode1)--,self.modeStack[#self.modeStack-1])
         return self
     end
 end
-FloatingObject.pushMode = FloatingObject._make_pushMode(FloatingObject._setMode)
--- function FloatingObject:pushMode(mode)
---     self.modeStack[#self.modeStack+1] = mode
---     self:_setMode(mode,self.modeStack[#self.modeStack-1])
---     return self
---     -- return #self.modeStack
--- end
 
-FloatingObject.pushModeKeepPosParent = FloatingObject._make_pushMode(FloatingObject._setModeKeepPosParent)
--- function FloatingObject:pushModeKeepPos(mode)
---     self.modeStack[#self.modeStack+1] = mode
---     self:_setModeKeepPosParent(mode,self.modeStack[#self.modeStack-1])
---     return self
---     -- return #self.modeStack
--- end
-
-
-function FloatingObject._make_popMode(setMode)
-    ---@param self FloatingObject
-    ---@param mode any?
-    ---@param index number?
-    return function (self,mode,index)
-        local old = self.modeStack[#self.modeStack]
-        if (mode and mode ~= old) or #self.modeStack <= 1 then return end
-        self.modeStack[#self.modeStack] = nil
-        setMode(self,self.modeStack[#self.modeStack],old)
-        return old
+---@return PushMode
+function FloatingObject._make_pushModePings(moveToMatrix)
+    local setMode = FloatingObject._make_setModePings(moveToMatrix)
+    return function (self,mode,doPing)
+        local mode1 = self:convertModeKey(mode)
+        self.modeStack[#self.modeStack+1] = mode1
+        setMode(self,mode1,doPing)--,self.modeStack[#self.modeStack-1])
+        return self
     end
 end
 
 
-FloatingObject.popMode = FloatingObject._make_popMode(FloatingObject._setMode)
--- function FloatingObject:popMode(mode,index)
---     local old = self.modeStack[#self.modeStack]
---     if (mode and mode ~= old) or #self.modeStack <= 1 then return end
---     self.modeStack[#self.modeStack] = nil
---     self:_setMode(self.modeStack[#self.modeStack],old)
---     return old
--- end
-FloatingObject.popModeKeepPosParent = FloatingObject._make_popMode(FloatingObject._setModeKeepPosParent)
+---@param moveTo MoveTo
+---@return PopMode
+function FloatingObject._make_popMode(moveTo)
+    local setMode = FloatingObject._make_setMode(moveTo)
+    return function (self,mode)
+        local old = self.modeStack[#self.modeStack]
+        if (mode and self:convertModeKey(mode) ~= old) or #self.modeStack <= 1 then return end
+        self.modeStack[#self.modeStack] = nil
+        setMode(self,self.modeStack[#self.modeStack])--,old)
+        -- return old
+    end
+end
+---@return PopMode
+function FloatingObject._make_popModePings(moveToMatrix)
+    local setMode = FloatingObject._make_setModePings(moveToMatrix)
+    return function (self,mode)
+        local old = self.modeStack[#self.modeStack]
+        if (mode and self:convertModeKey(mode) ~= old) or #self.modeStack <= 1 then return end
+        self.modeStack[#self.modeStack] = nil
+        setMode(self,self.modeStack[#self.modeStack])--,old)
+        -- return old
+    end
+end
+
+
+
+-- FloatingObject._setModeKeepPos = FloatingObject._make_setMode(FloatingObject.moveToKeepPos)
+
+
+
+-- FloatingObject._setMode = FloatingObject._make_setMode(models.moveTo)
+FloatingObject.pushMode = FloatingObject._make_pushMode(models.moveTo)
+FloatingObject.popMode = FloatingObject._make_popMode(models.moveTo)
+FloatingObject.pushMode = FloatingObject._make_pushModePings(FloatingObject.moveToMatrix)
+FloatingObject.popMode = FloatingObject._make_popModePings(FloatingObject.moveToMatrix)
+
+
+-- FloatingObject._setModeKeepPosParent = FloatingObject._make_setMode(FloatingObject.moveToKeepPosParent)
+-- FloatingObject.pushModeKeepPosParent = FloatingObject._make_pushMode(FloatingObject.moveToKeepPosParent)
+-- FloatingObject.popModeKeepPosParent = FloatingObject._make_popMode(FloatingObject.moveToKeepPosParent)
+FloatingObject.pushModeKeepPosParent = FloatingObject._make_pushModePings(FloatingObject.moveToKeepPosParentMatrix)
+FloatingObject.popModeKeepPosParent = FloatingObject._make_popModePings(FloatingObject.moveToKeepPosParentMatrix)
+
 
 
 function FloatingObject:getParent()
@@ -272,6 +336,24 @@ function FloatingObject:changePos(change)
     local par = self.part:getParent()
     local d = par:getParent():partToWorldMatrix():invert():applyDir(change)
     -- log(d,par:getPos(),par:getPositionMatrix())
-    par:setMatrix(par:getPositionMatrix():translate(d))
+    local pm = par:getPositionMatrix()
+    local newPos = pm:getColumn(4).xyz + d
+    if self:getID() then
+        pings.setFOParentPos(self:getID(),newPos,Utils.getID(par))
+    else
+        par:setMatrix(Utils.setMatrixPos(pm,newPos))
+    end
     -- par:setPos(par:getPos() + d)
+end
+
+---comment
+---@param gizmoID ID<FloatingObject>
+---@param pos vec3
+---@param parentID ID<ModelPart>|nil
+function pings.setFOParentPos(gizmoID,pos,parentID)
+    local fo = Utils.fromID(gizmoID)
+    if not fo then error("no id found:" .. gizmoID) end
+    --- todo: if these values differ a desync has happened.
+    local par = Utils.fromID(parentID) or fo.part:getParent()
+    par:setMatrix(Utils.setMatrixPos(par:getPositionMatrix(),pos))
 end

@@ -86,10 +86,15 @@ end
 
 
 
-
+---@package
 Utils._idInv = {}
+---@package
 Utils._ids = {}
 
+---@generic S
+---@param self S
+---@param id ID<S>
+---@return S
 function Utils.setID(self,id)
    if Utils._idInv[id] then
     error("multiple variables with id " .. id) -- .. " " .. _FloatingObject_ids[id] .. " " .. self)
@@ -102,20 +107,31 @@ function Utils.setID(self,id)
    return self
 end
 
+---@generic S
+---@param id ID<S>
+---@return S|nil
 function Utils.fromID(id)
     return Utils._idInv[id]
 end
+
+---@generic S
+---@param self S
+---@return ID<S>|nil
 function Utils.getID(self)
     return Utils._ids[self]
 end
 
 
+
+---@generic S
+---@class ID<S>
+
+
 ---@generic S
 ---@class IdUtil<S>
----@field setID fun(self:S,id:any):S
----@field fromID fun(id:any):S
----@field getID fun(self:S):any
-
+---@field setID fun(self:S,id:ID<S>):S
+---@field fromID fun(id:ID<S>):S|nil
+---@field getID fun(self:S):ID<S>|nil
 
 
 ---comment
@@ -127,4 +143,12 @@ function Utils._registerIDChaining(class)
   class.getID = Utils.getID
   return class
 end
+
+
+function Utils.setMatrixPos(matrix,pos)
+  return matrix:translate(-matrix:getColumn(4).xyz+pos)
+end
+
+
+
 return Utils

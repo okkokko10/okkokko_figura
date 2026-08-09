@@ -23,7 +23,7 @@
 
 ---@class Hitbox
 ---@field pos vec3
----@field size number
+---@field size vec3
 
 ---@class FloatingObject: IdUtil<FloatingObject>
 ---@field part ModelPart
@@ -247,6 +247,63 @@ function FloatingObject:addHitbox(pos,size,name)
     return self
 end
 
+function Utils.math.edgesToPosScale(pos1,pos2)
+    return (pos1+pos2)/2, Utils.math.vectorAbs(pos2-pos1)
+end
+
+function FloatingObject:addHitboxEdges(pos1,pos2,name)
+    self.hitboxes[name or (#self.hitboxes+1)] = {pos=(pos1+pos2)/2,size=(pos2-pos1)}
+    return self
+end
+
+
+function Utils.math.vectorAbs(vector)
+    return vector:applyFunc(math.abs)
+end
+
+---@class Vector
+---@field [string] any
+
+
+---@param matrix Matrix
+---@param func fun(vector:Vector,col:number):Vector
+function Utils.math.matrix4ApplyFuncVector(matrix,func)
+    return matrices.mat4(func(matrix[1],1),func(matrix[2],2),func(matrix[3],3),func(matrix[4],4))
+end
+---@param matrix Matrix
+---@param func fun(vector:Vector,col:number):Vector
+function Utils.math.matrix3ApplyFuncVector(matrix,func)
+    return matrices.mat3(func(matrix[1].xyz,1),func(matrix[2].xyz,2),func(matrix[3].xyz,3))
+end
+function Utils.math.matrix4Abs(matrix)
+    return Utils.math.matrix4ApplyFuncVector(matrix,Utils.math.vectorAbs)
+end
+
+-- works on matrix4 as well, deaugmenting it
+function Utils.math.matrix3Abs(matrix)
+    return Utils.math.matrix3ApplyFuncVector(matrix,Utils.math.vectorAbs)
+end
+---@class Matrix
+---@field [string] any
+
+---comment
+---@param aabb Hitbox
+---@param matrix Matrix
+function Utils.math.transformAABB(aabb,matrix)
+    return Utils.math.transformAABBAbs(aabb,matrix,Utils.math.matrix3Abs(matrix))
+    -- local newpos = matrix:apply(aabb.pos)
+
+end
+---@param aabb Hitbox
+---@param abs_matrix Matrix
+function Utils.math.transformAABBAbs(aabb,matrix,abs_matrix)
+    local newpos = matrix:apply(aabb.pos)
+    local newExt = abs_matrix * Utils.math.vectorAbs(aabb.size:copy())
+    return {pos = newpos, size = newExt}
+end
+
+
+---@deprecated
 function FloatingObject:getAABBs(out)
     local ptwm = self.part:partToWorldMatrix()
     out = out or {}
@@ -276,6 +333,7 @@ end
 ---@field localPos vec3
 ---@field distanceSq number
 ---@field side string?
+---@field objectKey? any -- when raycasting a table of multiple FloatingObject, is the key
 
 local debugKey = keybinds:newKeybind("debug", "key.keyboard.j")
 
@@ -318,6 +376,7 @@ function FloatingObject.raycastsOriented(startPos,endPos,objects)
         if out1 and out1.distanceSq < distanceSq then
             distanceSq = out1.distanceSq
             out = out1
+            out.objectKey = key
         end
     end
     return out
@@ -382,3 +441,7 @@ function pings.setFOParentPos(gizmoID,pos,parentID)
     local par = Utils.fromID(parentID) or fo.part:getParent()
     par:setMatrix(Utils.setMatrixPos(par:getPositionMatrix(),pos))
 end
+
+
+
+--- todo: abstract raycasting into a superclass

@@ -5,6 +5,7 @@ PlayerValues = {
     ---@type vec3?
     pos = nil,
     rot = nil,
+    bodyYaw = nil
 }
 
 if false then
@@ -22,6 +23,10 @@ end
 function PlayerValues:getRot(delta)
     -- if not player:isLoaded() then return end
     return PlayerValues.rot or player:isLoaded() and player:getRot(delta)
+end
+function PlayerValues:getBodyYaw(delta)
+    -- if not player:isLoaded() then return end
+    return PlayerValues.bodyYaw or player:isLoaded() and player:getBodyYaw(delta)
 end
 function PlayerValues:getUUID()
     -- if not player:isLoaded() then return end

@@ -18,7 +18,7 @@ Positioning.functions = {}
 
 --- in preRender, as a root World part.
 ---@param entity Entity
----@param followRot nil|number|"eyes"
+---@param followRot nil|number|"eyes"|"body"
 ---@return PreRenderFunction
 function Positioning.functions.followEntity(entity,followRot)
     if followRot == "eyes" then
@@ -28,8 +28,13 @@ function Positioning.functions.followEntity(entity,followRot)
         if not entity:isLoaded() then return end
         part:setPos(PS*(entity:getPos(delta)))
         if followRot then
-            local rot = entity:getRot(delta)
-            part:setRot( (followRot == 2) and rot.x or 0,-rot.y)
+            if (followRot == "body") then
+                part:setRot( 0,-entity:getBodyYaw(delta))
+            else
+                local rot = entity:getRot(delta)
+                part:setRot( (followRot == 2) and rot.x or 0,-rot.y)
+            end
+            
         end
     end
 end
@@ -81,7 +86,7 @@ Positioning.parts = {
 ---comment
 ---@param entity Entity
 ---@param name any
----@param followRot nil|number|"eyes"
+---@param followRot nil|number|"eyes"|"body"
 ---@return ModelPart
 function Positioning.entityFollower(entity,name,followRot)
     return models:newPart(name or entity:getUUID(),"World")
@@ -92,6 +97,7 @@ Positioning.parts.PlayerFollowerEyes = Positioning.entityFollower(require"player
 Positioning.parts.PlayerFollower = Positioning.entityFollower(require"playerValues","PlayerFollower")
 Positioning.parts.PlayerFollowerYaw = Positioning.entityFollower(require"playerValues","PlayerFollowerYaw",1)
 Positioning.parts.PlayerFollowerFull = Positioning.entityFollower(require"playerValues","PlayerFollowerFull",2)
+Positioning.parts.PlayerFollowerBody = Positioning.entityFollower(require"playerValues","PlayerFollowerBody","body")
 
 
 

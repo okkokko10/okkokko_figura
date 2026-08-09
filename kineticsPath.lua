@@ -126,7 +126,7 @@ function KineticsPath.make(pos)
     return path
 end
 
----@class vec3
+---@class vec3: Vector
 ---@field x number
 ---@field y number
 ---@field z number

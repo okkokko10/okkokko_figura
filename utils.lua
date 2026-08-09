@@ -150,5 +150,10 @@ function Utils.setMatrixPos(matrix,pos)
 end
 
 
+function Utils.vectorString(vector)
+  return table.concat({vector:unpack()}," ")
+end
+
+Utils.math = {}
 
 return Utils

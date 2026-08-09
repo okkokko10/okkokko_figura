@@ -31,10 +31,14 @@ TestObject.part:newItem("Item"):setItem("minecraft:glass")
 TestCompass = Positioning.absoluteRot("wa",TestObject.part)
 TestCompass:newItem("Item"):setItem("minecraft:green_stained_glass")--:setScale(1/16)
 
-local text = TestObject.part:newText("text"):setSeeThrough(true)
+-- local text = TestObject.part:newText("text"):setSeeThrough(true)
 
 TestObject:addHitbox(vec(0,0,0),1)
 
+
+Grabbing.addSelectable(TestObject)
+
+do return end
 
 local PointerObjectP1 = models:newPart("PointerObjectP1","World")
 
@@ -85,7 +89,6 @@ Objects.SelectionCandidates = {TestObject}
 -- end
 
 
-Grabbing.addSelectable(TestObject)
 
 
 local toolPage = action_wheel:newPage("toolPage")

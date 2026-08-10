@@ -215,6 +215,6 @@ Tablet2:setID("Tablet2")
 Tablet2:addHitboxEdges(tablet2.minpos,tablet2.maxpos)
 
 
-Grabbing.addSelectable(Tablet2)
+-- Grabbing.addSelectable(Tablet2)
 
 

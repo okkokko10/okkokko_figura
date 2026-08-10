@@ -1,10 +1,11 @@
 
 
 
----@class ModelPart
+---@class ModelPart : HasGetSetScalePos
 ---@field newPart fun(...): ModelPart
----@field [string] any
-
+---@field [string] any|(fun(...):ModelPart)|fun(...):any
+---@field ["moveTo"|"setMatrix"|"setPos"|"setRot"|"setScale"] fun(...): ModelPart
+---@field partToWorldMatrix fun(self:self):Matrix
 
 ---@alias RenderFunction fun(delta:number,ctx:string,part:ModelPart)
 ---@alias PreRenderFunction RenderFunction
@@ -98,6 +99,10 @@ Positioning.parts.PlayerFollower = Positioning.entityFollower(require"playerValu
 Positioning.parts.PlayerFollowerYaw = Positioning.entityFollower(require"playerValues","PlayerFollowerYaw",1)
 Positioning.parts.PlayerFollowerFull = Positioning.entityFollower(require"playerValues","PlayerFollowerFull",2)
 Positioning.parts.PlayerFollowerBody = Positioning.entityFollower(require"playerValues","PlayerFollowerBody","body")
+
+for key, value in pairs(Positioning.parts) do
+    Utils.setID(value,key)
+end
 
 
 

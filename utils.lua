@@ -109,9 +109,14 @@ end
 
 ---@generic S
 ---@param id ID<S>
+---@param checkType? Type<S>
 ---@return S|nil
-function Utils.fromID(id)
-    return Utils._idInv[id]
+function Utils.fromID(id,checkType)
+    local w = Utils._idInv[id]
+    if checkType and type(w) ~= checkType then
+      error("id " .. id .. " was expected to be " .. checkType .. ", instead was " .. type(w))
+    end
+    return w
 end
 
 ---@generic S
@@ -121,7 +126,25 @@ function Utils.getID(self)
     return Utils._ids[self]
 end
 
+---@generic S
+---@alias IDS<S> S|ID<S>
 
+---@generic S
+---@param ids IDS<S>
+---@return S|nil
+function Utils.materializeID(ids)
+  if type(ids) == "string" then
+    return Utils._idInv[ids]
+  else
+    return ids
+  end
+end
+
+---@generic S
+---@return { [ID<S>] : S }
+function Utils.listIDd()
+  return Utils._idInv
+end
 
 ---@generic S
 ---@class ID<S>

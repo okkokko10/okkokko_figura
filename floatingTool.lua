@@ -21,7 +21,7 @@
 
 
 
----@class Hitbox
+---@class HasPosSize
 ---@field pos vec3
 ---@field size vec3
 
@@ -29,8 +29,8 @@
 ---@field part ModelPart
 ---@field modeParents {[any]: ModelPart}
 ---@field modeStack any[]
----@field hitboxes {[any]: Hitbox}
-FloatingObject = {}
+---@field hitboxes {[any]: HasPosSize}
+FloatingObject = {__type = "FloatingObject"}
 
 require("utils")._registerIDChaining(FloatingObject)
 
@@ -140,7 +140,7 @@ function FloatingObject._make_setMode(moveTo)
 end
 
 function FloatingObject.foSetParentAndMatrix(fID,mode,matrix)
-    local fo = FloatingObject.fromID(fID) or (type(fID) == "table") and fID
+    local fo = FloatingObject.fromID(fID) or (type(fID) == "FloatingObject") and fID
     if not fo then error("not found:" .. (fID or "nil") .. " " .. (mode or "nil")) end
     local par = FloatingObject.toPart(fo:getModeParent(mode))
     if matrix then
@@ -247,13 +247,13 @@ function FloatingObject:addHitbox(pos,size,name)
     return self
 end
 
-function Utils.math.edgesToPosScale(pos1,pos2)
-    return (pos1+pos2)/2, Utils.math.vectorAbs(pos2-pos1)
-end
-
 function FloatingObject:addHitboxEdges(pos1,pos2,name)
     self.hitboxes[name or (#self.hitboxes+1)] = {pos=(pos1+pos2)/2,size=(pos2-pos1)}
     return self
+end
+
+function Utils.math.edgesToPosScale(pos1,pos2)
+    return (pos1+pos2)/2, Utils.math.vectorAbs(pos2-pos1)
 end
 
 
@@ -287,14 +287,14 @@ end
 ---@field [string] any
 
 ---comment
----@param aabb Hitbox
+---@param aabb HasPosSize
 ---@param matrix Matrix
 function Utils.math.transformAABB(aabb,matrix)
     return Utils.math.transformAABBAbs(aabb,matrix,Utils.math.matrix3Abs(matrix))
     -- local newpos = matrix:apply(aabb.pos)
 
 end
----@param aabb Hitbox
+---@param aabb HasPosSize
 ---@param abs_matrix Matrix
 function Utils.math.transformAABBAbs(aabb,matrix,abs_matrix)
     local newpos = matrix:apply(aabb.pos)

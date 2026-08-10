@@ -25,7 +25,6 @@ TestObject = FloatingObject:create(models:newPart("TestObject","LEFT_ITEM_PIVOT"
         base = Positioning.parts.PlayerFollower:newPart("TestObjectP1"):setPos(PS*1,PS/2,PS*3),
     }):pushMode("base"):setID("TestObject")
 
-
 TestObject.part:newItem("Item"):setItem("minecraft:glass")
 -- TestObject.part:addChild(vanilla_model.PLAYER)
 TestCompass = Positioning.absoluteRot("wa",TestObject.part)
@@ -36,7 +35,7 @@ TestCompass:newItem("Item"):setItem("minecraft:green_stained_glass")--:setScale(
 TestObject:addHitbox(vec(0,0,0),1)
 
 
-Grabbing.addSelectable(TestObject)
+-- Grabbing.addSelectable(TestObject)
 
 do return end
 

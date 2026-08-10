@@ -113,6 +113,13 @@ end
 ---@return S|nil
 function Utils.fromID(id,checkType)
     local w = Utils._idInv[id]
+    if id and not w then
+      w = Utils.constructFromID(id,checkType)
+      if w then
+        Utils.setID(w,id)
+      end
+    end
+
     if checkType and type(w) ~= checkType then
       error("id " .. id .. " was expected to be " .. checkType .. ", instead was " .. type(w))
     end
@@ -131,10 +138,11 @@ end
 
 ---@generic S
 ---@param ids IDS<S>
+---@param checkType? Type<S>
 ---@return S|nil
-function Utils.materializeID(ids)
+function Utils.materializeID(ids,checkType)
   if type(ids) == "string" then
-    return Utils._idInv[ids]
+    return Utils.fromID(ids,checkType)
   else
     return ids
   end
@@ -178,5 +186,24 @@ function Utils.vectorString(vector)
 end
 
 Utils.math = {}
+
+
+---creates a new object if it doesn't exist yet.
+---@generic S
+---@param id ID<S>
+---@param checkType? Type<S>
+---@return S|nil
+function Utils.constructFromID(id,checkType)
+  if type(id) ~= "string" then return end
+  local _, _, name =  string.find(id,"^!pl:(.*)$")
+  if name then
+    log(name)
+    return Positioning.playerNameFollower(name)
+  end
+  
+
+end
+
+
 
 return Utils

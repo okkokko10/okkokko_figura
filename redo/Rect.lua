@@ -18,8 +18,6 @@
 ---@field [1] Vector
 ---@field [2] Vector
 ---@field name? string
-
-
 Rect = {__type = "Rect"}
 
 local Rect_index = {

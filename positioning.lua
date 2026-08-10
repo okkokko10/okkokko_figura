@@ -26,7 +26,14 @@ function Positioning.functions.followEntity(entity,followRot)
         return Positioning.functions.followEntityEyes(entity)
     end
     return function(delta, ctx, part)
+        if type(entity) == "string" then
+            local ent =  (world.getPlayers())[entity]
+            if ent then
+                entity = ent
+            end
+        end
         if not entity:isLoaded() then return end
+        -- root:setPreRender(function (delta,ctx,part) part:setPos(16*(player:getPos(delta))) end)
         part:setPos(PS*(entity:getPos(delta)))
         if followRot then
             if (followRot == "body") then
@@ -110,4 +117,9 @@ end
 function Positioning.absoluteRot(name,parent)
     return (parent or models):newPart(name)
         :setPreRender( Positioning.functions.worldRotation() )
+end
+
+
+function Positioning.playerNameFollower(name)
+    return Positioning.entityFollower(name,"PlayerFollower_"..name,1)
 end

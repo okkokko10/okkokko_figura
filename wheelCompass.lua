@@ -69,14 +69,14 @@ function events.entity_init()
     )
     :setPostRender(
       function (delta,ctx,part)
-        if GIZMO.cameraTracking then
+        if GIZMO.cameraTracking and false then
           local pos = part:partToWorldMatrix():apply( vec(0,0,0))
           
           renderer:setCameraPivot(nilInAerospace(pos + (vec(0,1,0) * ( - 0.2))))
         end
       end
     )
-
+  Utils.setID(FloatingGizmo,"FloatingGizmo")
     
   COMPASS = FloatingGizmo:newPart("compass")--:setPos():setVisible(true) --:setVisible(false)
 

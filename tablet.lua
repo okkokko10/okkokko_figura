@@ -5,7 +5,7 @@ require"utils"
 require"kineticsPath"
 
 require"floatingToolUse"
-require "grabFloatingGizmos"
+-- require "grabFloatingGizmos"
 
 
 -- -- Tablet = {}
@@ -84,6 +84,8 @@ end
 ---@field extraData? table
 ---@field minpos Vector
 ---@field maxpos Vector
+---@field hitbox Hitbox
+---@field hitboxToButtonIndex number[]
 Tablet = {}
 Tablet.__index = Tablet
 
@@ -128,46 +130,47 @@ function Tablet.newTablet(name,buttonRules)
     
 
     tablet.minpos = vec(0,0,0)
-    tablet.maxpos = vec(-1,-length,1/8)
-
+    tablet.maxpos = vec(-1,-length,1/8)*PS
+    local rectT = Rect.fromEndpoints(tablet.minpos,tablet.maxpos)
 
     tablet.part = models:newPart(name)
-    Utils.math.setPosScaleFromEndpoints(
-        tablet.part:newItem("back"):setItem("minecraft:purple_stained_glass"),
-        tablet.minpos,tablet.maxpos
-    )
+    rectT:setCenteredItemTo(tablet.part:newItem("back"):setItem("minecraft:purple_stained_glass"))
     -- tablet.part:newBlock("back2"):setBlock("minecraft:green_stained_glass")--:setPos(PS*vec(1,1,1)/2):setScale(1,1,1)
     tablet.buttonRules = buttonRules
     tablet.buttonObjects = {}
     
-
+    tablet.hitbox = Hitbox:create(tablet.part,{rectT})
+    
+    tablet.hitboxToButtonIndex = {}
 
     for i, value in ipairs(buttonRules) do
-        local pos = vec(0,(1-i)*rules.spacing-rules.vpad,-0.001)
+        local pos = vec(0,(1-i)*rules.spacing-rules.vpad,-0.001)*PS
+        local rect = Rect.fromEndpoints(pos,pos - rules.scale*PS)
         --- should use a superclass instead
-        local tabletButton = FloatingObject:create(tablet.part:newPart("button"), {
-            base = Utils.math.setPosScaleFromEndpoints(
-                tablet.part:newPart(i),
-                pos,
-                pos - rules.scale
-                )
-        })
-        tablet.buttonObjects[i] = tabletButton
-        local ite = tabletButton.part:newItem("item"):setItem("minecraft:red_stained_glass")
-        tabletButton.part:newText("text"):setText(value.text):setPos(-16,0,8):setSeeThrough(true)
-        tabletButton:addHitbox(vec(0,0,0),1)
-        tabletButton.part:setPreRender(
-        function(delta, ctx, part)
-            ite:setItem(tablet.buttonObjects[tablet.hoveredButton] == tabletButton and "minecraft:red_stained_glass" or "minecraft:white_stained_glass")
-        end 
+        -- local tabletButton = FloatingObject:create(tablet.part:newPart("button"), {
+        --     base = rect:setCenteredItemTo(
+        --         tablet.part:newPart(i),
+        --         pos,
+        --         pos - rules.scale
+        --         )
+        -- })
+        local ite = tablet.part:newItem("item"..i):setItem("minecraft:white_stained_glass")
+        rect:setCenteredItemTo(ite)
+        tablet.buttonObjects[i] = ite
+        tablet.part:newText("text"..i):setText(value.text):setScale(rules.scale):setPos(pos):setSeeThrough(true)
+        tablet.hitboxToButtonIndex[tablet.hitbox:addRect(rect)] = i
         
-        )
     end
-    
+    -- tablet.part:setPreRender(
+    --     function(delta, ctx, part)
+            
+    --         ite:setItem(tablet.buttonObjects[tablet.hoveredButton] == tabletButton and "minecraft:red_stained_glass" or "minecraft:white_stained_glass")
+    --     end 
+    --     )
     tablet.part:setPostRender(
         function(delta, ctx, part)
             if not player:isLoaded() then return end
-            local eyePos = entityEyePos(player,delta)
+            local eyePos =  client.getCameraPos() -- entityEyePos(player,delta)
             local dir = player:getLookDir()
             local obj = tablet:Hover(eyePos,eyePos+100*dir)
         end
@@ -178,14 +181,43 @@ function Tablet.newTablet(name,buttonRules)
 end
 
 function Tablet:Hover(startPos,endPos)
-    local rc = FloatingObject.raycastsOriented(startPos,endPos,self.buttonObjects)
+    local rc = self.hitbox:raycastOriented(startPos,endPos)
     if rc then
-        self.hoveredButton = rc.objectKey
+        local buttonIndex = self.hitboxToButtonIndex[rc.index]
+        -- if self.part:getTask("text3") then
+        --     self.part:getTask("text3"):setText(printTable(rc,1,true))
+        -- end
+        local iteOld = self.buttonObjects[self.hoveredButton]
+        if iteOld then
+            iteOld:setItem("minecraft:white_stained_glass")
+        end
+        local iteNew = self.buttonObjects[buttonIndex]
+        if iteNew then
+            iteNew:setItem("minecraft:red_stained_glass")
+        end
+        self.hoveredButton = buttonIndex
+        return rc
     else
+        local iteOld = self.buttonObjects[self.hoveredButton]
+        if iteOld then
+            iteOld:setItem("minecraft:white_stained_glass")
+        end
         self.hoveredButton = nil
     end
 end
 
+function Tablet:Click(startPos,endPos)
+    local rc = self:Hover(startPos,endPos)
+    if rc then
+        local rules =  self.buttonRules[self.hoveredButton]
+        log("pressed" .. (self.hoveredButton or ""))
+        if rules and rules.onPress then
+            rules.onPress("",self,self.hoveredButton)
+        end
+        
+    end
+
+end
 
 
 
@@ -195,9 +227,19 @@ end
 --- that modeParent is then named the same
 --- in non-host, the anchor point could be the one that moves, since the matrix is communicated anyway
 
+require"redo.Grab"
 
 local tablet2 = Tablet.newTablet("tablet2",{
-    {},{},{}
+    {
+        text = "update player followers",
+        onPress = Grabbing.allPlayers
+    },{
+        text = "check queue status",
+        onPress = function ()
+            host:sendChatCommand("queue status")
+        end
+
+    },{}
 })
 local Tablet2 = FloatingObject:create(tablet2.part,
     {
@@ -205,8 +247,16 @@ local Tablet2 = FloatingObject:create(tablet2.part,
     })
 
 
+local pressKey = keybinds:newKeybind("press tablet button", "key.mouse.left", false)
 
 
+function pressKey.press()
+    if not player:isLoaded() then return end
+    local eyePos = client.getCameraPos() --entityEyePos(player,client.getFrameTime())
+    local dir = player:getLookDir()
+    local obj = tablet2:Click(eyePos,eyePos+100*dir)
+    
+end
 
 
 

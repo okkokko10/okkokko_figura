@@ -4,7 +4,7 @@ require "positioning"
 require "playerValues"
 
 
-require "grabFloatingGizmos"
+-- require "grabFloatingGizmos"
 
 
 Objects = {}

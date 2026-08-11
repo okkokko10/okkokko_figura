@@ -11,7 +11,7 @@ local CHAT_TEXT
 
 function events.entity_init()
     
-    CHAT_TEXT = Utils.setID(Utils.fromID("FloatingGizmo"):newPart("chat"),"ChatText")
+    CHAT_TEXT = Utils.ID.set(Utils.ID.from("FloatingGizmo"):newPart("chat"),"ChatText")
             :setPos(PS*vec(0,-0.1,0))
         :newPart("billboard","BILLBOARD")
         :newText("text")

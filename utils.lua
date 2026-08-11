@@ -85,7 +85,7 @@ function stripWhitespace(str)
   return string.gsub(str, '^%s*(.-)%s*$', '%1')
 end
 
-
+Utils.ID = {}
 
 ---@package
 Utils._idInv = {}
@@ -96,7 +96,7 @@ Utils._ids = {}
 ---@param self S
 ---@param id ID<S>
 ---@return S
-function Utils.setID(self,id)
+function Utils.ID.set(self,id)
    if Utils._idInv[id] then
     error("multiple variables with id " .. id) -- .. " " .. _FloatingObject_ids[id] .. " " .. self)
    end
@@ -112,12 +112,12 @@ end
 ---@param id ID<S>
 ---@param checkType? Type<S>
 ---@return S|nil
-function Utils.fromID(id,checkType)
+function Utils.ID.from(id,checkType)
     local w = Utils._idInv[id]
     if id and not w then
       w = Utils.constructFromID(id,checkType)
       if w then
-        Utils.setID(w,id)
+        Utils.ID.set(w,id)
       end
     end
 
@@ -130,7 +130,7 @@ end
 ---@generic S
 ---@param self S
 ---@return ID<S>|nil
-function Utils.getID(self)
+function Utils.ID.get(self)
     return Utils._ids[self]
 end
 
@@ -141,9 +141,9 @@ end
 ---@param ids IDS<S>
 ---@param checkType? Type<S>
 ---@return S|nil
-function Utils.materializeID(ids,checkType)
+function Utils.ID.materialize(ids,checkType)
   if type(ids) == "string" then
-    return Utils.fromID(ids,checkType)
+    return Utils.ID.from(ids,checkType)
   else
     return ids
   end
@@ -151,7 +151,7 @@ end
 
 ---@generic S
 ---@return { [ID<S>] : S }
-function Utils.listIDd()
+function Utils.ID.listIDd()
   return Utils._idInv
 end
 
@@ -170,9 +170,9 @@ end
 ---@generic S
 ---@param class IdUtil<S>
 function Utils._registerIDChaining(class)
-  class.setID = Utils.setID
-  class.fromID = Utils.fromID
-  class.getID = Utils.getID
+  class.setID = Utils.ID.set
+  class.fromID = Utils.ID.from
+  class.getID = Utils.ID.get
   return class
 end
 
@@ -189,6 +189,12 @@ end
 Utils.math = {}
 
 
+function Utils.registerIDConstructor(keyword,func)
+  
+end
+
+
+---@package
 ---creates a new object if it doesn't exist yet.
 ---@generic S
 ---@param id ID<S>

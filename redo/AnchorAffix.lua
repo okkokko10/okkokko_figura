@@ -20,11 +20,11 @@ AnchorAffix.direct = {}
 ---@param rot? Vector
 function AnchorAffix.direct.part_alter(partID,parentID,matrix,pos,rot)
     
-    local part = Utils.fromID(partID)
+    local part = Utils.ID.from(partID)
     if not part then
         return host:isHost() and log("no such part: " .. partID)
     end
-    local parent = parentID and Utils.fromID(parentID)
+    local parent = parentID and Utils.ID.from(parentID)
     if parent then
         if parent:isChildOf(part) or parent == part then
             if host:isHost() then
@@ -67,7 +67,7 @@ AnchorAffix.complex = {}
 ---@param parentID? ID<ModelPart> -- new parent
 ---@param target? ConvertsToMatrix -- new world matrix
 function AnchorAffix.complex.affixInPlace(partID, parentID, target,noPing)
-    local part = Utils.fromID(partID) or error("no part: ".. (partID or "nil"))
+    local part = Utils.ID.from(partID) or error("no part: ".. (partID or "nil"))
     if parentID then
         local mat = Conversion.toMatrix(parentID):invert() * Conversion.toMatrix(target or part)
         if noPing then
@@ -91,8 +91,8 @@ AnchorAffix.info = {}
 ---@param parentID ID<ModelPart> -- new parent
 ---@return boolean|nil
 function AnchorAffix.info.isChildOf(partID, parentID)
-    local part = Utils.fromID(partID)
-    local parent = Utils.fromID(parentID)
+    local part = Utils.ID.from(partID)
+    local parent = Utils.ID.from(parentID)
     if part and parent then
         return part:isChildOf(parent) or partID == parentID
     else
@@ -102,6 +102,6 @@ end
 ---@param partID ID<ModelPart>
 ---@return ID<ModelPart>
 function AnchorAffix.info.getParentID(partID)
-    return Utils.getID(Utils.fromID(partID):getParent())
+    return Utils.ID.get(Utils.ID.from(partID):getParent())
 end
 return AnchorAffix

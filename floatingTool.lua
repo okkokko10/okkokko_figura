@@ -63,7 +63,7 @@ function FloatingObject:convertModeKey(mode)
     if self.modeParents[mode] then
         return mode
     else
-        return Utils.getID(mode) or mode
+        return Utils.ID.get(mode) or mode
     end
     -- return (not self.modeParents[mode]) and FloatingObject.getID(mode) or mode
 end
@@ -408,7 +408,7 @@ function FloatingObject:createParentInPlace(root,name)
 end
 
 function FloatingObject:createParent(root,key,name)
-    local p = (Utils.fromID(root) or root or Positioning.parts.World):newPart(name or key)
+    local p = (Utils.ID.from(root) or root or Positioning.parts.World):newPart(name or key)
     -- log(p:partToWorldMatrix())
     self.modeParents[key] = p
     return p
@@ -423,7 +423,7 @@ function FloatingObject:changePos(change)
     local pm = par:getPositionMatrix()
     local newPos = pm:getColumn(4).xyz + d
     if self:getID() then
-        pings.setFOParentPos(self:getID(),newPos,Utils.getID(par))
+        pings.setFOParentPos(self:getID(),newPos,Utils.ID.get(par))
     else
         par:setMatrix(Utils.setMatrixPos(pm,newPos))
     end
@@ -435,10 +435,10 @@ end
 ---@param pos vec3
 ---@param parentID ID<ModelPart>|nil
 function pings.setFOParentPos(gizmoID,pos,parentID)
-    local fo = Utils.fromID(gizmoID)
+    local fo = Utils.ID.from(gizmoID)
     if not fo then error("no id found:" .. gizmoID) end
     --- todo: if these values differ a desync has happened.
-    local par = Utils.fromID(parentID) or fo.part:getParent()
+    local par = Utils.ID.from(parentID) or fo.part:getParent()
     par:setMatrix(Utils.setMatrixPos(par:getPositionMatrix(),pos))
 end
 

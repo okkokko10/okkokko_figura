@@ -41,7 +41,7 @@ Conversion._toMatrix = {
     Matrix4 = function (value) return value end,
     Vector3 = function (value) return matrices.mat4():translate(value) end,
     ModelPart = function (part,...) return part:partToWorldMatrix() end,
-    string =  function (id,...) return Conversion.toMatrix(Utils.fromID(id),...) end,
+    string =  function (id,...) return Conversion.toMatrix(Utils.ID.from(id),...) end,
     ["nil"] = function (n,...)
         if (select("#",...)>0) then
             return Conversion.toMatrix(...) 

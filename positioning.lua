@@ -86,6 +86,28 @@ function Positioning.functions.worldRotation()
     return Positioning.functions._worldRotation
 end
 
+
+
+function Positioning.functions.coordinate(pos)
+
+    return function(delta, ctx, part)
+        
+        
+        part:setPos(PS*(entity:getPos(delta)))
+        if followRot then
+            if (followRot == "body") then
+                part:setRot( 0,-entity:getBodyYaw(delta))
+            else
+                local rot = entity:getRot(delta)
+                part:setRot( (followRot == 2) and rot.x or 0,-rot.y)
+            end
+            
+        end
+    end
+end
+
+
+
 --- common parts
 Positioning.parts = {
     World = models:newPart("World","World"),
@@ -108,7 +130,7 @@ Positioning.parts.PlayerFollowerFull = Positioning.entityFollower(require"player
 Positioning.parts.PlayerFollowerBody = Positioning.entityFollower(require"playerValues","PlayerFollowerBody","body")
 
 for key, value in pairs(Positioning.parts) do
-    Utils.setID(value,key)
+    Utils.ID.set(value,key)
 end
 
 

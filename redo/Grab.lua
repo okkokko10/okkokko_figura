@@ -13,7 +13,7 @@ local airKey = keybinds:newKeybind("fix gizmo", "key.keyboard.x", false)
 
 
 
-local carryingPart = Utils.setID(Positioning.parts.PlayerFollowerEyes:newPart("CarryingPart"),"CarryingPart")
+local carryingPart = Utils.ID.set(Positioning.parts.PlayerFollowerEyes:newPart("CarryingPart"),"CarryingPart")
 
 
 
@@ -63,7 +63,7 @@ Grabbing.hitboxToGizmo = {}
 
 ---@param gizmo HasPartIDHitbox
 function Grabbing.addSelectable(gizmo)
-    if not Utils.fromID(gizmo.partID,"ModelPart") then
+    if not Utils.ID.from(gizmo.partID,"ModelPart") then
         error("adding ID-less object as grabbable: "..printTable(gizmo,1,true)) -- the error would have already happened
     end
     Grabbing.Selectable[#Grabbing.Selectable+1] = gizmo
@@ -84,7 +84,7 @@ end
 function Grabbing.updateOntoList()
     Grabbing.ontoList = {}
     Grabbing.ontoListInv = {}
-    for id, value in pairs(Utils.listIDd()) do
+    for id, value in pairs(Utils.ID.listIDd()) do
         if type(value) == "ModelPart" and id ~= "CarryingPart" then
             Grabbing.ontoList[#Grabbing.ontoList+1] = id
             Grabbing.ontoListInv[id] = #Grabbing.ontoList
@@ -99,7 +99,7 @@ end
 ---comment
 ---@param partID ID<ModelPart>
 function Grabbing.grab(partID)
-    if Grabbing.isGrabbing() or not Utils.fromID(partID) then return end
+    if Grabbing.isGrabbing() or not Utils.ID.from(partID) then return end
     Grabbing.carriedPartID = partID
     local parentID = AnchorAffix.info.getParentID(partID)
     Grabbing.updateOntoList()
@@ -200,7 +200,7 @@ function Grabbing.updateGUI()
             color = "#AACACA"
         }
         -- lines[#lines+1] = {
-        --     text = printTable(Utils.getID(gizmo),1,true) .. "\n",
+        --     text = printTable(Utils.ID.getID(gizmo),1,true) .. "\n",
         --     color = "#ACAACA"
         -- }
 
@@ -285,20 +285,20 @@ end
 function freecamKey.release()
     
     AnchorAffix.complex.affixInPlace(AnchorAffix.info.getParentID("Freecam"))
-    Utils.fromID("Freecam")
+    Utils.ID.from("Freecam")
 end
 
 
 
 events.ENTITY_INIT:register(function ()
     
-    for key, value in pairs(Utils.listIDd()) do
+    for key, value in pairs(Utils.ID.listIDd()) do
         if type(value.part) == "ModelPart" then
-            Utils.setID(value.part,key.."_part")
+            Utils.ID.set(value.part,key.."_part")
         end
     end
-    Utils.setID(
-        Utils.fromID("TestObject_part"):newPart("freecam"),
+    Utils.ID.set(
+        Utils.ID.from("TestObject_part"):newPart("freecam"),
         "Freecam"
     ):setPostRender(
       function (delta,ctx,part)
@@ -314,8 +314,8 @@ events.ENTITY_INIT:register(function ()
 
       end
     )
-    -- Utils.setID(TestObject.part,"TestObject_part")
-    -- Utils.setID()
+    -- Utils.ID.setID(TestObject.part,"TestObject_part")
+    -- Utils.ID.setID()
     Grabbing.updateOntoList()
     for index, value in ipairs(Grabbing.ontoList) do
         Grabbing.addSelectable({partID = value, hitbox = Hitbox.fromModelPartItems(value)})
@@ -332,6 +332,6 @@ end)
 
 function Grabbing.allPlayers()
     for key, value in pairs((world.getPlayers()) ) do
-        Utils.fromID("!pl:" .. key)
+        Utils.ID.from("!pl:" .. key)
     end
 end

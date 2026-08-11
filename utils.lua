@@ -1,12 +1,13 @@
 Utils = {}
 
+Utils.Sublevel = {}
 
 -- copied from https://discord.com/channels/1129805506354085959/1234218592187453452/1499007047818154054 
 -- we have to raycast twice because sublevel rotation gives some offset
 local _sabelSubLevelOffset = vec(0, 10000, 0)
 ---@param pos Vector3
 ---@return Vector3
-function sableSublevelToWorld(pos)
+function Utils.Sublevel.sableSublevelToWorld(pos)
   -- return pos
   local pos1 = pos + _sabelSubLevelOffset
   local pos2 = pos - _sabelSubLevelOffset
@@ -32,47 +33,47 @@ function prettierLists(str)
   end
 end
 
-function sublevelRotationMatrix3(pos)
+function Utils.Sublevel.sublevelRotationMatrix3(pos)
   if not pos then
     error("pos not given")
   end
-  if not isInSublevel(pos) then
+  if not Utils.Sublevel.isInSublevel(pos) then
     return matrices.mat3()
   end
-  local center = sableSublevelToWorld(pos)
-  local x = sableSublevelToWorld(pos + vec(1,0,0))
-  local y = sableSublevelToWorld(pos + vec(0,1,0))
-  local z = sableSublevelToWorld(pos + vec(0,0,1))
+  local center = Utils.Sublevel.sableSublevelToWorld(pos)
+  local x = Utils.Sublevel.sableSublevelToWorld(pos + vec(1,0,0))
+  local y = Utils.Sublevel.sableSublevelToWorld(pos + vec(0,1,0))
+  local z = Utils.Sublevel.sableSublevelToWorld(pos + vec(0,0,1))
 
   return matrices.mat3(x-center,y-center,z-center)
   
 end
 
-function sublevelRotationMatrix(pos)
-  return sublevelRotationMatrix3(pos):augmented()
+function Utils.Sublevel.sublevelRotationMatrix(pos)
+  return Utils.Sublevel.sublevelRotationMatrix3(pos):augmented()
 end
 
-function sublevelRotationMatrixInv3(pos)
-  if not isInSublevel(pos) then
+function Utils.Sublevel.sublevelRotationMatrixInv3(pos)
+  if not Utils.Sublevel.isInSublevel(pos) then
     return matrices.mat3()
   end
-  return sublevelRotationMatrix3(pos):invert()
+  return Utils.Sublevel.sublevelRotationMatrix3(pos):invert()
 end
 
-function sublevelRotationMatrixInv(pos)
-  if not isInSublevel(pos) then
+function Utils.Sublevel.sublevelRotationMatrixInv(pos)
+  if not Utils.Sublevel.isInSublevel(pos) then
     return matrices.mat4()
   end
-  return sublevelRotationMatrix3(pos):invert():augmented()
+  return Utils.Sublevel.sublevelRotationMatrix3(pos):invert():augmented()
 end
 
 
-function isInSublevel(pos)
+function Utils.Sublevel.isInSublevel(pos)
   return pos.x > 20000000
 end
 
-function nilInAerospace(pos)
-  return (not isInSublevel(pos) or nil) and pos
+function Utils.Sublevel.nilInAerospace(pos)
+  return (not Utils.Sublevel.isInSublevel(pos) or nil) and pos
 end
 
 

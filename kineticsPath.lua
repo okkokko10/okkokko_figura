@@ -5,7 +5,7 @@ require "utils"
 
 -- vec(20534276, 129, 20640776)
 function pings.pingSublevel(pos)
-  return sableSublevelToWorld(pos)
+  return Utils.Sublevel.sableSublevelToWorld(pos)
   
 end
 
@@ -272,14 +272,14 @@ function KineticsPath.updateRender()
   local nextElsewhere = true
   for i = 1, #KineticsPath.sourcePath do
     if nextElsewhere then
-      levelRot = sublevelRotationMatrix(KineticsPath.sourcePath[i].pos)
+      levelRot = Utils.Sublevel.sublevelRotationMatrix(KineticsPath.sourcePath[i].pos)
       nextElsewhere = false
     end
 
     local isLast = i == #KineticsPath.sourcePath
     local isOrigin = isLast and (i < KineticsPath.pathLength)
 
-    local sv = sableSublevelToWorld(KineticsPath.sourcePath[i].pos + 1/2)
+    local sv = Utils.Sublevel.sableSublevelToWorld(KineticsPath.sourcePath[i].pos + 1/2)
     local nextPos = KineticsPath.sourcePath[i+1] and KineticsPath.sourcePath[i+1].pos
     local localDirection = nextPos and (nextPos - KineticsPath.sourcePath[i].pos) or (vec(0,0,0))
     

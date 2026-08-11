@@ -304,7 +304,7 @@ events.ENTITY_INIT:register(function ()
       function (delta,ctx,part)
         if GIZMO.cameraTracking then
           local pos = part:partToWorldMatrix():apply( vec(0,0,0))
-          renderer:setCameraPivot(nilInAerospace(pos + (vec(0,1,0) * ( - 0.2))))
+          renderer:setCameraPivot(Utils.Sublevel.nilInAerospace(pos + (vec(0,1,0) * ( - 0.2))))
         end
         if freecamKey:isPressed() then
             local pare = AnchorAffix.info.getParentID("Freecam")

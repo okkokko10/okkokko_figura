@@ -40,7 +40,7 @@ function events.entity_init()
       function(delta, ctx, part)
         if GIZMO.trackingOther then
           
-          part:setPos(PS*(sableSublevelToWorld(GIZMO.trackingOther)))
+          part:setPos(PS*(Utils.Sublevel.sableSublevelToWorld(GIZMO.trackingOther)))
         end
       end
     )
@@ -72,7 +72,7 @@ function events.entity_init()
         if GIZMO.cameraTracking and false then
           local pos = part:partToWorldMatrix():apply( vec(0,0,0))
           
-          renderer:setCameraPivot(nilInAerospace(pos + (vec(0,1,0) * ( - 0.2))))
+          renderer:setCameraPivot(Utils.Sublevel.nilInAerospace(pos + (vec(0,1,0) * ( - 0.2))))
         end
       end
     )
@@ -236,7 +236,7 @@ end
 function pings.gizmoTrackPos(pos)
   if pos then
     -- log(pos)
-    models.posTrack:setPos(PS*sableSublevelToWorld(pos))
+    models.posTrack:setPos(PS*Utils.Sublevel.sableSublevelToWorld(pos))
     FloatingGizmo:moveTo(models.posTrack)
     GIZMO.trackingOther = pos
   else
@@ -350,7 +350,7 @@ mainPage:newAction()
         if GIZMO.trackingOther then
           if not player:isLoaded() then return end
 
-          local inv = sublevelRotationMatrixInv3(GIZMO.trackingOther)
+          local inv = Utils.Sublevel.sublevelRotationMatrixInv3(GIZMO.trackingOther)
           local accountedDir = inv * player:getLookDir()
           pings.setGizmo("trackingOther",GIZMO.trackingOther + accountedDir *dir * GIZMO.distance)
           

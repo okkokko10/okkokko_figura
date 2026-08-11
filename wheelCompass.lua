@@ -76,7 +76,7 @@ function events.entity_init()
         end
       end
     )
-  Utils.ID.set(FloatingGizmo,"FloatingGizmo")
+  Utils.ID.field.FloatingGizmo = FloatingGizmo
     
   COMPASS = FloatingGizmo:newPart("compass")--:setPos():setVisible(true) --:setVisible(false)
 

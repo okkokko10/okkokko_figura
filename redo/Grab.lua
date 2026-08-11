@@ -14,7 +14,8 @@ local airKey = keybinds:newKeybind("fix gizmo", "key.keyboard.x", false)
 
 
 
-local carryingPart = Utils.ID.set(Positioning.parts.PlayerFollowerEyes:newPart("CarryingPart"),"CarryingPart")
+Utils.ID.field.CarryingPart = Positioning.parts.PlayerFollowerEyes:newPart("CarryingPart"):setPos(PS*vec(0,0,2))
+
 
 
 
@@ -75,6 +76,12 @@ function Grabbing.addSelectable(gizmo)
     --     gizmo:createParent(value,key)
     -- end
 end
+
+---@param partID ID<ModelPart>
+function Grabbing.addSelectableGenerate(partID)
+    Grabbing.addSelectable({partID = partID, hitbox = Hitbox.fromModelPartItems(partID)})
+end
+
 
 -- todo: place snapped to grid
 
@@ -152,7 +159,7 @@ end
 ---comment
 ---@param partID ID<ModelPart>
 function Grabbing.grab(partID)
-    if Grabbing.isGrabbing() or not Utils.ID.from(partID) then return end
+    if Grabbing.isGrabbing() or not Utils.ID.isID(partID) or (not Grabbing.isSelectable[partID]) then return end
     Grabbing.carriedPartID = partID
     local parentID = AnchorAffix.info.getParentID(partID)
     Grabbing.oldParentID = parentID
@@ -311,7 +318,11 @@ function grabKey.release()
 end
 
 function airKey.press()
-    return Grabbing.grab(Grabbing.ontoList[Grabbing.ontoIndex])
+    if Grabbing.isGrabbing() then
+        AnchorAffix.complex.affixInPlace(Grabbing.carriedPartID,nil,"CarryingPart")
+    else
+        Grabbing.grab(Grabbing.ontoList[Grabbing.ontoIndex])
+    end
 end
 
 function placeKey.press()
@@ -340,50 +351,19 @@ if host:isHost() then
         Grabbing.updateGUI()
     end)
 end
-local freecamKey = keybinds:newKeybind("move freecam's parent", "key.keyboard.e", false)
-
-function freecamKey.press()
-    
-end
-
-function freecamKey.release()
-    
-    AnchorAffix.complex.affixInPlace(AnchorAffix.info.getParentID("Freecam"))
-    Utils.ID.from("Freecam")
-end
-
 
 
 events.ENTITY_INIT:register(function ()
-    
-    for key, value in pairs(Utils.ID.listIDd()) do
-        if type(value.part) == "ModelPart" then
-            Utils.ID.set(value.part,key.."_part")
-        end
-    end
-    Utils.ID.set(
-        Utils.ID.from("TestObject_part"):newPart("freecam"),
-        "Freecam"
-    ):setPostRender(
-      function (delta,ctx,part)
-        if GIZMO.cameraTracking then
-          local pos = part:partToWorldMatrix():apply( vec(0,0,0))
-          renderer:setCameraPivot(Utils.Sublevel.nilInAerospace(pos + (vec(0,1,0) * ( - 0.2))))
-        end
-        if freecamKey:isPressed() then
-            local pare = AnchorAffix.info.getParentID("Freecam")
-            local change = player:getLookDir()*0.2
-            AnchorAffix.complex.affixInPlace(pare,nil,Conversion.toMatrix(pare):translate(change),true)
-        end
 
-      end
-    )
+
+    --- temporary
+    
     -- Utils.ID.setID(TestObject.part,"TestObject_part")
     -- Utils.ID.setID()
     Grabbing.updateOntoList()
-    for index, value in ipairs(Grabbing.ontoList) do
-        Grabbing.addSelectable({partID = value, hitbox = Hitbox.fromModelPartItems(value)})
-    end
+    -- for index, value in ipairs(Grabbing.ontoList) do
+    --     Grabbing.addSelectableGenerate(value)
+    -- end
 
 end)
 
@@ -400,3 +380,5 @@ function Grabbing.allPlayers()
     Grabbing.updateOntoList()
 
 end
+
+return Grabbing

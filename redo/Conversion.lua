@@ -31,7 +31,7 @@ end
 
 
 
----@alias ConvertsToMatrix Matrix|Vector|ModelPart|ID<ModelPart>|function|nil|boolean|ComposedMatrix|{matrix:ConvertsToMatrix}
+---@alias ConvertsToMatrix Matrix|Vector|ModelPart|ID<ModelPart>|function|nil|boolean|ComposedMatrix|{matrix:ConvertsToMatrix}|string
 
 ---@package 
 ---@generic T: ConvertsToMatrix|boolean

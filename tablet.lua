@@ -241,10 +241,18 @@ local tablet2 = Tablet.newTablet("tablet2",{
 
     },{}
 })
-local Tablet2 = FloatingObject:create(tablet2.part,
-    {
-        base = Positioning.parts.PlayerFollowerYaw:newPart("Tablet2P"):setPos(PS*(0.1),PS*1.5,PS*2),
-    })
+
+tablet2.part:moveTo(Positioning.parts.PlayerFollowerYaw):setPos(PS*(0.1),PS*1.5,PS*2)
+
+Utils.ID.field.Tablet2 = tablet2.part
+
+Grabbing.addSelectableGenerate("Tablet2")
+
+
+-- local Tablet2 = FloatingObject:create(tablet2.part,
+--     {
+--         base = Positioning.parts.PlayerFollowerYaw:newPart("Tablet2P"):setPos(PS*(0.1),PS*1.5,PS*2),
+--     })
 
 
 local pressKey = keybinds:newKeybind("press tablet button", "key.mouse.left", false)
@@ -255,14 +263,13 @@ function pressKey.press()
     local eyePos = client.getCameraPos() --entityEyePos(player,client.getFrameTime())
     local dir = player:getLookDir()
     local obj = tablet2:Click(eyePos,eyePos+100*dir)
-    
 end
 
 
 
-Tablet2:setID("Tablet2")
+-- Tablet2:setID("Tablet2")
 
-Tablet2:addHitboxEdges(tablet2.minpos,tablet2.maxpos)
+-- Tablet2:addHitboxEdges(tablet2.minpos,tablet2.maxpos)
 
 
 -- Grabbing.addSelectable(Tablet2)

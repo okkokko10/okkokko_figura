@@ -1,5 +1,5 @@
 
-require "wheelCompass"
+-- require "wheelCompass"
 
 CHAT_MESSAGE = nil
 
@@ -9,17 +9,21 @@ CHAT_SHOWN = false
 
 local CHAT_TEXT
 
-function events.entity_init()
-    
-    CHAT_TEXT = Utils.ID.set(Utils.ID.from("FloatingGizmo"):newPart("chat"),"ChatText")
-            :setPos(PS*vec(0,-0.1,0))
-        :newPart("billboard","BILLBOARD")
-        :newText("text")
-            :setScale(1/2)
-            :setText("")
-            :setSeeThrough(true)
-            :setAlignment("CENTER")
-end
+require"floatingToolUse" -- temp
+
+local chatObj = Utils.ID.field.TestObject:newPart("chat"):setPos(PS*vec(0,-0.1,0))
+Utils.ID.field.ChatText = chatObj
+
+require("redo.Grab").addSelectableGenerate("ChatText")
+
+CHAT_TEXT = 
+        
+    chatObj:newPart("billboard","BILLBOARD")
+    :newText("text")
+        :setScale(1/2)
+        :setText("")
+        :setSeeThrough(true)
+        :setAlignment("CENTER")
 
 
 

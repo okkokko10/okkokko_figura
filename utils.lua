@@ -147,11 +147,19 @@ function Utils.constructFromID(id,checkType)
 
 end
 
-
+--- Utils.ID.set and Utils.ID.from using a field
 Utils.ID.field = setmetatable({},{
+  ---@generic S
+  ---@param t any
+  ---@param k ID<S>
+  ---@return S
   __index = function (t, k)
     return Utils.ID.from(k)
   end,
+  ---@generic S
+  ---@param t any
+  ---@param k ID<S>
+  ---@param v S
   __newindex = function (t, k, v)
     Utils.ID.set(v,k)
   end
@@ -197,6 +205,10 @@ function Utils.ID.from(id,checkType)
     end
     return w
 end
+
+Utils.ID.isID = Utils.ID.from -- temp
+Utils.ID.hasID = Utils.ID.get -- temp
+
 
 ---@generic S
 ---@param self S

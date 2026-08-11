@@ -27,7 +27,7 @@ TestObject = FloatingObject:create(models:newPart("TestObject","LEFT_ITEM_PIVOT"
 
 TestObject.part:newItem("Item"):setItem("minecraft:glass")
 -- TestObject.part:addChild(vanilla_model.PLAYER)
-TestCompass = Positioning.absoluteRot("wa",TestObject.part)
+TestCompass = Positioning.make.absoluteRot("wa",TestObject.part)
 TestCompass:newItem("Item"):setItem("minecraft:green_stained_glass")--:setScale(1/16)
 
 -- local text = TestObject.part:newText("text"):setSeeThrough(true)

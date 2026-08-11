@@ -5,6 +5,8 @@ Utils.Sublevel = {}
 -- copied from https://discord.com/channels/1129805506354085959/1234218592187453452/1499007047818154054 
 -- we have to raycast twice because sublevel rotation gives some offset
 local _sabelSubLevelOffset = vec(0, 10000, 0)
+
+--- copied from https://discord.com/channels/1129805506354085959/1234218592187453452/1499007047818154054 
 ---@param pos Vector3
 ---@return Vector3
 function Utils.Sublevel.sableSublevelToWorld(pos)
@@ -33,19 +35,23 @@ function prettierLists(str)
   end
 end
 
+---comment
+---@param pos Vector
+---@return Matrix
+---@return Vector
 function Utils.Sublevel.sublevelRotationMatrix3(pos)
   if not pos then
     error("pos not given")
   end
   if not Utils.Sublevel.isInSublevel(pos) then
-    return matrices.mat3()
+    return matrices.mat3(),pos
   end
   local center = Utils.Sublevel.sableSublevelToWorld(pos)
   local x = Utils.Sublevel.sableSublevelToWorld(pos + vec(1,0,0))
   local y = Utils.Sublevel.sableSublevelToWorld(pos + vec(0,1,0))
   local z = Utils.Sublevel.sableSublevelToWorld(pos + vec(0,0,1))
 
-  return matrices.mat3(x-center,y-center,z-center)
+  return matrices.mat3(x-center,y-center,z-center),center
   
 end
 
@@ -68,6 +74,7 @@ function Utils.Sublevel.sublevelRotationMatrixInv(pos)
 end
 
 
+
 function Utils.Sublevel.isInSublevel(pos)
   return pos.x > 20000000
 end
@@ -77,8 +84,23 @@ function Utils.Sublevel.nilInAerospace(pos)
 end
 
 
-
 PS = 16
+
+
+---the position matrix of the coordinate in world space.
+---the materialized coordinate is in the origin.
+---by default multiplies the coordinate by 16
+---@param pos Vector3
+---@param posScaling? number
+---@return Matrix
+---@return boolean loaded
+function Utils.Sublevel.sublevelPositionMatrix(pos,posScaling)
+  local mat,v = Utils.Sublevel.sublevelRotationMatrix3(pos)
+  local worked = not Utils.Sublevel.isInSublevel(v)
+  return mat:augmented():translate((posScaling or PS) * v),worked
+end
+
+
 
 -- https://stackoverflow.com/questions/51181222/lua-trailing-space-removal
 function stripWhitespace(str)
@@ -86,6 +108,55 @@ function stripWhitespace(str)
 end
 
 Utils.ID = {}
+
+
+
+---@package
+Utils._idConstructors = {}
+
+---using Utils.ID.from() with an unregistered ID of form !<keyword>:<arg> registers it as an ID corresponding to this func
+---@generic S
+---@param keyword string
+---@param func fun(arg:string):S|nil
+function Utils.registerIDConstructor(keyword,func)
+  Utils._idConstructors[keyword] = func
+end
+
+
+---@package
+---creates a new object if it doesn't exist yet.
+---@generic S
+---@param id ID<S>
+---@param checkType? Type<S>
+---@return S|nil
+function Utils.constructFromID(id,checkType)
+  if type(id) ~= "string" then return end
+  local _, _, keyword, name =  string.find(id,"^!(.*):(.*)$")
+  if keyword then
+    local f =Utils._idConstructors[keyword]
+    if f then
+      log("constructing: ",keyword,name,f)
+      local out = f(name)
+      return out
+    else
+      log("unrecognized keyword:",keyword, "used with",name)
+    end
+    -- return Positioning.playerNameFollower(name)
+  end
+  
+
+end
+
+
+Utils.ID.field = setmetatable({},{
+  __index = function (t, k)
+    return Utils.ID.from(k)
+  end,
+  __newindex = function (t, k, v)
+    Utils.ID.set(v,k)
+  end
+})
+
 
 ---@package
 Utils._idInv = {}
@@ -115,7 +186,7 @@ end
 function Utils.ID.from(id,checkType)
     local w = Utils._idInv[id]
     if id and not w then
-      w = Utils.constructFromID(id,checkType)
+      w = Utils.constructFromID(id)
       if w then
         Utils.ID.set(w,id)
       end
@@ -187,29 +258,6 @@ function Utils.vectorString(vector)
 end
 
 Utils.math = {}
-
-
-function Utils.registerIDConstructor(keyword,func)
-  
-end
-
-
----@package
----creates a new object if it doesn't exist yet.
----@generic S
----@param id ID<S>
----@param checkType? Type<S>
----@return S|nil
-function Utils.constructFromID(id,checkType)
-  if type(id) ~= "string" then return end
-  local _, _, name =  string.find(id,"^!pl:(.*)$")
-  if name then
-    log(name)
-    return Positioning.playerNameFollower(name)
-  end
-  
-
-end
 
 
 

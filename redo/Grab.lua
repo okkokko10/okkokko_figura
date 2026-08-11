@@ -1,7 +1,8 @@
 
-require".positioning"
-require".utils"
+require"positioning"
+require"utils"
 local AnchorAffix = require"./AnchorAffix"
+local Hitbox = require"./Hitbox"
 
 
 -- do return end
@@ -24,12 +25,13 @@ Grabbing.carriedPartID = nil
 
 ---@type HasPartIDHitbox[]
 Grabbing.Selectable = {}
+Grabbing.isSelectable = {}
 
 -- function Grabbing.addSelectable(gizmo) end
 
-Grabbing.GUI = models:newPart("GrabbingGUI2","GUI"):setPos(-client.getScaledWindowSize().xy_*vec(1,0.3,1))
+Grabbing.GUI = models:newPart("GrabbingGUI2","GUI"):setPos(-client.getScaledWindowSize().xy_*vec(0.7,0.3,1))
 
-Grabbing.GUI:newText("text"):setAlignment("RIGHT") --:setScale(1/2)
+Grabbing.GUI:newText("text"):setAlignment("LEFT") --:setScale(1/2)
 
   --   local windowScale = client.getScaledWindowSize()/client.getWindowSize()
   --   local mous = client.getMousePos() * windowScale
@@ -67,6 +69,7 @@ function Grabbing.addSelectable(gizmo)
         error("adding ID-less object as grabbable: "..printTable(gizmo,1,true)) -- the error would have already happened
     end
     Grabbing.Selectable[#Grabbing.Selectable+1] = gizmo
+    Grabbing.isSelectable[gizmo.partID] = #Grabbing.Selectable
     Grabbing.hitboxToGizmo[gizmo.hitbox] = gizmo
     -- for key, value in pairs(Positioning.parts) do -- I wonder, the order in which pairs runs is undefined behaviour, so it could lead to desync
     --     gizmo:createParent(value,key)
@@ -78,18 +81,68 @@ end
 -- todo: when grabbing an object, the action wheel is replaced
 -- todo: when looking at an object, its parent is highlighted.
 
+---@generic T
+---@class Tree<T>
+---@field [T] Tree<T>
 
+---comment
+---@param list ID<ModelPart>[]
+---@return Tree<ID<ModelPart>>
+---@return {[ ID<ModelPart> ] : Tree<ID<ModelPart>>} children
+---@return ID<ModelPart>[] listed
+---@return {[ ID<ModelPart> ] : number } listedInv
+---@return {[ ID<ModelPart> ] : number } depth
+function Grabbing.makeTree(list)
+    local out = {}
+    local tables = {}
+    for index, value in ipairs(list) do
+        tables[value] = {}
+    end
+    for key, value in pairs(tables) do
+        local parent = AnchorAffix.info.getParentID(key)
+        if key == Grabbing.carriedPartID then
+            parent = Grabbing.oldParentID
+        end
+        if parent then
+            if tables[parent] then
+                tables[parent][key]=value
+            else
+                log("strange grabbing:",parent,key,value)
+                out[key] = value
+            end
+        else
+            out[key] = value
+        end
+    end
+    local listed = {}
+    local listedInv = {}
+    local depth = {}
+    local function f(tbl,d)
+        for key, value in pairs(tbl) do
+            depth[key] = d
+            listed[#listed+1] = key
+            listedInv[key] = #listed
+            f(value,d+1)
+        end
+    end
+    f(out,0)
+    return out,tables,listed,listedInv,depth
+end
+
+
+
+Grabbing.ontoTree = {}
+Grabbing.ontoDepth = {}
 
 ---sets ontoList as the list of IDd ModelParts
 function Grabbing.updateOntoList()
-    Grabbing.ontoList = {}
-    Grabbing.ontoListInv = {}
+    local initial = {}
     for id, value in pairs(Utils.ID.listIDd()) do
         if type(value) == "ModelPart" and id ~= "CarryingPart" then
-            Grabbing.ontoList[#Grabbing.ontoList+1] = id
-            Grabbing.ontoListInv[id] = #Grabbing.ontoList
+            initial[#initial+1] = id
         end
     end
+    Grabbing.ontoTree,_,Grabbing.ontoList,Grabbing.ontoListInv,Grabbing.ontoDepth = Grabbing.makeTree(initial)
 end
 
 function Grabbing.isGrabbing()
@@ -102,6 +155,7 @@ function Grabbing.grab(partID)
     if Grabbing.isGrabbing() or not Utils.ID.from(partID) then return end
     Grabbing.carriedPartID = partID
     local parentID = AnchorAffix.info.getParentID(partID)
+    Grabbing.oldParentID = parentID
     Grabbing.updateOntoList()
     Grabbing.ontoIndex = Grabbing.ontoListInv[parentID] or 1
     AnchorAffix.complex.affixInPlace(partID,"CarryingPart")
@@ -143,6 +197,7 @@ function Grabbing.release(onto,center)
         Grabbing.carriedPartID = nil
         host:swingArm(true)
         -- Grabbing2.ontoList = {}
+        --Grabbing.updateOntoList() -- this errors because of ping async behaviour
         Grabbing.updateGUI()
         return true
     end
@@ -164,10 +219,18 @@ function Grabbing.updateGUI()
 
     for index, listPartId in ipairs(Grabbing.ontoList) do
         
+        local depth = Grabbing.ontoDepth[listPartId] or 0
+
         local isAncestor = AnchorAffix.info.isChildOf(rcPartID,listPartId)
         local isOntoIndexAncestor = AnchorAffix.info.isChildOf(ontoID,listPartId)
+        local isManaged = Positioning.isManaged(listPartId)
+
+        local isSelectable = Grabbing.isSelectable[listPartId]
+        local right = (isSelectable and " +" or "") .. (isManaged and " -" or "")
+        local left = string.rep("   ",depth)
+
         lines[#lines+1] = {
-            text = listPartId .. "\n",
+            text = left .. listPartId .. right ..  "\n",
             color = (
                 (Grabbing.isGrabbing() and index == Grabbing.ontoIndex)
                     and "#AA0011" 
@@ -185,7 +248,7 @@ function Grabbing.updateGUI()
             )
         }
     end
-    if Grabbing.rc then
+    if Grabbing.rc and false then
         -- lines[#lines+1] = {
         --     text = Utils.vectorString(Grabbing.rc.localPos),
         --     color = "#00FFFF"
@@ -273,6 +336,7 @@ if host:isHost() then
             
         local rc2 = raycastLook(Grabbing.Selectable)
         Grabbing.rc = rc2
+        Grabbing.updateOntoList()
         Grabbing.updateGUI()
     end)
 end
@@ -319,7 +383,6 @@ events.ENTITY_INIT:register(function ()
     Grabbing.updateOntoList()
     for index, value in ipairs(Grabbing.ontoList) do
         Grabbing.addSelectable({partID = value, hitbox = Hitbox.fromModelPartItems(value)})
-        
     end
 
 end)
@@ -334,4 +397,6 @@ function Grabbing.allPlayers()
     for key, value in pairs((world.getPlayers()) ) do
         Utils.ID.from("!pl:" .. key)
     end
+    Grabbing.updateOntoList()
+
 end

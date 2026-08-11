@@ -102,6 +102,7 @@ end
 ---@param partID ID<ModelPart>
 ---@return ID<ModelPart>
 function AnchorAffix.info.getParentID(partID)
-    return Utils.ID.get(Utils.ID.from(partID):getParent())
+    local p = Utils.ID.from(partID)
+    return Utils.ID.get(p and p:getParent())
 end
 return AnchorAffix

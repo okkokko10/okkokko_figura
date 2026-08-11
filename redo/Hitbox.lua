@@ -115,3 +115,5 @@ function Hitbox.fromModelPartItems(part)
     end
     return Hitbox:create(part,aabbs),keyToIndex,indexToKey
 end
+
+return Hitbox

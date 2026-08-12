@@ -66,22 +66,18 @@ AnchorAffix.complex = {}
 ---@param partID ID<ModelPart>
 ---@param parentID? ID<ModelPart> -- new parent
 ---@param target? ConvertsToMatrix -- new world matrix
-function AnchorAffix.complex.affixInPlace(partID, parentID, target,noPing)
-    local part = Utils.ID.from(partID) or error("no part: ".. (partID or "nil"))
+function AnchorAffix.complex.affixInPlace(partID, parentID, target, noPing)
+    local mat
     if parentID then
-        local mat = Conversion.toMatrix(parentID):invert() * Conversion.toMatrix(target or part)
-        if noPing then
-            AnchorAffix.direct.part_alter(partID,parentID,mat)
-        else
-            pings.part_alter(partID,parentID,mat)
-        end
+        mat = Conversion.toMatrix(parentID):invert() * Conversion.toMatrix(target or partID)
     else
-        local mat = Conversion.toMatrix(part:getParent()):invert() * Conversion.toMatrix(target or partID)
-        if noPing then
-            AnchorAffix.direct.part_alter(partID,parentID,mat)
-        else
-            pings.part_alter(partID,parentID,mat)
-        end
+        local part = Utils.ID.from(partID) or error("no part: ".. (partID or "nil"))
+        mat = Conversion.toMatrix(part:getParent()):invert() * Conversion.toMatrix(target or part)
+    end
+    if noPing then
+        AnchorAffix.direct.part_alter(partID,parentID,mat)
+    else
+        pings.part_alter(partID,parentID,mat)
     end
 end
 

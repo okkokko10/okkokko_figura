@@ -30,8 +30,21 @@ end
 
 
 
+-- local facingBit = 2
+-- Conversion.Matrix = {
+--     Down = 16 + 0,
+--     Up = 16 + 1,
+--     North = 
+-- }
+
 
 ---@alias ConvertsToMatrix Matrix|Vector|ModelPart|ID<ModelPart>|function|nil|boolean|ComposedMatrix|{matrix:ConvertsToMatrix}|string
+
+---@package 
+Conversion._toMatrix_number = {
+    [1] = matrices.mat4() -- todo: directions
+}
+
 
 ---@package 
 ---@generic T: ConvertsToMatrix|boolean
@@ -56,6 +69,7 @@ Conversion._toMatrix = {
     ComposedMatrix = function (value) return Conversion.toMatrix(value[1],true) * Conversion.toMatrix(value[2],true) end,
     InvertedMatrix = function (value) return Conversion.toMatrix(value[1],true):inverted() end,
     -- PlayerAPI = function (entity) return Conversion.toMatrix(value[1],true):inverted() end
+    number = function (value) return (Conversion._toMatrix_number[value] or matrices.mat4()):copy() end,
 }
 
 ---@generic T

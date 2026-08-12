@@ -7,12 +7,6 @@ local Hitbox = require"./Hitbox"
 
 -- do return end
 
-local grabKey = keybinds:newKeybind("grab gizmo", "key.mouse.right", false)
-local placeKey = keybinds:newKeybind("fix gizmo", "key.mouse.left", false)
-local airKey = keybinds:newKeybind("fix gizmo", "key.keyboard.x", false)
-
-
-
 
 Utils.ID.field.CarryingPart = Positioning.parts.PlayerFollowerEyes:newPart("CarryingPart"):setPos(PS*vec(0,0,2))
 
@@ -188,10 +182,10 @@ function Grabbing.grab(partID)
 
 end
 
---- note: this will continuously add onto the stack
+
 function Grabbing.release(onto,center)
     if Grabbing.isGrabbing() then
-        if onto == "ONTO" or true then
+        if not onto then
             onto = Grabbing.ontoList[Grabbing.ontoIndex]
         end
         if onto then
@@ -228,12 +222,12 @@ function Grabbing.updateGUI()
         
         local depth = Grabbing.ontoDepth[listPartId] or 0
 
-        local isAncestor = AnchorAffix.info.isChildOf(rcPartID,listPartId)
-        local isOntoIndexAncestor = AnchorAffix.info.isChildOf(ontoID,listPartId)
+        local isAncestor = false and AnchorAffix.info.isChildOf(rcPartID,listPartId)
+        local isOntoIndexAncestor = false and AnchorAffix.info.isChildOf(ontoID,listPartId)
         local isManaged = Positioning.isManaged(listPartId)
 
         local isSelectable = Grabbing.isSelectable[listPartId]
-        local right = (isSelectable and " +" or "") .. (isManaged and " -" or "")
+        local right = (isSelectable and " +" or "") .. (isManaged and (Positioning.isActive(listPartId) and " ---" or " - -") or "")
         local left = string.rep("   ",depth)
 
         lines[#lines+1] = {
@@ -292,7 +286,7 @@ end
 
 
 
-local function raycastLook(objects,delta)
+function Grabbing.raycastLook(objects,delta)
     if not player:isLoaded() then return end
     local eyePos = entityEyePos(player,delta or client.getFrameTime())
     local dir = player:getLookDir()
@@ -300,44 +294,6 @@ local function raycastLook(objects,delta)
 
 end
 
-function grabKey.press()
-    if not player:isLoaded() then return end
-        
-    local rc2 = raycastLook(Grabbing.Selectable)
-    -- logTable(rc2)
-    if rc2 then
-        Grabbing.rc = rc2
-        Grabbing.grab(Grabbing.hitboxToGizmo[rc2.hitbox].partID)
-        -- logTable(rc2)
-        return true
-    end
-end
-
-function grabKey.release()
-    return Grabbing.release()
-end
-
-function airKey.press()
-    if Grabbing.isGrabbing() then
-        AnchorAffix.complex.affixInPlace(Grabbing.carriedPartID,nil,"CarryingPart")
-    else
-        Grabbing.grab(Grabbing.ontoList[Grabbing.ontoIndex])
-    end
-end
-
-function placeKey.press()
-    return Grabbing.release("ONTO",true)
-end
-
-function events.mouse_scroll(dir)
-    repeat
-        Grabbing.ontoIndex = (Grabbing.ontoIndex - dir - 1) % (math.max(#Grabbing.ontoList,1)) + 1
-    until not AnchorAffix.info.isChildOf(Grabbing.ontoList[Grabbing.ontoIndex],Grabbing.carriedPartID)
-    Grabbing.updateGUI()
-    if Grabbing.isGrabbing() then
-        return true
-    end
-end
 
 
 if host:isHost() then
@@ -345,27 +301,18 @@ if host:isHost() then
         
         if not player:isLoaded() then return end
             
-        local rc2 = raycastLook(Grabbing.Selectable)
+        local rc2 = Grabbing.raycastLook(Grabbing.Selectable)
         Grabbing.rc = rc2
         Grabbing.updateOntoList()
         Grabbing.updateGUI()
     end)
+    events.ENTITY_INIT:register(function ()
+
+        Grabbing.updateOntoList()
+    end)
 end
 
 
-events.ENTITY_INIT:register(function ()
-
-
-    --- temporary
-    
-    -- Utils.ID.setID(TestObject.part,"TestObject_part")
-    -- Utils.ID.setID()
-    Grabbing.updateOntoList()
-    -- for index, value in ipairs(Grabbing.ontoList) do
-    --     Grabbing.addSelectableGenerate(value)
-    -- end
-
-end)
 
 
 
@@ -378,7 +325,8 @@ function Grabbing.allPlayers()
         Utils.ID.from("!pl:" .. key)
     end
     Grabbing.updateOntoList()
-
 end
+
+
 
 return Grabbing

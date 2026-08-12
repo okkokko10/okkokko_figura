@@ -137,6 +137,9 @@ function Utils.constructFromID(id,checkType)
     if f then
       log("constructing: ",keyword,name,f)
       local out = f(name)
+      if not out then
+      log("failure: ",keyword,name,f)
+      end
       return out
     else
       log("unrecognized keyword:",keyword, "used with",name)

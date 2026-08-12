@@ -213,7 +213,7 @@ end
 
 Utils.registerIDConstructor("pl",Positioning.make.playerNameFollower)
 Utils.registerIDConstructor("c",function (arg)
-    local _, _, x, y, z =  string.find(arg,"^!%s*(%S*)%s*(%S*)%s*(%S*)%s*$")
+    local _, _, x, y, z =  string.find(arg,"^%s*(%S*)%s*(%S*)%s*(%S*)%s*$")
     x = tonumber(x)
     y = tonumber(y)
     z = tonumber(z)

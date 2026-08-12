@@ -325,40 +325,6 @@ mainPage:newAction()
 
 local bufferTrackingOther = nil
 
-mainPage:newAction()
-    :title("look as gizmo")
-    :item("minecraft:glass_pane")
-    :hoverColor(0.9,0.9,0.9)
-    :onLeftClick(function()
-      pings.setGizmo("cameraTracking",true)
-
-      if GIZMO.trackingOther then
-        -- renderer:setCameraPivot(GIZMO.trackingOther + (vec(0,1,0) * (GIZMO.height)))
-        -- GIZMO.cameraTracking = true
-      end
-      
-    end)
-    :onRightClick(function()
-      renderer:setCameraPivot()
-      -- GIZMO.cameraTracking = false
-      pings.setGizmo("cameraTracking",false)
-
-
-    end)
-    :onScroll(
-      function (dir)
-        if GIZMO.trackingOther then
-          if not player:isLoaded() then return end
-
-          local inv = Utils.Sublevel.sublevelRotationMatrixInv3(GIZMO.trackingOther)
-          local accountedDir = inv * player:getLookDir()
-          pings.setGizmo("trackingOther",GIZMO.trackingOther + accountedDir *dir * GIZMO.distance)
-          
-        end
-
-      end
-
-    )
 
 mainPage:newAction()
     :title("move tracking to")

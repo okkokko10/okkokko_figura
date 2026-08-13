@@ -261,10 +261,6 @@ function Utils.math.vectorAbs(vector)
     return vector:applyFunc(math.abs)
 end
 
----@class Vector
----@field [string] any
-
-
 ---@param matrix Matrix
 ---@param func fun(vector:Vector,col:number):Vector
 function Utils.math.matrix4ApplyFuncVector(matrix,func)
@@ -283,8 +279,6 @@ end
 function Utils.math.matrix3Abs(matrix)
     return Utils.math.matrix3ApplyFuncVector(matrix,Utils.math.vectorAbs)
 end
----@class Matrix
----@field [string] any
 
 ---comment
 ---@param aabb HasPosSize

@@ -33,7 +33,7 @@ FloatingGizmo = {}
 
 
 
-function events.entity_init()
+do
 
   models:newPart("posTrack","World") --:newText("check"):setText("test"):setSeeThrough(true)
     :setPreRender(

@@ -148,7 +148,7 @@ function KineticsPath.packNode(node)
   return matrices.mat3(node.pos,vec(network.Id or 0, network.Stress or 0,network.Capacity or 0),vec(network.Size or 0,0,0))
 end
 
----@param matr "mat3"
+---@param matr Matrix
 ---@return KineticPathNode
 function KineticsPath.unpackNode(matr)
   return {pos = matr:getColumn(1), network = {Id = matr:getColumn(2)[1],Stress = matr:getColumn(2)[2],Capacity = matr:getColumn(2)[3],Size = matr:getColumn(3)[1]}}
@@ -338,6 +338,15 @@ local function localKineticsPath(startPos,showNBT)
   KineticsPath.updateRender()
 end
 
+function KineticsPath.blockData(block)
+  local state = block:toStateString()
+  local comparator = block:getComparatorOutput()
+
+  local combined = state .. ((comparator ~=0) and (":::"..comparator..":::") or "")
+
+  return Utils.string.prettierLists(combined)
+end
+
 function KineticsPath.updateNBT()
 
   if not KineticsPath.sourcePath[1] then
@@ -349,7 +358,7 @@ function KineticsPath.updateNBT()
   -- local blockData = block:getEntityData()
   -- kineticsPath.firstNBT = (showNBT or nil) and blockData and toJson(blockData.BlockEntityTag)
   
-  KineticsPath.firstNBT = (KineticsPath.firstNBT and block) and Utils.string.prettierLists(block:toStateString())
+  KineticsPath.firstNBT = (KineticsPath.firstNBT and block) and KineticsPath.blockData(block)
 end
 
 
@@ -473,7 +482,7 @@ mainPage:newAction()
 function events.tick()
   --code goes here
   -- kineticsPath.updateRender()
-  if avatar:getPermissionLevel() == "max" then
+  if avatar:getPermissionLevel() == "max" or host:isHost() then
     KineticsPath.updateNBT()
     KineticsPath.changeRender()
   end
@@ -508,3 +517,10 @@ end
 --   -- end
 --   --code goes here
 -- end
+
+
+function KineticsPath.getFirst()
+  if KineticsPath.sourcePath[1] and KineticsPath.sourcePath[1].pos then
+    return world.getBlockState(KineticsPath.sourcePath[1].pos)
+  end
+end

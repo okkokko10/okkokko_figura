@@ -278,4 +278,50 @@ end
 
 Utils.entity = {}
 
+
+Utils.table = {}
+
+
+---@generic K,V
+---@param from {[K]: V}
+---@param out {[V]: K}?
+---@return {[V]: K}
+
+
+
+
+---@generic K,V
+---@param from {[K]: V}
+---@param out {[V]: K}?
+---@return {[V]: K}
+function Utils.table.inverted(from,out)
+  out = out or {}
+  for key, value in pairs(from) do
+    out[value] = key
+  end
+  return out
+  
+end
+
+
+---@generic A,B,C
+---@param left {[A]: B}
+---@param right {[B]: C}
+---@param out {[A]: C}?
+---@return {[A]: C}
+function Utils.table.compose(left,right,out)
+  out = out or {}
+  for key, value in pairs(left) do
+    out[key] = value
+  end
+  return out
+  
+end
+
+
+
+function Utils.nop()
+  
+end
+
 return Utils

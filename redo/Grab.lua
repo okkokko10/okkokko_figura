@@ -73,6 +73,8 @@ function Grabbing.addSelectable(gizmo)
     -- end
 end
 
+--- todo: change this to GrabAttributes.<partID>.hitbox = <hitbox>
+
 ---@param partID ID<ModelPart>
 function Grabbing.addSelectableGenerate(partID)
     Grabbing.addSelectable({partID = partID, hitbox = Hitbox.fromModelPartItems(partID)})
@@ -132,6 +134,12 @@ function Grabbing.makeTree(list)
     return out,tables,listed,listedInv,depth
 end
 
+function Grabbing.canGrab(partID)
+    return Grabbing.isSelectable[partID]
+end
+function Grabbing.canAffixTo(partID)
+    return true -- todo
+end
 
 
 Grabbing.ontoTree = {}
@@ -155,7 +163,7 @@ end
 ---comment
 ---@param partID ID<ModelPart>
 function Grabbing.grab(partID)
-    if Grabbing.isGrabbing() or not Utils.ID.isID(partID) or (not Grabbing.isSelectable[partID]) then return end
+    if Grabbing.isGrabbing() or not Utils.ID.isID(partID) or (not Grabbing.canGrab(partID)) then return end
     Grabbing.carriedPartID = partID
     local parentID = AnchorAffix.info.getParentID(partID)
     Grabbing.oldParentID = parentID
@@ -206,6 +214,8 @@ function Grabbing.release(onto,center)
     end
 end
 
+--- animation idea: pistons emerge from portals?
+--- a piston at the end of an arm emerges from the ground below
 
 
 function Grabbing.updateGUI()

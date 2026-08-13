@@ -188,11 +188,13 @@ Positioning.parts = {
     World = models:newPart("World","World"),
 }
 
-Positioning.parts.PlayerFollowerEyes = Positioning.make.entityFollower(require"playerValues","PlayerFollowerEyes","eyes")
-Positioning.parts.PlayerFollower = Positioning.make.entityFollower(require"playerValues","PlayerFollower")
-Positioning.parts.PlayerFollowerYaw = Positioning.make.entityFollower(require"playerValues","PlayerFollowerYaw",1)
-Positioning.parts.PlayerFollowerFull = Positioning.make.entityFollower(require"playerValues","PlayerFollowerFull",2)
-Positioning.parts.PlayerFollowerBody = Positioning.make.entityFollower(require"playerValues","PlayerFollowerBody","body")
+Utils.ID.field.FollowMe = (models:newPart("player root","World"))
+
+Positioning.parts.PlayerFollowerEyes = Positioning.make.entityFollower(require"playerValues","PlayerFollowerEyes","eyes"):moveTo(Utils.ID.field.FollowMe)
+Positioning.parts.PlayerFollower = Positioning.make.entityFollower(require"playerValues","PlayerFollower"):moveTo(Utils.ID.field.FollowMe)
+Positioning.parts.PlayerFollowerYaw = Positioning.make.entityFollower(require"playerValues","PlayerFollowerYaw",1):moveTo(Utils.ID.field.FollowMe)
+Positioning.parts.PlayerFollowerFull = Positioning.make.entityFollower(require"playerValues","PlayerFollowerFull",2):moveTo(Utils.ID.field.FollowMe)
+Positioning.parts.PlayerFollowerBody = Positioning.make.entityFollower(require"playerValues","PlayerFollowerBody","body"):moveTo(Utils.ID.field.FollowMe)
 
 for key, value in pairs(Positioning.parts) do
     Utils.ID.set(value,key)
@@ -207,18 +209,29 @@ function Positioning.make.absoluteRot(name,parent)
 end
 
 
-function Positioning.make.playerNameFollower(name)
-    return Positioning.make.entityFollower(name,"PlayerFollower_"..name)
-end
+--- todo: these should be unselectable in the grab UI
 
+require"redo.GrabAttributes"
+GrabAttributes.pl.unselectable = true
+Utils.ID.field.pl = (models:newPart("player root","World"))
+
+
+
+function Positioning.make.playerNameFollower(name)
+    return Positioning.make.entityFollower(name,"PlayerFollower_"..name):moveTo(Utils.ID.field.pl)
+end
 Utils.registerIDConstructor("pl",Positioning.make.playerNameFollower)
+
+GrabAttributes.c.unselectable = true
+Utils.ID.field.c = (models:newPart("player root","World"))
+
 Utils.registerIDConstructor("c",function (arg)
     local _, _, x, y, z =  string.find(arg,"^%s*(%S*)%s*(%S*)%s*(%S*)%s*$")
     x = tonumber(x)
     y = tonumber(y)
     z = tonumber(z)
     if x and y and z then
-        return Positioning.make.coordinateFollower(vec(x,y,z))
+        return Positioning.make.coordinateFollower(vec(x,y,z)):moveTo(Utils.ID.field.c)
     end
 
 

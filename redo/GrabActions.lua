@@ -80,9 +80,13 @@ end
 
 
 function events.mouse_scroll(dir)
+    local old = Grabbing.ontoIndex
+    local control = Grabbing.isGrabbing() and Grabbing.canAffixTo or Grabbing.canGrab
+    local selected
     repeat
         Grabbing.ontoIndex = (Grabbing.ontoIndex - dir - 1) % (math.max(#Grabbing.ontoList,1)) + 1
-    until not AnchorAffix.info.isChildOf(Grabbing.ontoList[Grabbing.ontoIndex],Grabbing.carriedPartID)
+        selected = Grabbing.ontoList[Grabbing.ontoIndex]
+    until not (AnchorAffix.info.isChildOf(selected,Grabbing.carriedPartID) or (not control(selected)))
     Grabbing.updateGUI()
     if Grabbing.isGrabbing() then
         return true

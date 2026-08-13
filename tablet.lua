@@ -63,7 +63,7 @@ require"floatingToolUse"
 
 
 
----@generic T : { setPos:fun(), setScale:fun()}
+---@generic T : HasSetScalePos
 ---@param target T
 ---@param pos1 Vector
 ---@param pos2 Vector
@@ -72,14 +72,16 @@ require"floatingToolUse"
 ---@return T
 function Utils.math.setPosScaleFromEndpoints(target,pos1,pos2,posScaling,scaleScaling)
     local a, b = Utils.math.edgesToPosScale(pos1,pos2)
-    return target:setPos((posScaling or PS)*a):setScale((scaleScaling or 1) * b)
+    return (target --[[@as HasSetScalePos]]):setPos((posScaling or PS)*a):setScale((scaleScaling or 1) * b)
 end
 
+---@class ItemTask: HasGetSetScalePos
+---@field [string] any
 
 ---@class Tablet
 ---@field part ModelPart
 ---@field buttonRules ButtonRule[]
----@field buttonObjects FloatingObject[]
+---@field buttonObjects ItemTask[]
 ---@field hoveredButton number?
 ---@field extraData? table
 ---@field minpos Vector

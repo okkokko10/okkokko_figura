@@ -16,6 +16,13 @@
         "matrices",
         "player",
         "world",
-        "events"
-    ]
+        "events",
+        "vectors",
+        "avatar",
+        "renderer"
+    ],
+    "Lua.diagnostics.disable": [
+        "duplicate-set-field"
+    ],
+    "Lua.runtime.version": "Lua 5.2"
 }

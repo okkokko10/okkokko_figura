@@ -19,7 +19,7 @@
 
 
 
-
+---@deprecated
 
 ---@class HasPosSize
 ---@field pos vec3
@@ -383,7 +383,7 @@ function FloatingObject.raycastsOriented(startPos,endPos,objects)
 end
 
 
-
+---@deprecated
 ---comment
 ---@param startPos vec3
 ---@param endPos vec3

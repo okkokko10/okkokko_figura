@@ -18,15 +18,18 @@ function Utils.Sublevel.sableSublevelToWorld(pos)
   return (hitPos1 + hitPos2) * 0.5
 end
 
+Utils.math = {}
 
 -- copied from https://discord.com/channels/1129805506354085959/1129811275380162730/1501029819964457130 
-function directionToEulerAngle(dirVec)
+function Utils.math.directionToEulerAngle(dirVec)
     return vec(0, 180, 0)-vec(-math.deg(math.atan2(dirVec.y, dirVec.xz:length())), -math.deg(math.atan2(dirVec.x, dirVec.z)), 0)
 end
 
 NewlineLists = true
 
-function prettierLists(str)
+Utils.string = {}
+
+function Utils.string.prettierLists(str)
   if NewlineLists then
   return (str or ""):gsub(",",",\n"):gsub("{","{ ")
   else
@@ -103,7 +106,7 @@ end
 
 
 -- https://stackoverflow.com/questions/51181222/lua-trailing-space-removal
-function stripWhitespace(str)
+function Utils.string.stripWhitespace(str)
   return string.gsub(str, '^%s*(.-)%s*$', '%1')
 end
 
@@ -272,8 +275,7 @@ function Utils.vectorString(vector)
   return table.concat({vector:unpack()}," ")
 end
 
-Utils.math = {}
 
-
+Utils.entity = {}
 
 return Utils

@@ -206,7 +206,7 @@ function KineticsPath.changeRender()
 
     local nextPos = KineticsPath.sourcePath[i+1] and KineticsPath.sourcePath[i+1].pos
     local localDirection = nextPos and (nextPos - KineticsPath.sourcePath[i].pos) or (vec(0,0,0))
-    local angle = directionToEulerAngle(-localDirection)
+    local angle = Utils.math.directionToEulerAngle(-localDirection)
     
     
     local l1distance = math.abs(localDirection.x)+math.abs(localDirection.y)+math.abs(localDirection.z)
@@ -222,7 +222,7 @@ function KineticsPath.changeRender()
     models.pathRoot[i]:setVisible(true)
 
     models.pathRoot[i].text:getTask("text")
-    :setText(stripWhitespace(
+    :setText(Utils.string.stripWhitespace(
       (i == 1 and (not host:isHost()) and "okkokko's shared debug\n" or "") ..
       ((netId == 0) and "" or ("(" .. i .. ")\n"..
       (KineticsPath.pretty(value.network,(KineticsPath.sourcePath[i-1] or {}).network) or "") .. 
@@ -349,7 +349,7 @@ function KineticsPath.updateNBT()
   -- local blockData = block:getEntityData()
   -- kineticsPath.firstNBT = (showNBT or nil) and blockData and toJson(blockData.BlockEntityTag)
   
-  KineticsPath.firstNBT = (KineticsPath.firstNBT and block) and prettierLists(block:toStateString())
+  KineticsPath.firstNBT = (KineticsPath.firstNBT and block) and Utils.string.prettierLists(block:toStateString())
 end
 
 

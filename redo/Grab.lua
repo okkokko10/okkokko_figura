@@ -11,6 +11,8 @@ local Hitbox = require"./Hitbox"
 Utils.ID.field.CarryingPart = Positioning.parts.PlayerFollowerEyes:newPart("CarryingPart"):setPos(PS*vec(0,0,2))
 
 
+--- todo: separate "grabbable" and "grabbing" logic.
+--- make multiple grabbers possible.
 
 
 Grabbing = {}
@@ -288,7 +290,7 @@ end
 
 function Grabbing.raycastLook(objects,delta)
     if not player:isLoaded() then return end
-    local eyePos = entityEyePos(player,delta or client.getFrameTime())
+    local eyePos = Utils.entity.entityEyePos(player,delta or client.getFrameTime())
     local dir = player:getLookDir()
     return Hitbox.raycastsOriented(eyePos,eyePos+100*dir,objects)
 

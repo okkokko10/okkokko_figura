@@ -104,7 +104,7 @@ function Positioning.functions.followEntityEyes(entity)
         if ent then entity = ent end
         if not t then return Positioning.setActive(part,false) end
 
-        local eyePos = entityEyePos(entity,delta)
+        local eyePos = Utils.entity.entityEyePos(entity,delta)
         part:setPos(PS*(eyePos))
         local rot = entity:getRot(delta)
         part:setRot(rot.x,-rot.y)

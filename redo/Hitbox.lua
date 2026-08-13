@@ -108,7 +108,7 @@ function Hitbox.fromModelPartItems(part)
     local indexToKey = {}
     for key, value in pairs(Utils.ID.materialize(part):getTask()) do
         if type(value) == "ItemTask" then
-            aabbs[#aabbs+1] = Rect.fromItemTask(value)
+            aabbs[#aabbs+1] = Rect.fromItemTask(value):setName(value:getName())
             keyToIndex[key] = #aabbs
             indexToKey[#aabbs] = key
         end

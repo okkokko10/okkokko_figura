@@ -267,7 +267,7 @@ mainPage:newAction()
     :onLeftClick(function()
       
       if not player:isLoaded() then return end
-      local playerRot = player:getRot(delta)
+      local playerRot = player:getRot(client.getFrameTime())
       pings.setTargetHeading(180-playerRot.y)
     end)
     :onRightClick(function()      

@@ -98,7 +98,7 @@ end
 ---@param scaleScaling? number -- 
 ---@return S
 function Rect:setCenteredItemTo(target,posScaling,scaleScaling)
-    return target:setPos((posScaling or 1)*self:getPos()):setScale((scaleScaling or (1/PS)) * self:getScale()) -- embrace the fact that 1 metre is 16 units
+    return (target --[[@as HasSetScalePos]]):setPos((posScaling or 1)*self:getPos()):setScale((scaleScaling or (1/PS)) * self:getScale()) -- embrace the fact that 1 metre is 16 units
 end
 -- function Rect:setCenteredItemTo(target,posScaling,scaleScaling)
 --     return target:setPos((posScaling or PS)*self:getPos()):setScale((scaleScaling or 1) * self:getScale())
@@ -112,7 +112,7 @@ end
 ---@param scaleScaling? number -- 
 ---@return S
 function Rect:setCornerBlockTo(target,posScaling,scaleScaling)
-    return target:setPos((posScaling or 1)*self[1]):setScale((scaleScaling or (1/PS)) * self:getScale())
+    return (target --[[@as HasSetScalePos]]):setPos((posScaling or 1)*self[1]):setScale((scaleScaling or (1/PS)) * self:getScale())
 end
 -- function Rect:setCornerBlockTo(target,posScaling,scaleScaling)
 --     return target:setPos((posScaling or PS)*self[1]):setScale((scaleScaling or 1) * self:getScale())
@@ -135,8 +135,9 @@ end
 
 --- does not take into account rotation.
 ---@param itemTask HasGetScalePos
+---@return Rect
 function Rect.fromItemTask(itemTask)
-    return Rect.fromPosSize(itemTask:getPos(),itemTask:getScale()*PS):setName(itemTask:getName())
+    return Rect.fromPosSize(itemTask:getPos(),itemTask:getScale()*PS)
 end
 
 

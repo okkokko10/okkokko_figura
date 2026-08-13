@@ -1,0 +1,21 @@
+{
+    
+    "Lua.diagnostics.globals": [
+        "pings",
+        "models",
+        "log",
+        "raycast",
+        "keybinds",
+        "vec",
+        "action_wheel",
+        "client",
+        "host",
+        "logTable",
+        "toJson",
+        "printTable",
+        "matrices",
+        "player",
+        "world",
+        "events"
+    ]
+}

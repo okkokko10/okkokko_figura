@@ -196,6 +196,11 @@ Positioning.parts.PlayerFollowerYaw = Positioning.make.entityFollower(require"pl
 Positioning.parts.PlayerFollowerFull = Positioning.make.entityFollower(require"playerValues","PlayerFollowerFull",2):moveTo(Utils.ID.field.FollowMe)
 Positioning.parts.PlayerFollowerBody = Positioning.make.entityFollower(require"playerValues","PlayerFollowerBody","body"):moveTo(Utils.ID.field.FollowMe)
 
+Positioning.parts.MyBase = Positioning.parts.PlayerFollower:newPart("MyBase")
+
+Positioning.parts.Disabled = Utils.ID.field.FollowMe:newPart("Disabled"):setVisible(false)
+
+
 for key, value in pairs(Positioning.parts) do
     Utils.ID.set(value,key)
 end

@@ -11,7 +11,7 @@ local oldLog = log
 
 
 
-local LogText = Positioning.parts.PlayerFollower:newPart("LogText"):setPos(PS*1,PS/2,PS*3)
+local LogText = Positioning.parts.MyBase:newPart("LogText"):setPos(PS*1,PS/2,PS*3)
 Utils.ID.field.LogText = LogText
 
 local rect = Rect.fromEndpoints(vec(0,0,0),PS*vec(-1,1,1/PS))
@@ -52,6 +52,7 @@ local function newLog(...)
 end
 
 log = newLog
+logTable = newLogTable
 
 
 require("redo.Grab").addSelectableGenerate("LogText")

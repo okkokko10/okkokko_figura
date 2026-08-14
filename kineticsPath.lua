@@ -518,9 +518,3 @@ end
 --   --code goes here
 -- end
 
-
-function KineticsPath.getFirst()
-  if KineticsPath.sourcePath[1] and KineticsPath.sourcePath[1].pos then
-    return world.getBlockState(KineticsPath.sourcePath[1].pos)
-  end
-end

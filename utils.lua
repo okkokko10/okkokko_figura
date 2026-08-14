@@ -324,4 +324,7 @@ function Utils.nop()
   
 end
 
+Utils.Nop = setmetatable({},{__index = function (t,k) return Utils.nop end})
+
+
 return Utils

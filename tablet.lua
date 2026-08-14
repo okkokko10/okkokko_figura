@@ -244,7 +244,7 @@ local tablet2 = Tablet.newTablet("tablet2",{
     },{}
 })
 
-tablet2.part:moveTo(Positioning.parts.PlayerFollowerYaw):setPos(PS*(0.1),PS*1.5,PS*2)
+tablet2.part:moveTo(Positioning.parts.MyBase):setPos(PS*(0.1),PS*1.5,PS*2)
 
 Utils.ID.field.Tablet2 = tablet2.part
 

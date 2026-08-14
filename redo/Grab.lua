@@ -339,6 +339,7 @@ function Grabbing.allPlayers()
     Grabbing.updateOntoList()
 end
 
+Grabbing.addSelectableGenerate("MyBase")
 
 
 return Grabbing

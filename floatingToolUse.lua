@@ -25,7 +25,7 @@ Objects = {}
 --         base = Positioning.parts.PlayerFollower:newPart("TestObjectP1"):setPos(PS*1,PS/2,PS*3),
 --     }):pushMode("base"):setID("TestObject")
 
-local TestObject = Positioning.parts.PlayerFollower:newPart("TestObject"):setPos(PS*1,PS/2,PS*3)
+local TestObject = Positioning.parts.MyBase:newPart("TestObject"):setPos(PS*1,PS/2,PS*3)
 Utils.ID.field.TestObject = TestObject
 TestObject:newItem("Item"):setItem("minecraft:glass")
 -- TestObject.part:addChild(vanilla_model.PLAYER)

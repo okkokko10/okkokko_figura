@@ -23,7 +23,9 @@ end
 
 
 ---@class BlockState
+---@field getPos fun(self:self):Vector
 ---@field id string
+---@field getEntityData fun()
 
 ---@class ItemStack
 ---@field tag table

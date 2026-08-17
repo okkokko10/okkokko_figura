@@ -44,21 +44,13 @@ function events.entity_init()
     models.pathRoot[i]
       :newPart("block")
       :newPart("pointing")
-    -- kineticsPath.modelPath[i].block_pointing1 = 
-    --   kineticsPath.modelPath[i].block_pointing
-    --   -- :newBlock("path"..i .. " block glass")
-    --   -- :setBlock("light_blue_stained_glass")
       :newItem("glass")
         :setItem("light_blue_stained_glass")
         :setPos(vec(0,0,8))
-
-        -- :setBlock("comparator")
         :setLight(15,15)
-        -- :setPos(-vec(1,1,1) * 16 / 2)
         :setScale(.5,.5,1)
     local text = main:newPart("text","BILLBOARD"):newText("text")
       :setLight(15,15)
-      -- :setPos(vec(1,1,0) * 16 / 2)
       :setText("NONE")
       :setWidth(16*4*3)
       :setScale(1/4)
@@ -66,8 +58,6 @@ function events.entity_init()
     if host:isHost() then
       text:setSeeThrough(true)
     end
-
-    
   end
   models.pathRoot
     :newPart("last"):setVisible(false)

@@ -167,8 +167,8 @@ Positioning.make = {}
 
 
 
-function Positioning.make.coordinateFollower(pos,name)
-    return models:newPart(name or ("follows " ..Utils.vectorString(pos)),"World")
+function Positioning.make.coordinateFollower(pos,name,parent)
+    return (parent or models):newPart(name or ("follows " ..Utils.vectorString(pos)),"World")
             :setPreRender(Positioning.functions.coordinate(pos))
 end
 

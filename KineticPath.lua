@@ -16,6 +16,20 @@
 
 
 
+---comment
+---@param pos Vector
+---@return Vector
+---@return Vector
+function Utils.Sublevel.getSublevelOriginOffset(pos)
+    if Utils.Sublevel.isInSublevel(pos) then
+        local origin = vec(bit32.band(bit32.bnot(0x800),pos.x),0,bit32.band(bit32.bnot(0x800),pos.z))
+        return origin, pos-origin
+    else
+        return vec(0,0,0), pos
+    end
+end
+
+
 ---not exact. relies on a (possibly unfounded) assumption that sublevels will not be over 1000 blocks in diameter
 --- not used for important logic here
 ---returns true if both are in the world
@@ -23,11 +37,7 @@
 ---@param pos2 Vector
 ---@return boolean
 function Utils.Sublevel.areInSameSublevel(pos1,pos2)
-    if (Utils.Sublevel.isInSublevel(pos1) or Utils.Sublevel.isInSublevel(pos2)) then
-        return (pos1-pos2):lengthSquared() < 1000*1000
-    else
-        return true
-    end
+    return Utils.Sublevel.getSublevelOriginOffset(pos1) == Utils.Sublevel.getSublevelOriginOffset(pos2)
   
 end
 
@@ -39,6 +49,8 @@ function Utils.Sublevel.difference(pos1,pos2)
     return Utils.Sublevel.areInSameSublevel(pos1,pos2) and (pos1-pos2) or nil
 
 end
+
+
 
 
 ---@alias KineticPathStatus "exceeds_length"|"unloaded"|"not_block_entity"|"no_network"|"root_reached"
@@ -59,8 +71,56 @@ local KineticPath = {
 }
 KineticPath.__index = KineticPath
 
+--- just searches the table for any value that could be ExtraKinetics
+---relies on assumption: an inner table in nbt is ExtraKinetics iff it contains a field `NeedsSpeedUpdate`
+---@param blockData table
+---@return table? ExtraKinetics
+---@return string? key
+function KineticPath:getExtraKinetics(blockData)
+    for key, value in pairs(blockData) do
+        if type(value) == "table" then
+            if value.NeedsSpeedUpdate then
+                return value, key
+            end
+        end
+    end
+    return nil
+end
 
+---comment
+---@param blockData table
+---@return Vector? Source
+---@return boolean? ConnectedToExtraKinetics
+function KineticPath:getSource(blockData)
+    if not blockData then
+        return
+    end
+    local source = blockData.Source
+    if not source then
+        return
+    end
+    local source_vec = vec(table.unpack(source))
+    local ConnectedToExtraKinetics = blockData.ConnectedToExtraKinetics == 1
+    return source_vec, ConnectedToExtraKinetics
+end
 
+---comment
+---@param pos Vector
+---@param ConnectedToExtraKinetics boolean
+---@return table? data
+---@return string blockIdOrExtraKinetic
+---@return table block
+function KineticPath:getData(pos,ConnectedToExtraKinetics)
+    local block = world.getBlockState(pos)
+    local blockData = block:getEntityData()
+    if not blockData then return nil, block.id, block end
+    if ConnectedToExtraKinetics then
+        local ek, key =  self:getExtraKinetics(blockData)
+        return ek, key or "", block
+    else
+        return blockData, block.id, block
+    end
+end
 
 
 --- todo: maybe abstract it so you can track more kinds of networks with it.
@@ -79,18 +139,20 @@ function KineticPath:make(pos,pathLength,noList)
     local status = "exceeds_length"
     local i1
     local prevPos
+    local connectedToExtraKinetics = false
     for i = 1, pathLength do
       i1 = i
       if not noList then
         path[i] = {pos=pos}
       end
-      local block = world.getBlockState(pos)
-      ---@type {Network: {Id:number,Stress:number,Capacity:number,Size:number}?, Speed:number, Source:{[1]:number,[2]:number,[3]:number}? }?
-      local blockData = block:getEntityData()
+      local blockData, idOrEK, block = self:getData(pos,connectedToExtraKinetics)
+
+      -- ---@type {Network: {Id:number,Stress:number,Capacity:number,Size:number}?, Speed:number, Source:{[1]:number,[2]:number,[3]:number}? }?
+
       if not blockData then
         -- either not loaded, or something weirder (or just the first block. append "_start" to the status if i==1. or return the index).
         -- todo: differentiate between being unloaded in the same level and in different levels
-        if block.id == "minecraft:void_air" then -- void_air exists in unloaded chunks and beyond the build height limits. so technically this branch could also occur when a source is somehow above the build height limit.
+        if idOrEK == "minecraft:void_air" then -- void_air exists in unloaded chunks and beyond the build height limits. so technically this branch could also occur when a source is somehow above the build height limit.
           -- normal if on the ground, weird if the last vertex is on a sublevel.
           -- todo: report somewhere on whether the last connection is across (sub)levels.
           status = "unloaded"
@@ -141,14 +203,6 @@ end
 
 
 
----comment
----@param pos Vector
----@return Vector
----@return Vector
-function Utils.Sublevel.getSublevelOriginOffset(pos)
-    return pos,vec(0,0,0)
-end
-
 -- {20481028, 126, 20560907}
 -- host:setClipboard (tostring( KineticsPath .getFirstPos() ))
 -- host:setClipboard (string.format("%X, %X, %X",(KineticsPath .getFirstPos():unpack() ) ) )
@@ -181,28 +235,40 @@ end
 
 
 
+KineticPath.prett = {
+    {vars = "index", format = "(%i)", condition = "always"},
+    {vars = "Id", format = "Kinetic Network %i", condition = "change"},
+    {vars = "Stress Capacity", format = "%i/%i SU used", condition = "change"},
+    {vars = "Size", format = "size: %i", condition = "change"},
+    {vars = "", format = "root", condition = "isEnd & status=root_reached"},
+    {vars = "status", format = "status: %s", condition = "isEnd -status=root_reached -isStart"},
+    -- {mode = "ExtraKinetics"} -- write text for extra kinetics in the same block, on the same text
+}
+
+
+
 ---@param node_data KineticPathNode
 ---@param i number
 ---@param prev_difference Vector|nil|false -- Vector: relative position of previous path node. false: previous path node in different sublevel. nil: start of list
 ---@param next_difference Vector|nil|false -- Vector: relative position of next path node. false: next path node in different sublevel. nil: end of list
-function KineticPath:make_text(node_data,i,prev_difference,next_difference)
+---@param prev_data KineticPathNode? -- for comparing differences to previous. doesn't exist if first.
+function KineticPath:make_text(node_data,i,prev_difference,next_difference,prev_data)
+    local lines = {}
+    for index, value in ipairs(self.prett) do
+
+
+        -- local line
+
+        -- lines[#lines+1] = line
+    end
+
+
     return
 end
 
 
 
 
-local prett = {
-    {"index","(%i)", condition = ""},
-    {"Id","Kinetic Network %i", condition = "change"},
-    {"Stress Capacity","%i/%i SU used", condition = "change"},
-    {"Size","size: %i", condition = "change"},
-    {"","root",condition = "isEnd & status=root_reached"},
-    {"status","status: %s",condition = "isEnd -status=root_reached -isStart"},
-    {"status"}
-
-
-}
 
 function KineticPath.pretty(network,oldNetwork,repeats)
   oldNetwork = oldNetwork or {}

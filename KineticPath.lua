@@ -22,7 +22,8 @@
 ---@return Vector
 function Utils.Sublevel.getSublevelOriginOffset(pos)
     if Utils.Sublevel.isInSublevel(pos) then
-        local origin = vec(bit32.band(bit32.bnot(0x800),pos.x),0,bit32.band(bit32.bnot(0x800),pos.z))
+        local origin = vec(bit32.band(bit32.bnot(0x7FF),pos.x),0,bit32.band(bit32.bnot(0x7FF),pos.z))
+        -- log("sublevel origin offset:", pos, origin, pos-origin)
         return origin, pos-origin
     else
         return vec(0,0,0), pos
@@ -90,7 +91,7 @@ end
 ---@field Capacity number -- network
 ---@field Size number -- network
 ---@field Speed number -- information.
----@field blockIdOrExtraKinetic string
+---@field blockId string
 ---@field source_pos? VectorWithLayer
 -- ---@field connectedToExtraKinetics boolean
 ---@field index integer
@@ -102,11 +103,11 @@ end
 ---@alias KineticPathStatus "exceeds_length"|"unloaded"|"not_block_entity"|"no_network"|"root_reached"
 
 ---@class KineticPath
----@field start_pos Vector
+---@field start_pos VectorWithLayer
 ---@field path? KineticPathNodeData[]
 ---@field length number
----@field end_pos Vector
----@field penultimate_pos Vector?
+---@field end_pos VectorWithLayer
+---@field penultimate_pos VectorWithLayer?
 ---@field status KineticPathStatus?
 ---@field part ModelPart?
 ---@field path_parts ModelPart[]?
@@ -124,7 +125,7 @@ KineticPath.__index = KineticPath
 ---@return string? key
 function KineticPath:getExtraKinetics(blockData)
     for key, value in pairs(blockData) do
-        if type(value) == "table" then
+        if type(value) == "table" and key ~= "BlockEntityTag" then
             if value.NeedsSpeedUpdate then
                 return value, key
             end
@@ -225,7 +226,7 @@ function KineticPath:make(pos,pathLength,noList)
         path[i] = {
             pos=pos, 
             -- isExtraKinetics=connectedToExtraKinetics,
-            blockIdOrExtraKinetic = idOrEK,
+            blockId = idOrEK,
             source_pos = source_vec,
             -- connectedToExtraKinetics = connectedToExtra or false,
             index = i,
@@ -239,6 +240,9 @@ function KineticPath:make(pos,pathLength,noList)
             Speed = blockData.Speed,
             common = common
             }
+        for key, value in pairs(network) do
+            path[i][key] = value
+        end
       end
 
       if not source_vec then
@@ -260,9 +264,11 @@ function KineticPath:make(pos,pathLength,noList)
     return path,i1,pos,prevPos,status
 end
 
+KineticPath.instances = {}
 
 function KineticPath.create(pos,pathLength,noList)
     local out = setmetatable({start_pos = pos},KineticPath)
+    KineticPath.instances[#KineticPath.instances+1] = out
     return out
 end
 function KineticPath:extend(pathLength,noList)
@@ -270,6 +276,18 @@ function KineticPath:extend(pathLength,noList)
     return self
 end
 
+function KineticPath:remove()
+    if self.part then
+        self.part:remove()
+        self.part = nil
+    end
+end
+function KineticPath.remove_all()
+    for key, value in pairs(KineticPath.instances) do
+        value:remove()
+    end
+    KineticPath.instances = {}
+end
 
 
 -- {20481028, 126, 20560907}
@@ -290,7 +308,7 @@ function Utils.Sublevel.moveToSublevelPosition(pos,part,grandparent)
     local slOrigin, slOffset = Utils.Sublevel.getSublevelOriginOffset(pos)
     local sublevelID = "sl"..tostring(slOrigin)
     if not grandparent[sublevelID] then
-        Positioning.make.coordinateFollower(pos,sublevelID,grandparent)
+        Positioning.make.coordinateFollower(slOrigin,sublevelID,grandparent)
     end
     if type(part) == "ModelPart" then
         part:moveTo(grandparent[sublevelID])
@@ -348,13 +366,23 @@ function Utils.string.condition(str)
     return out
 end
 
-
-KineticPath.prett = {
+--- overrideable
+KineticPath.pretty_rules = {
+    {format = function (node_data)
+        local succ, name = pcall(player.getName,player)
+        if not succ then
+            name = ""
+        end
+        return name .. "'s kinetic path"
+    end, condition = "isStart"},
     {vars = "index", format = "(%i)", condition = "always"},
     {vars = "Id", format = "Kinetic Network %i", condition = "change"}, -- change looks at vars and checks whether they are equal to the previous
-    {vars = "Stress Capacity", format = "%i/%i SU used", condition = "change"},
+    {vars = "Stress Capacity", format = "%s/%s SU", condition = "change"},
+    {vars = "AddedStress", format = "%s SU used", condition = "found"},
+    {vars = "AddedCapacity", format = "%s SU added", condition = "found"},
     {vars = "Size", format = "size: %i", condition = "change"},
-    {vars = "", format = "root", condition = {"isEnd",{key = "status", value = "root_reached", op = "equals"}, op = "and"}},
+    {vars = "Speed", format = "%sRPM", condition = "change"},
+    {format = "root", condition = {"isEnd",{key = "status", value = "root_reached", op = "equals"}, op = "and"}},
     {
         vars = "status", format = "status: %s",
         condition = {
@@ -363,6 +391,31 @@ KineticPath.prett = {
             {"isStart",invert=true},
             op = "and"}
     },
+    {
+        vars= "blockId",
+        format = "EK: %s", condition = "isExtraKinetics"
+    },
+    {
+        ---@param state KineticPathNodeData
+        format = function (state)
+            return "->"..(state.next_difference:length())
+        end,
+        condition = function (state)
+            return state.next_difference and (state.next_difference:lengthSquared() ~= 1)
+        end,
+    },
+    {
+        ---@param state KineticPathNodeData
+        format = function (state)
+            return "continues at " .. tostring(state.source_pos.xyz)
+        end,
+        condition = function (state)
+            return (state.next_difference == false)
+        end,
+    },
+    {
+        format = "->EK", condition = "connectedToExtraKinetics"
+    }
     -- {mode = "ExtraKinetics"} -- write text for extra kinetics in the same block, on the same text
 }
 
@@ -374,7 +427,7 @@ KineticPath.prett = {
 ---@return any
 function KineticPath:state_get(state,var)
     local out = state[var] or state.common[var]
-    if out then
+    if out ~= nil then
         return true,out
     end
     return false
@@ -397,6 +450,15 @@ KineticPath.condition_words = {
                     end
                 end
                 return false
+            end,
+            found = function (self,state,vars)
+                for key, value in pairs(vars) do
+                    local r, v = self:state_get(state,value)
+                    if not r then
+                        return false
+                    end
+                end
+                return true
             end,
             
             isEnd = function (self,state,vars)
@@ -499,7 +561,8 @@ function KineticPath:pretty_line(state,line)
     end
     local vars_material = {}
     for index, value in ipairs(vars) do
-        vars_material[index] = self:state_get(state,value)
+        local r, v = self:state_get(state,value)
+        vars_material[index] = v
     end
     local succ, str
     if type(line.format) =="string" then
@@ -519,7 +582,7 @@ end
 ---@return string
 function KineticPath:make_text(node_data)
     local lines = {}
-    for index, value in ipairs(self.prett) do
+    for index, value in ipairs(self.pretty_rules) do
         lines[#lines+1] = self:pretty_line(node_data,value)
     end
     return table.concat(lines,"\n")
@@ -530,8 +593,13 @@ end
 
 
 
-
-
+---overrideable.
+---@param path_part ModelPart
+---@param node_data KineticPathNodeData
+---@return Vector|nil color
+function KineticPath:textBgColor(path_part,node_data)
+    return vectors.intToRGB((((node_data.Id or 0) % 0x1001000) * (2654435761 % 0x1000000)))* 0.9
+end
 
 ---overrideable.
 ---@param path_part ModelPart
@@ -543,9 +611,30 @@ function KineticPath:init_pathPart(path_part,node_data)
         :setScale(1/4)
         :setOpacity(0.5)
     if host:isHost() then
-        text:setSeeThrough(true)
     end
-    text:setText(self:make_text(node_data))
+    text:setSeeThrough(true)
+    local colo = self:textBgColor(path_part,node_data)
+    if colo then
+        text:setBackground(true):setBackgroundColor(colo)
+    end
+
+
+    local t = self:make_text(node_data)
+    text:setText(t)
+    -- log(t)
+
+    if node_data.next_difference and node_data.next_difference ~= vec(0,0,0) then
+        local angle = Utils.math.directionToEulerAngle(-node_data.next_difference)
+        path_part:newPart("to_next"):setRot(angle):setScale(1,1,node_data.next_difference:length())
+        :newItem("glass")
+        :setItem("light_blue_stained_glass")
+        :setPos(vec(0,0,8))
+        :setLight(15,15)
+        :setScale(.5,.5,1)
+        
+    end
+
+
     
 end
 
@@ -558,9 +647,8 @@ function KineticPath:pre_init_pathPart(i)
     end
     local prevNode = self.path[i-1]
     local nextNode = self.path[i+1]
-    local main = Utils.Sublevel.moveToSublevelPosition(node.pos,nil,self.part)
+    local main = Utils.Sublevel.moveToSublevelPosition(node.pos.xyz + 0.5,nil,self.part)
     self.path_parts[i] = main
-
     self:init_pathPart(main,node)
     
 end
@@ -588,7 +676,7 @@ function KineticPath.test(pathLength,noList)
     local p = KineticPath.create(pos,pathLength or 10, noList)
     p:extend(pathLength or 10,noList)
     p:createVisual(models,"kineticTest")
-
+    log(p)
   end
 
 end

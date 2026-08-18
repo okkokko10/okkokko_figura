@@ -47,22 +47,57 @@ end
 ---@return Vector|nil
 function Utils.Sublevel.difference(pos1,pos2)
     return Utils.Sublevel.areInSameSublevel(pos1,pos2) and (pos1-pos2) or nil
-
 end
+
+--- Vector<4> that encodes a 3d position and whether it points to Extra Kinetics. get the original with .xyz
+---@alias VectorWithLayer Vector<4>|Vector<3>
+local VectorWithLayer = {}
+
+function VectorWithLayer.fromVectorAndPointingToExtraKinetics(vec,ek)
+    return vec:augmented(ek and 1 or 0)
+end
+
+---comment
+---@param vecWL VectorWithLayer
+---@return Vector
+function VectorWithLayer.getVector(vecWL)
+    return vecWL.xyz
+end
+---comment
+---@param vecWL VectorWithLayer
+---@return boolean extraKinetics
+function VectorWithLayer.isPointingToExtraKinetics(vecWL)
+    return vecWL.w == 1
+end
+
+---@class Vector
+---@field xyz Vector
+---@field w number
+
+---@class KineticPathCommonData
+---@field start_pos VectorWithLayer
+---@field length number
+---@field end_pos VectorWithLayer
+---@field penultimate_pos VectorWithLayer?
+---@field status KineticPathStatus?
 
 
 ---@class KineticPathNodeData
----@field pos Vector
----@field Id number
----@field Stress number
----@field Capacity number
----@field Size number
+---@field pos VectorWithLayer
+-- ---@field isExtraKinetics boolean
+---@field Id number -- network
+---@field Stress number -- network
+---@field Capacity number -- network
+---@field Size number -- network
+---@field Speed number -- information.
+---@field blockIdOrExtraKinetic string
+---@field source_pos? VectorWithLayer
+-- ---@field connectedToExtraKinetics boolean
 ---@field index integer
 ---@field previous? KineticPathNodeData
 ---@field prev_difference Vector|false|nil -- Vector: relative position of previous path node. can be 0. false: previous path node in different sublevel. nil: start of list
 ---@field next_difference Vector|false|nil -- Vector: relative position of next(source) path node. can be 0. false: next path node in different sublevel. nil: end of list
----@field source_pos? Vector
-
+---@field common KineticPathCommonData
 
 ---@alias KineticPathStatus "exceeds_length"|"unloaded"|"not_block_entity"|"no_network"|"root_reached"
 
@@ -100,8 +135,7 @@ end
 
 ---comment
 ---@param blockData table
----@return Vector? Source
----@return boolean? ConnectedToExtraKinetics
+---@return VectorWithLayer? Source
 function KineticPath:getSource(blockData)
     if not blockData then
         return
@@ -112,20 +146,19 @@ function KineticPath:getSource(blockData)
     end
     local source_vec = vec(table.unpack(source))
     local ConnectedToExtraKinetics = blockData.ConnectedToExtraKinetics == 1
-    return source_vec, ConnectedToExtraKinetics
+    return VectorWithLayer.fromVectorAndPointingToExtraKinetics(source_vec, ConnectedToExtraKinetics)
 end
 
 ---comment
----@param pos Vector
----@param ConnectedToExtraKinetics boolean
+---@param pos VectorWithLayer
 ---@return table? data
 ---@return string blockIdOrExtraKinetic
 ---@return table block
-function KineticPath:getData(pos,ConnectedToExtraKinetics)
-    local block = world.getBlockState(pos)
+function KineticPath:getData(pos)
+    local block = world.getBlockState(VectorWithLayer.getVector(pos))
     local blockData = block:getEntityData()
     if not blockData then return nil, block.id, block end
-    if ConnectedToExtraKinetics then
+    if VectorWithLayer.isPointingToExtraKinetics(pos) then
         local ek, key =  self:getExtraKinetics(blockData)
         return ek, key or "", block
     else
@@ -135,28 +168,28 @@ end
 
 
 --- todo: maybe abstract it so you can track more kinds of networks with it.
----@param pos Vector
+---@param pos VectorWithLayer
 ---@param pathLength number?
 ---@param noList boolean? if true, discards the intermediate path. todo: still saves the second-to-last to determine if the unloaded endpoint is in a different (sub)level
 ---@return KineticPathNodeData[]
 ---@return number length
----@return Vector endpoint
----@return Vector? penultimate_point
+---@return VectorWithLayer endpoint
+---@return VectorWithLayer? penultimate_point
 ---@return KineticPathStatus status 
 function KineticPath:make(pos,pathLength,noList)
-    pathLength = pathLength or KineticPath.pathLength
+    pathLength = pathLength or self.pathLength
     ---@type KineticPathNodeData[]
     local path = {}
     local status = "exceeds_length"
     local i1
     local prevPos
     local connectedToExtraKinetics = false
+
+    local common = {}
+    
+    common.start_pos = pos
     for i = 1, pathLength do
-      i1 = i
-      if not noList then
-        path[i] = {pos=pos}
-      end
-      local blockData, idOrEK, block = self:getData(pos,connectedToExtraKinetics)
+      local blockData, idOrEK, block = self:getData(pos)
 
       -- ---@type {Network: {Id:number,Stress:number,Capacity:number,Size:number}?, Speed:number, Source:{[1]:number,[2]:number,[3]:number}? }?
 
@@ -182,12 +215,33 @@ function KineticPath:make(pos,pathLength,noList)
         status = "no_network"
         break
       end
+      i1 = i
+
+      local source_vec = self:getSource(blockData)
+      
       if not noList then
-        path[i].network = network
+        local prev_difference = prevPos and (Utils.Sublevel.difference(VectorWithLayer.getVector(prevPos), VectorWithLayer.getVector(pos)) or false)
+        local next_difference = source_vec and (Utils.Sublevel.difference(VectorWithLayer.getVector(source_vec), VectorWithLayer.getVector(pos)) or false)
+        path[i] = {
+            pos=pos, 
+            -- isExtraKinetics=connectedToExtraKinetics,
+            blockIdOrExtraKinetic = idOrEK,
+            source_pos = source_vec,
+            -- connectedToExtraKinetics = connectedToExtra or false,
+            index = i,
+            previous = path[i-1],
+            prev_difference = prev_difference,
+            next_difference = next_difference,
+            Id=network.Id,
+            Stress = network.Stress,
+            Capacity = network.Capacity,
+            Size = network.Size,
+            Speed = blockData.Speed,
+            common = common
+            }
       end
-      local speed = blockData.Speed -- currently unused, but could be displayed.
-      local source = blockData.Source -- the position of the "parent" vertex.
-      if not source then
+
+      if not source_vec then
         -- a kinetic network vertex that does not have a source is a root.
         -- although I wonder, would it be possible for a network to have multiple roots?
         -- todo maybe: check whether the network id depends on the root position, making the root unique.
@@ -195,10 +249,13 @@ function KineticPath:make(pos,pathLength,noList)
         break
       end
       prevPos = pos
-      local source_vec = vec(table.unpack(source))
       pos = source_vec
+    --   connectedToExtraKinetics = connectedToExtra or false
     end
-    
+    common.length = i1
+    common.end_pos = pos
+    common.penultimate_pos = prevPos
+    common.status = status
 
     return path,i1,pos,prevPos,status
 end
@@ -210,6 +267,7 @@ function KineticPath.create(pos,pathLength,noList)
 end
 function KineticPath:extend(pathLength,noList)
     self.path, self.length, self.end_pos, self.penultimate_pos, self.status = KineticPath:make(self.start_pos,pathLength,noList)
+    return self
 end
 
 
@@ -309,61 +367,168 @@ KineticPath.prett = {
 }
 
 
+---comment
+---@param state KineticPathNodeData
+---@param var string
+---@return boolean success
+---@return any
+function KineticPath:state_get(state,var)
+    local out = state[var] or state.common[var]
+    if out then
+        return true,out
+    end
+    return false
+end
+
+---@type {[string] : fun(self:KineticPath,state:KineticPathNodeData,vars):boolean}
+KineticPath.condition_words = {
+            always = function (self,state,vars)
+                return true
+            end,
+            change = function (self,state,vars)
+                if not state.previous then
+                    return true
+                end
+                for key, value in pairs(vars) do
+                    local r, v = self:state_get(state,value)
+                    local r2, v2 = self:state_get(state.previous,value)
+                    if r ~= r2 or v ~= v2 then
+                        return true
+                    end
+                end
+                return false
+            end,
+            
+            isEnd = function (self,state,vars)
+
+                return state.index == state.common.length
+            end,
+            isStart = function (self,state,vars)
+                return state.index == 1
+            end,
+            isExtraKinetics = function (self,state,vars)
+                return VectorWithLayer.isPointingToExtraKinetics(state.pos)
+            end,
+            connectedToExtraKinetics = function (self,state,vars)
+                return state.source_pos and VectorWithLayer.isPointingToExtraKinetics(state.source_pos) or false
+            end,
+}
+
+---@type {[string] : fun(self:KineticPath,state:KineticPathNodeData,vars,condition:table):boolean}
+KineticPath.condition_ops = {
+            ["and"] = function (self,state,vars,condition)
+                for index, value in ipairs(condition) do
+                    if not self:pretty_condition(state,vars,value) then
+                        return false
+                    end
+                end
+                return true
+            end,
+            ["or"] = function (self,state,vars,condition)
+                for index, value in ipairs(condition) do
+                    if self:pretty_condition(state,vars,value) then
+                        return true
+                    end
+                end
+                return false
+            end,
+            ["equals"] = function (self,state,vars,condition)
+                local r,v = self:state_get(state,condition.key)
+                return v == condition.value
+            end,
+            
+            ["ternary"] = function (self,state,vars,condition)
+                if self:pretty_condition(state,vars,condition[1] or condition.cond or condition.c or condition.condition) then
+                    return self:pretty_condition(state,vars,condition[2] or condition.left or condition.t)
+                else
+                    return self:pretty_condition(state,vars,condition[3] or condition.right or condition.e)
+                end
+            end,
+            
+}
+
 
 function KineticPath:pretty_condition(state,vars,condition)
-    local vars = Utils.string.split(condition)
+    if type(condition) == "string" then
+        local f = self.condition_words[condition]
+        if not f then
+            -- error has occured
+            log("unknown condition word:",condition)
+            return false
+        end
+        return f(self,state,vars)
+
+    elseif type(condition) == "table" then
+        local f = self.condition_ops[condition.op or "and"]
+        if not f then
+            -- error has occured
+            log("unknown condition op:",tostring(condition.op))
+            return false
+        end
+        local out = f(self,state,vars,condition)
+        return ((not out) ~= (not condition.invert))
+    elseif type(condition) == "function" then
+        local succ,r = pcall(condition,state,vars)
+        if not succ then
+            log("error in condition:",r)
+            return false
+        end
+        return r
+    end
+    if condition == nil then
+        return true
+    end
+    if condition == true then
+        return true
+    end
+    if condition == false then
+        return false
+    end
+
+
 
     
 end
 
 
-function KineticPath:pretty_vars(state,line)
-    local vars = Utils.string.split(line.vars)
-
-    
+function KineticPath:pretty_line(state,line)
+    local vars = Utils.string.split(line.vars or "")
+    local cond = self:pretty_condition(state,vars,line.condition)
+    if not cond then
+        return
+    end
+    local vars_material = {}
+    for index, value in ipairs(vars) do
+        vars_material[index] = self:state_get(state,value)
+    end
+    local succ, str
+    if type(line.format) =="string" then
+        succ, str = pcall(string.format,line.format,table.unpack(vars_material))
+    elseif type(line.format) == "function" then
+        succ, str = pcall(line.format,state,table.unpack(vars_material))
+    end
+    if not succ then
+        str = "ERROR: vars " .. tostring(line.vars) .. " not applicable to format " .. tostring(line.format) .. ". message: " .. tostring(str)
+    end
+    return str
 end
 
 
 
 ---@param node_data KineticPathNodeData
----@param i number
----@param prev_difference Vector|nil|false -- Vector: relative position of previous path node. false: previous path node in different sublevel. nil: start of list
----@param next_difference Vector|nil|false -- Vector: relative position of next path node. false: next path node in different sublevel. nil: end of list
----@param prev_data KineticPathNodeData? -- for comparing differences to previous. doesn't exist if first.
-function KineticPath:make_text(node_data,i,prev_difference,next_difference,prev_data)
+---@return string
+function KineticPath:make_text(node_data)
     local lines = {}
     for index, value in ipairs(self.prett) do
-
-
-        -- local line
-
-        -- lines[#lines+1] = line
+        lines[#lines+1] = self:pretty_line(node_data,value)
     end
-
-
-    return
+    return table.concat(lines,"\n")
 end
 
 
 
 
 
-function KineticPath.pretty(network,oldNetwork,repeats)
-  oldNetwork = oldNetwork or {}
-  if network then
-    return
-      ((network.Id == oldNetwork.Id and (not repeats))
-        and "" 
-        or ("network id: " .. (network.Id or "NONE") .. "\n"))..
-      ((network.Stress == oldNetwork.Stress and network.Capacity == oldNetwork.Capacity and (not repeats)) 
-        and "" 
-        or ((network.Stress or "") .. "/" .. (network.Capacity or "") .. "\n"))..
-      ((network.Size == oldNetwork.Size and (not repeats))
-        and "" 
-        or ("size: " .. (network.Size or "???") .. "\n"))
-  end
-  return "()\n"
-end
 
 
 
@@ -371,11 +536,7 @@ end
 ---overrideable.
 ---@param path_part ModelPart
 ---@param node_data KineticPathNodeData
----@param i number
----@param prev_difference Vector|nil|false -- Vector: relative position of previous path node. can be 0. false: previous path node in different sublevel. nil: start of list
----@param next_difference Vector|nil|false -- Vector: relative position of next path node. can be 0. false: next path node in different sublevel. nil: end of list
----@param prev_data KineticPathNodeData? -- for comparing differences to previous. doesn't exist if first.
-function KineticPath:init_pathPart(path_part,node_data,i,prev_difference,next_difference,prev_data)
+function KineticPath:init_pathPart(path_part,node_data)
     local text = path_part:newPart("text","BILLBOARD"):newText("text")
         :setLight(15,15)
         :setWidth(16*4*3)
@@ -384,6 +545,7 @@ function KineticPath:init_pathPart(path_part,node_data,i,prev_difference,next_di
     if host:isHost() then
         text:setSeeThrough(true)
     end
+    text:setText(self:make_text(node_data))
     
 end
 
@@ -398,11 +560,8 @@ function KineticPath:pre_init_pathPart(i)
     local nextNode = self.path[i+1]
     local main = Utils.Sublevel.moveToSublevelPosition(node.pos,nil,self.part)
     self.path_parts[i] = main
-    
-    local prev_difference = prevNode and (Utils.Sublevel.difference(prevNode.pos, node.pos) or false)
-    local next_difference = nextNode and (Utils.Sublevel.difference(nextNode.pos, node.pos) or false)
 
-    self:init_pathPart(main,node,i,prev_difference,next_difference)
+    self:init_pathPart(main,node)
     
 end
 
@@ -417,3 +576,21 @@ function KineticPath:createVisual(rootPart,name)
         self:pre_init_pathPart(i)
     end
 end
+
+
+
+function KineticPath.test(pathLength,noList)
+    
+  if host:isHost() then
+    local block, hitPos, side = host:getPickBlock()
+    if not block then return end
+    local pos = block:getPos()
+    local p = KineticPath.create(pos,pathLength or 10, noList)
+    p:extend(pathLength or 10,noList)
+    p:createVisual(models,"kineticTest")
+
+  end
+
+end
+
+return KineticPath

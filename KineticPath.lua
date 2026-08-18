@@ -51,13 +51,24 @@ function Utils.Sublevel.difference(pos1,pos2)
 end
 
 
+---@class KineticPathNodeData
+---@field pos Vector
+---@field Id number
+---@field Stress number
+---@field Capacity number
+---@field Size number
+---@field index integer
+---@field previous? KineticPathNodeData
+---@field prev_difference Vector|false|nil -- Vector: relative position of previous path node. can be 0. false: previous path node in different sublevel. nil: start of list
+---@field next_difference Vector|false|nil -- Vector: relative position of next(source) path node. can be 0. false: next path node in different sublevel. nil: end of list
+---@field source_pos? Vector
 
 
 ---@alias KineticPathStatus "exceeds_length"|"unloaded"|"not_block_entity"|"no_network"|"root_reached"
 
 ---@class KineticPath
 ---@field start_pos Vector
----@field path? KineticPathNode[]
+---@field path? KineticPathNodeData[]
 ---@field length number
 ---@field end_pos Vector
 ---@field penultimate_pos Vector?
@@ -66,7 +77,7 @@ end
 ---@field path_parts ModelPart[]?
 local KineticPath = {
   pathLength = 32,
---   -@type KineticPathNode[]
+--   -@type KineticPathNodeData[]
 --   sourcePath = {}, -- {x,y,z,type}
 }
 KineticPath.__index = KineticPath
@@ -127,14 +138,14 @@ end
 ---@param pos Vector
 ---@param pathLength number?
 ---@param noList boolean? if true, discards the intermediate path. todo: still saves the second-to-last to determine if the unloaded endpoint is in a different (sub)level
----@return KineticPathNode[]
+---@return KineticPathNodeData[]
 ---@return number length
 ---@return Vector endpoint
 ---@return Vector? penultimate_point
 ---@return KineticPathStatus status 
 function KineticPath:make(pos,pathLength,noList)
     pathLength = pathLength or KineticPath.pathLength
-    ---@type KineticPathNode[]
+    ---@type KineticPathNodeData[]
     local path = {}
     local status = "exceeds_length"
     local i1
@@ -234,24 +245,91 @@ function Utils.Sublevel.moveToSublevelPosition(pos,part,grandparent)
 end
 
 
+function Utils.string.split(str)
+    local out = {}
+    for w in string.gmatch(str,"%S+") do
+        out[#out+1] = w
+    end
+    return out
+end
+
+---takes parentheses and extracts their contents
+---@param str string
+---@return string
+---@return { [string] : string }
+function Utils.string.subconditions(str)
+    local subcondition_sentinel = "SCa%daCS"
+    local subconditions = {}
+    local count = 1
+    str = string.gsub(
+        str,"%b()",function (s)
+            local id = subcondition_sentinel:format(count)
+            count = count + 1
+            subconditions[id] = string.gsub(s,"^%((.*)%)$","%1")
+            return id
+        end
+    )
+    return str,subconditions
+end
+
+--- incomplete
+function Utils.string.condition(str)
+    
+    local subconditions
+    str,subconditions = Utils.string.subconditions(str)
+    str = string.gsub(str,"|"," | ") --
+    str = string.gsub(str,"%-%s*"," %-") -- formats `-` so it has a preceding space and no space between it and the next word
+    str = string.gsub(str,"%s*=%s*","%=") -- formats `=` so there is no space between
+
+    local out = {}
+    for w in string.gmatch(str,"(%S+)") do
+        
+        out[#out+1] = w
+    end
+
+    return out
+end
+
 
 KineticPath.prett = {
     {vars = "index", format = "(%i)", condition = "always"},
-    {vars = "Id", format = "Kinetic Network %i", condition = "change"},
+    {vars = "Id", format = "Kinetic Network %i", condition = "change"}, -- change looks at vars and checks whether they are equal to the previous
     {vars = "Stress Capacity", format = "%i/%i SU used", condition = "change"},
     {vars = "Size", format = "size: %i", condition = "change"},
-    {vars = "", format = "root", condition = "isEnd & status=root_reached"},
-    {vars = "status", format = "status: %s", condition = "isEnd -status=root_reached -isStart"},
+    {vars = "", format = "root", condition = {"isEnd",{key = "status", value = "root_reached", op = "equals"}, op = "and"}},
+    {
+        vars = "status", format = "status: %s",
+        condition = {
+            "isEnd",
+            {key="status",value="root_reached",op = "equals", invert = true},
+            {"isStart",invert=true},
+            op = "and"}
+    },
     -- {mode = "ExtraKinetics"} -- write text for extra kinetics in the same block, on the same text
 }
 
 
 
----@param node_data KineticPathNode
+function KineticPath:pretty_condition(state,vars,condition)
+    local vars = Utils.string.split(condition)
+
+    
+end
+
+
+function KineticPath:pretty_vars(state,line)
+    local vars = Utils.string.split(line.vars)
+
+    
+end
+
+
+
+---@param node_data KineticPathNodeData
 ---@param i number
 ---@param prev_difference Vector|nil|false -- Vector: relative position of previous path node. false: previous path node in different sublevel. nil: start of list
 ---@param next_difference Vector|nil|false -- Vector: relative position of next path node. false: next path node in different sublevel. nil: end of list
----@param prev_data KineticPathNode? -- for comparing differences to previous. doesn't exist if first.
+---@param prev_data KineticPathNodeData? -- for comparing differences to previous. doesn't exist if first.
 function KineticPath:make_text(node_data,i,prev_difference,next_difference,prev_data)
     local lines = {}
     for index, value in ipairs(self.prett) do
@@ -292,11 +370,11 @@ end
 
 ---overrideable.
 ---@param path_part ModelPart
----@param node_data KineticPathNode
+---@param node_data KineticPathNodeData
 ---@param i number
----@param prev_difference Vector|nil|false -- Vector: relative position of previous path node. false: previous path node in different sublevel. nil: start of list
----@param next_difference Vector|nil|false -- Vector: relative position of next path node. false: next path node in different sublevel. nil: end of list
----@param prev_data KineticPathNode? -- for comparing differences to previous. doesn't exist if first.
+---@param prev_difference Vector|nil|false -- Vector: relative position of previous path node. can be 0. false: previous path node in different sublevel. nil: start of list
+---@param next_difference Vector|nil|false -- Vector: relative position of next path node. can be 0. false: next path node in different sublevel. nil: end of list
+---@param prev_data KineticPathNodeData? -- for comparing differences to previous. doesn't exist if first.
 function KineticPath:init_pathPart(path_part,node_data,i,prev_difference,next_difference,prev_data)
     local text = path_part:newPart("text","BILLBOARD"):newText("text")
         :setLight(15,15)

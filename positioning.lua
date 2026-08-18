@@ -80,13 +80,21 @@ function Positioning.functions.followEntity(entity,followRot)
         if ent then entity = ent end
         if not t then return Positioning.setActive(part,false) end
         -- root:setPreRender(function (delta,ctx,part) part:setPos(16*(player:getPos(delta))) end)
-        part:setPos(PS*(entity:getPos(delta)))
+        local b = entity:getPos(delta)
+        if b then
+            part:setPos(PS*b)
+        end
         if followRot then
             if (followRot == "body") then
-                part:setRot( 0,-entity:getBodyYaw(delta))
+                local a = entity:getBodyYaw(delta)
+                if a then
+                    part:setRot( 0,-a)
+                end
             else
                 local rot = entity:getRot(delta)
-                part:setRot( (followRot == 2) and rot.x or 0,-rot.y)
+                if rot then
+                    part:setRot( (followRot == 2) and rot.x or 0,-rot.y)
+                end
             end
             
         end
@@ -105,12 +113,49 @@ function Positioning.functions.followEntityEyes(entity)
         if not t then return Positioning.setActive(part,false) end
 
         local eyePos = Utils.entity.entityEyePos(entity,delta)
-        part:setPos(PS*(eyePos))
+        if eyePos then
+            part:setPos(PS*(eyePos))
+        end
         local rot = entity:getRot(delta)
-        part:setRot(rot.x,-rot.y)
+        if rot then
+            part:setRot(rot.x,-rot.y)
+        end
         Positioning.setActive(part,true)
     end
 end
+
+
+--- in preRender, as a root World part.
+---@param entity Entity
+---@param followRot nil|number|"eyes"|"body"
+---@return PreRenderFunction
+function Positioning.functions.followEntityRot(entity,followRot)
+    if followRot == "eyes" then
+        return Positioning.functions.followEntityEyes(entity)
+    end
+    return function(delta, ctx, part)
+
+        local ent, t = materializeEntity(entity)
+        if ent then entity = ent end
+        if not t then return Positioning.setActive(part,false) end
+        
+        if (followRot == "body") then
+            local a = entity:getBodyYaw(delta)
+            if a then
+                part:setRot( 0,-a)
+            end
+        else
+            local rot = entity:getRot(delta)
+            if rot then
+                part:setRot( (followRot == 2) and rot.x or 0,-rot.y)
+            end
+        end
+            
+        
+        Positioning.setActive(part,true)
+    end
+end
+
 
 
 
@@ -177,10 +222,11 @@ end
 ---@param entity Entity
 ---@param name any
 ---@param followRot nil|number|"eyes"|"body"
+---@param onlyRot boolean?
 ---@return ModelPart
-function Positioning.make.entityFollower(entity,name,followRot)
+function Positioning.make.entityFollower(entity,name,followRot,onlyRot)
     return models:newPart(name or entity:getUUID(),"World")
-            :setPreRender(Positioning.functions.followEntity(entity,followRot))
+            :setPreRender((onlyRot and Positioning.functions.followEntityRot or Positioning.functions.followEntity)(entity,followRot))
 end
 
 --- common parts

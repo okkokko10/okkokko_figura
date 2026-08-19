@@ -188,25 +188,26 @@ function Positioning.functions.worldRotation()
     return Positioning.functions._worldRotation
 end
 
-
+---@type {[Vector] : {old?: Matrix, current: Matrix, loaded: boolean}}
 Positioning._CoordinateMatrices = {}
-Positioning._CoordinateMatricesOld = {}
-Positioning._CoordinateMatricesLoaded = {}
 
 
 --- moves to the position. moves with sublevels.
----@return fun()
+--- lerps matrices, which is not ideal.
+---@return fun() world_tick_function
 ---@return PreRenderFunction
 function Positioning.functions.coordinate(pos)
     -- local matri = matrices.mat4()
     -- local oldMatri = matri
     -- local loaded = false
     return function()
-        Positioning._CoordinateMatricesOld[pos] = Positioning._CoordinateMatrices[pos]
-        Positioning._CoordinateMatrices[pos], Positioning._CoordinateMatricesLoaded[pos] = Utils.Sublevel.sublevelPositionMatrix(pos)
+        local cm = Positioning._CoordinateMatrices[pos]
+        cm.old = cm.current
+        cm.current, cm.loaded = Utils.Sublevel.sublevelPositionMatrix(pos)
     end, function (delta, ctx, part)
-        if Positioning._CoordinateMatricesLoaded[pos] then
-            local mat = math.lerp(Positioning._CoordinateMatricesOld[pos] or matrices.mat4(),Positioning._CoordinateMatrices[pos],delta)
+        local cm = Positioning._CoordinateMatrices[pos]
+        if cm and cm.loaded then
+            local mat = math.lerp(cm.old or cm.current,cm.current,delta)
             part:setMatrix(mat)
             Positioning.setActive(part,true)
         else
@@ -222,13 +223,13 @@ Positioning.make = {}
 
 function Positioning.make.coordinateFollower(pos,name,parent)
     local nm = name or ("follows " ..Utils.vectorString(pos))
-    local onTick,onPreRender = Positioning.functions.coordinate(pos)
+    local onTick, onPreRender = Positioning.functions.coordinate(pos)
     local tick_name = "tick_coordinate_" .. tostring(pos)
-    if events.TICK:getRegisteredCount(tick_name) == 0 then
+    if events.WORLD_TICK:getRegisteredCount(tick_name) == 0 then
         events.WORLD_TICK:register(onTick,tick_name)
     end
     return (parent or models):newPart(nm,"World")
-            :setPreRender(onPreRender)
+        :setPreRender(onPreRender)
 end
 
 

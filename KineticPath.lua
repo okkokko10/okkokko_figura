@@ -22,7 +22,7 @@
 ---@return Vector
 function Utils.Sublevel.getSublevelOriginOffset(pos)
     if Utils.Sublevel.isInSublevel(pos) then
-        local origin = vec(bit32.band(bit32.bnot(0x7FF),pos.x),0,bit32.band(bit32.bnot(0x7FF),pos.z))
+        local origin = vec(bit32.band(bit32.bnot(0x7FF),pos.x),0,bit32.band(bit32.bnot(0x7FF),pos.z)) + 0x400
         -- log("sublevel origin offset:", pos, origin, pos-origin)
         return origin, pos-origin
     else

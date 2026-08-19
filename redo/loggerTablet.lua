@@ -54,5 +54,36 @@ end
 log = newLog
 logTable = newLogTable
 
+function LogCurrentTime(extra)
+    local date = client.getDate()
+    log(("time log: %s:%s:%s"):format(date.hour,date.minute,date.second), extra)
+    -- logTable(client.getDate())
+end
+
+pings.LogCurrentTime = LogCurrentTime
+
+LogCurrentTime("init loggerTablet")
+
+events.ENTITY_INIT:register(function ()
+    LogCurrentTime("entity_init")
+end)
+
+local tick_started = false
+events.TICK:register(function ()
+    if not tick_started then
+        tick_started = true
+        LogCurrentTime("first tick")
+    end
+end)
+
+
+local world_tick_started = false
+events.WORLD_TICK:register(function ()
+    if not world_tick_started then
+        world_tick_started = true
+        LogCurrentTime("first world tick")
+    end
+end)
+
 
 require("redo.Grab").addSelectableGenerate("LogText")

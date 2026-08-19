@@ -266,7 +266,7 @@ end
 
 KineticPath.instances = {}
 
-function KineticPath.create(pos,pathLength,noList)
+function KineticPath.create(pos)
     local out = setmetatable({start_pos = pos},KineticPath)
     KineticPath.instances[#KineticPath.instances+1] = out
     return out
@@ -398,7 +398,7 @@ KineticPath.pretty_rules = {
     {
         ---@param state KineticPathNodeData
         format = function (state)
-            return "->"..(state.next_difference:length())
+            return "-> +"..(tostring(state.next_difference))
         end,
         condition = function (state)
             return state.next_difference and (state.next_difference:lengthSquared() ~= 1)
@@ -610,6 +610,10 @@ function KineticPath:init_pathPart(path_part,node_data)
         :setWidth(16*4*3)
         :setScale(1/4)
         :setOpacity(0.5)
+    if VectorWithLayer.isPointingToExtraKinetics(node_data.pos) then
+        text:setAlignment("RIGHT")
+    end
+
     if host:isHost() then
     end
     text:setSeeThrough(true)
@@ -663,6 +667,7 @@ function KineticPath:createVisual(rootPart,name)
     for i, node in ipairs(self.path or {}) do
         self:pre_init_pathPart(i)
     end
+    return self
 end
 
 
@@ -673,12 +678,14 @@ function KineticPath.test(pathLength,noList)
     local block, hitPos, side = host:getPickBlock()
     if not block then return end
     local pos = block:getPos()
-    local p = KineticPath.create(pos,pathLength or 10, noList)
-    p:extend(pathLength or 10,noList)
-    p:createVisual(models,"kineticTest")
+    local p = KineticPath.create(pos)
+        :extend(pathLength or 32,noList)
+        :createVisual(models,"kineticTest")
     log(p)
   end
-
 end
+
+
+
 
 return KineticPath

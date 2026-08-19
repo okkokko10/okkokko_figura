@@ -189,16 +189,24 @@ function Positioning.functions.worldRotation()
 end
 
 
+Positioning._CoordinateMatrices = {}
+Positioning._CoordinateMatricesOld = {}
+Positioning._CoordinateMatricesLoaded = {}
 
 
 --- moves to the position. moves with sublevels.
+---@return fun()
 ---@return PreRenderFunction
 function Positioning.functions.coordinate(pos)
-
-    return function(delta, ctx, part)
-        
-        local mat, loaded = Utils.Sublevel.sublevelPositionMatrix(pos)
-        if loaded then
+    -- local matri = matrices.mat4()
+    -- local oldMatri = matri
+    -- local loaded = false
+    return function()
+        Positioning._CoordinateMatricesOld[pos] = Positioning._CoordinateMatrices[pos]
+        Positioning._CoordinateMatrices[pos], Positioning._CoordinateMatricesLoaded[pos] = Utils.Sublevel.sublevelPositionMatrix(pos)
+    end, function (delta, ctx, part)
+        if Positioning._CoordinateMatricesLoaded[pos] then
+            local mat = math.lerp(Positioning._CoordinateMatricesOld[pos] or matrices.mat4(),Positioning._CoordinateMatrices[pos],delta)
             part:setMatrix(mat)
             Positioning.setActive(part,true)
         else
@@ -213,8 +221,14 @@ Positioning.make = {}
 
 
 function Positioning.make.coordinateFollower(pos,name,parent)
-    return (parent or models):newPart(name or ("follows " ..Utils.vectorString(pos)),"World")
-            :setPreRender(Positioning.functions.coordinate(pos))
+    local nm = name or ("follows " ..Utils.vectorString(pos))
+    local onTick,onPreRender = Positioning.functions.coordinate(pos)
+    local tick_name = "tick_coordinate_" .. tostring(pos)
+    if events.TICK:getRegisteredCount(tick_name) == 0 then
+        events.WORLD_TICK:register(onTick,tick_name)
+    end
+    return (parent or models):newPart(nm,"World")
+            :setPreRender(onPreRender)
 end
 
 

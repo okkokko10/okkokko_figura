@@ -200,6 +200,9 @@ function Positioning.functions.coordinate(pos)
     -- local matri = matrices.mat4()
     -- local oldMatri = matri
     -- local loaded = false
+    if not Positioning._CoordinateMatrices[pos] then
+        Positioning._CoordinateMatrices[pos] = {current = matrices.mat4()}
+    end
     return function()
         local cm = Positioning._CoordinateMatrices[pos]
         cm.old = cm.current

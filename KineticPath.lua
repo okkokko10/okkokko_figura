@@ -78,37 +78,44 @@ end
 ---@class KineticPathCommonData
 ---@field start_pos VectorWithLayer
 ---@field length number
----@field end_pos VectorWithLayer
----@field penultimate_pos VectorWithLayer?
+---@field end_pos VectorWithLayer -- if status=="root_reached", is the location of the root. else, is the location of the first invalid position
+---@field penultimate_pos VectorWithLayer?  -- if status=="root_reached", is the location prior to root. else, is the location of the last valid position
 ---@field status KineticPathStatus?
+---@field last_valid_pos VectorWithLayer? -- basically path[length].pos
 
 
----@class KineticPathNodeData
+---@class PathNodeData<S>
 ---@field pos VectorWithLayer
 -- ---@field isExtraKinetics boolean
+---@field blockId string
+---@field source_pos? VectorWithLayer
+-- ---@field connectedToExtraKinetics boolean
+---@field index integer
+---@field previous? S
+---@field prev_difference Vector|false|nil -- Vector: relative position of previous path node. can be 0. false: previous path node in different sublevel. nil: start of list
+---@field next_difference Vector|false|nil -- Vector: relative position of next(source) path node. can be 0. false: next path node in different sublevel. nil: end of list
+---@field common KineticPathCommonData
+
+---@class KineticData
 ---@field Id number -- network
 ---@field Stress number -- network
 ---@field Capacity number -- network
 ---@field Size number -- network
 ---@field Speed number -- information.
----@field blockId string
----@field source_pos? VectorWithLayer
--- ---@field connectedToExtraKinetics boolean
----@field index integer
----@field previous? KineticPathNodeData
----@field prev_difference Vector|false|nil -- Vector: relative position of previous path node. can be 0. false: previous path node in different sublevel. nil: start of list
----@field next_difference Vector|false|nil -- Vector: relative position of next(source) path node. can be 0. false: next path node in different sublevel. nil: end of list
----@field common KineticPathCommonData
+---@field AddedStress number -- information.
+---@field AddedCapacity number -- information
+
+
+---@class KineticPathNodeData : KineticData, PathNodeData<KineticPathNodeData>
+
+
 
 ---@alias KineticPathStatus "exceeds_length"|"unloaded"|"not_block_entity"|"no_network"|"root_reached"
 
 ---@class KineticPath
 ---@field start_pos VectorWithLayer
----@field path? KineticPathNodeData[]
----@field length number
----@field end_pos VectorWithLayer
----@field penultimate_pos VectorWithLayer?
----@field status KineticPathStatus?
+---@field path? KineticPathNodeData[]|false
+---@field common KineticPathCommonData?
 ---@field part ModelPart?
 ---@field path_parts ModelPart[]?
 local KineticPath = {
@@ -118,9 +125,27 @@ local KineticPath = {
 }
 KineticPath.__index = KineticPath
 
+
+---@param pathNodeData PathNodeData<KineticData>
+---@param blockData NetworkBlockData
+---@param idOrEK string?
+---@param block unknown
+---@return KineticPathNodeData
+function KineticPath:addKineticData(pathNodeData,blockData, idOrEK, block)
+        for key, value in pairs((blockData).Network or {}) do
+            pathNodeData[key] = value
+        end
+        ---@diagnostic disable-next-line: inject-field
+        pathNodeData.Speed = blockData.Speed
+        return pathNodeData
+end
+
+--- can also be a ExtraKinetic component
+---@alias NetworkBlockData table
+
 --- just searches the table for any value that could be ExtraKinetics
 ---relies on assumption: an inner table in nbt is ExtraKinetics iff it contains a field `NeedsSpeedUpdate`
----@param blockData table
+---@param blockData NetworkBlockData
 ---@return table? ExtraKinetics
 ---@return string? key
 function KineticPath:getExtraKinetics(blockData)
@@ -135,9 +160,11 @@ function KineticPath:getExtraKinetics(blockData)
 end
 
 ---comment
----@param blockData table
+---@param blockData NetworkBlockData
+---@param idOrEK string?
+---@param block unknown
 ---@return VectorWithLayer? Source
-function KineticPath:getSource(blockData)
+function KineticPath:getSource(blockData, idOrEK, block)
     if not blockData then
         return
     end
@@ -152,9 +179,9 @@ end
 
 ---comment
 ---@param pos VectorWithLayer
----@return table? data
+---@return NetworkBlockData? data
 ---@return string blockIdOrExtraKinetic
----@return table block
+---@return unknown block
 function KineticPath:getData(pos)
     local block = world.getBlockState(VectorWithLayer.getVector(pos))
     local blockData = block:getEntityData()
@@ -168,81 +195,90 @@ function KineticPath:getData(pos)
 end
 
 
+---comment
+---@param blockData NetworkBlockData|nil
+---@param idOrEK string?
+---@param block unknown
+---@return string|nil
+function KineticPath:validateBlockData(blockData, idOrEK, block)
+        if not blockData then
+            -- either not loaded, or something weirder (or just the first block. append "_start" to the status if i==1. or return the index).
+            -- todo: differentiate between being unloaded in the same level and in different levels
+            if block.id == "minecraft:void_air" then -- void_air exists in unloaded chunks and beyond the build height limits. so technically this branch could also occur when a source is somehow above the build height limit.
+                -- normal if on the ground, weird if the last vertex is on a sublevel.
+                -- todo: report somewhere on whether the last connection is across (sub)levels.
+                return "unloaded"
+            else
+                -- it would be strange if this happened outside of i==1. a kinetic source that isn't a block entity.
+                return "not_block_entity"
+            end
+        else
+            local network = blockData.Network
+            -- hm, technically this check doesn't have to be required, and if omitted could track other relationships where "Source" points toward a root. 
+            if not (network and network.Stress) then -- there exist nbt components titled "Network" other than kinetic networks, such as big radars data networks
+            --- block isn't in a kinetic network.
+            --- happens if it isn't an active kinetic block.
+            --- it would be odd if this happened outside i==1
+            return "no_network"
+            end
+        end
+end
+
 --- todo: maybe abstract it so you can track more kinds of networks with it.
 ---@param pos VectorWithLayer
----@param pathLength number?
----@param noList boolean? if true, discards the intermediate path. todo: still saves the second-to-last to determine if the unloaded endpoint is in a different (sub)level
----@return KineticPathNodeData[]
----@return number length
----@return VectorWithLayer endpoint
----@return VectorWithLayer? penultimate_point
----@return KineticPathStatus status 
-function KineticPath:make(pos,pathLength,noList)
-    pathLength = pathLength or self.pathLength
-    ---@type KineticPathNodeData[]
-    local path = {}
+---@param pathEnd number
+---@param pathStart number?
+---@param path KineticPathNodeData[]|false? if false (not nil), discards the intermediate path. todo: still saves the second-to-last to determine if the unloaded endpoint is in a different (sub)level
+---@param common? KineticPathCommonData
+---@return KineticPathNodeData[]|false
+---@return KineticPathCommonData common
+function KineticPath:make(pos, pathEnd, pathStart, path,common)
+    -- pathEnd = pathEnd
+    ---@type KineticPathNodeData[]?
+    if path ~= false then
+        path = path or {}
+    end
+
     local status = "exceeds_length"
-    local i1
     local prevPos
     local connectedToExtraKinetics = false
 
-    local common = {}
-    
-    common.start_pos = pos
-    for i = 1, pathLength do
+    common = common or {}
+
+    common.start_pos = common.start_pos or pos
+    for i = pathStart or (#(path or {}) + 1), pathEnd do
       local blockData, idOrEK, block = self:getData(pos)
 
       -- ---@type {Network: {Id:number,Stress:number,Capacity:number,Size:number}?, Speed:number, Source:{[1]:number,[2]:number,[3]:number}? }?
-
-      if not blockData then
-        -- either not loaded, or something weirder (or just the first block. append "_start" to the status if i==1. or return the index).
-        -- todo: differentiate between being unloaded in the same level and in different levels
-        if idOrEK == "minecraft:void_air" then -- void_air exists in unloaded chunks and beyond the build height limits. so technically this branch could also occur when a source is somehow above the build height limit.
-          -- normal if on the ground, weird if the last vertex is on a sublevel.
-          -- todo: report somewhere on whether the last connection is across (sub)levels.
-          status = "unloaded"
-        else
-          -- it would be strange if this happened outside of i==1. a kinetic source that isn't a block entity.
-          status = "not_block_entity"
-        end
+      local st = self:validateBlockData(blockData,idOrEK, block )
+      if st then
+        status = st
         break
       end
-      local network = blockData.Network
-      -- hm, technically this check doesn't have to be required, and if omitted could track other relationships where "Source" points toward a root. 
-      if not (network and network.Stress) then -- there exist nbt components titled "Network" other than kinetic networks, such as big radars data networks
-        --- block isn't in a kinetic network.
-        --- happens if it isn't an active kinetic block.
-        --- it would be odd if this happened outside i==1
-        status = "no_network"
-        break
-      end
-      i1 = i
-
-      local source_vec = self:getSource(blockData)
+      ---@cast blockData -?
       
-      if not noList then
+      
+      common.length = i
+      common.last_valid_pos = pos
+
+      local source_vec = self:getSource(blockData, idOrEK, block)
+      
+      if path then
+        
+        -- local network = blockData.network
         local prev_difference = prevPos and (Utils.Sublevel.difference(VectorWithLayer.getVector(prevPos), VectorWithLayer.getVector(pos)) or false)
         local next_difference = source_vec and (Utils.Sublevel.difference(VectorWithLayer.getVector(source_vec), VectorWithLayer.getVector(pos)) or false)
-        path[i] = {
-            pos=pos, 
-            -- isExtraKinetics=connectedToExtraKinetics,
+        path[i] = self:addKineticData({
+            pos=pos,
             blockId = idOrEK,
             source_pos = source_vec,
-            -- connectedToExtraKinetics = connectedToExtra or false,
             index = i,
             previous = path[i-1],
             prev_difference = prev_difference,
             next_difference = next_difference,
-            Id=network.Id,
-            Stress = network.Stress,
-            Capacity = network.Capacity,
-            Size = network.Size,
-            Speed = blockData.Speed,
             common = common
-            }
-        for key, value in pairs(network) do
-            path[i][key] = value
-        end
+            },blockData, idOrEK, block
+            )
       end
 
       if not source_vec then
@@ -256,23 +292,46 @@ function KineticPath:make(pos,pathLength,noList)
       pos = source_vec
     --   connectedToExtraKinetics = connectedToExtra or false
     end
-    common.length = i1
+    -- common.length = i1
     common.end_pos = pos
     common.penultimate_pos = prevPos
     common.status = status
 
-    return path,i1,pos,prevPos,status
+    return path,common
 end
 
-KineticPath.instances = {}
+
 
 function KineticPath.create(pos)
     local out = setmetatable({start_pos = pos},KineticPath)
-    KineticPath.instances[#KineticPath.instances+1] = out
     return out
 end
-function KineticPath:extend(pathLength,noList)
-    self.path, self.length, self.end_pos, self.penultimate_pos, self.status = KineticPath:make(self.start_pos,pathLength,noList)
+
+--- keeps stuff like status but updates stuff like start_pos
+---@param current KineticPathCommonData
+---@param new KineticPathCommonData
+---@return KineticPathCommonData new
+function KineticPath:mergeCommon(current,new)
+    for key, value in pairs(new) do
+        if key ~= "start_pos" then
+            current[key] = value
+        end
+    end
+    return current
+end
+
+---disables tracking the path. only gathers common with :extend
+---@return KineticPath
+function KineticPath:disablePath()
+    self.path = false
+    return self
+end
+
+function KineticPath:extend(pathLength)
+    local start = (self.common or {}).length
+    local path, common =  KineticPath:make((self.common or {}).last_valid_pos or self.start_pos,(start or 1) + pathLength - 1,start,self.path,self.common)
+    self.path =  path
+    self.common = common
     return self
 end
 
@@ -281,13 +340,15 @@ function KineticPath:remove()
         self.part:remove()
         self.part = nil
     end
+    self.removed = true
 end
-function KineticPath.remove_all()
-    for key, value in pairs(KineticPath.instances) do
-        value:remove()
-    end
-    KineticPath.instances = {}
-end
+
+-- function KineticPath.remove_all()
+--     for key, value in pairs(KineticPath.instances) do
+--         value:remove()
+--     end
+--     KineticPath.instances = {}
+-- end
 
 
 -- {20481028, 126, 20560907}
@@ -388,7 +449,7 @@ KineticPath.pretty_rules = {
         condition = {
             "isEnd",
             {key="status",value="root_reached",op = "equals", invert = true},
-            {"isStart",invert=true},
+            -- {"isStart",invert=true},
             op = "and"}
     },
     {
@@ -642,11 +703,31 @@ function KineticPath:init_pathPart(path_part,node_data)
     
 end
 
+---if ticks is a number, this is removed in that amount of ticks
+---@param ticks number?
+---@return self
+function KineticPath:setLifetime(ticks)
+    if ticks then
+        (require"Sleep"):queue(ticks,self.remove,self)
+    end
+    return self
+end
+function KineticPath:lengthenEveryTicks(byLength,ticks,lifetimeAfter)
+    if (not self.removed) and ((not self.common) or self.common.status == "exceeds_length" or self.common.status == "unloaded") then
+        self:extendVisual(byLength or 1)
+        require("Sleep"):queue(ticks or 1, self.lengthenEveryTicks, self, byLength, ticks)
+    else
+        self:setLifetime(lifetimeAfter)
+        log(self.common.end_pos)
+    end
+    return self
+end
+
 
 function KineticPath:pre_init_pathPart(i)
     local node = self.path[i]
     if not node then
-        error("somehow pre-initializing without having a path. i = " .. i)
+        -- error("somehow pre-initializing without having a path. i = " .. i)
         return
     end
     local prevNode = self.path[i-1]
@@ -664,23 +745,42 @@ end
 function KineticPath:createVisual(rootPart,name)
     self.part = rootPart:newPart(name or ("KineticPath"..tostring(self.start_pos)),"World")
     self.path_parts = {}
-    for i, node in ipairs(self.path or {}) do
+    for i, node in pairs(self.path or {}) do
         self:pre_init_pathPart(i)
     end
     return self
 end
 
+---creates a model that displays this.
+---@param from number?
+---@param to number?
+function KineticPath:resetVisual(from,to)
+    for i = from or 1, to or self.common.length do
+        if self.path_parts[i] then
+            self.path_parts[i]:remove()
+            self.path_parts[i] = nil
+        end
+        self:pre_init_pathPart(i)
+    end
+    return self
+end
 
+function KineticPath:extendVisual(pathLength)
+    local start = (self.common or {}).length
+    return self:extend(pathLength+1):resetVisual(start,(start or 1) + pathLength )
+end
 
-function KineticPath.test(pathLength,noList)
+function KineticPath.test(pathLength,lifetime,byLength,ticks)
     
   if host:isHost() then
     local block, hitPos, side = host:getPickBlock()
     if not block then return end
     local pos = block:getPos()
     local p = KineticPath.create(pos)
-        :extend(pathLength or 32,noList)
         :createVisual(models,"kineticTest")
+        :extendVisual(pathLength or 32)
+        :lengthenEveryTicks(byLength or 2,ticks or 1,lifetime)
+        -- :setLifetime(lifetime)
     log(p)
   end
 end

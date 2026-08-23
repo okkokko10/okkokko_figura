@@ -1,5 +1,5 @@
 
-require"Invoke"
+require"invoke.Invoke"
 
 
 local areSneaking = {

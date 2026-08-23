@@ -1,4 +1,4 @@
-require"Invoke"
+require"invoke.Invoke"
 
 
 local infoSkull = models:newPart("infoSkull","SKULL")
@@ -11,11 +11,11 @@ local time = 0
 Invoke.infosPart = infoSkull:newPart("infos"):setPreRender(
     
     function(delta, ctx, part)
-        local nowTime = client.getFrameTime()
-        if time == nowTime then
-            return true
-        end
-        time = nowTime
+        -- local nowTime = client.getFrameTime()
+        -- if time == nowTime then
+        --     return true
+        -- end
+        -- time = nowTime
         -- if Invoke.startedSneaking(player) then
         --     log(part,ctx,part:partToWorldMatrix(),part:getParent():partToWorldMatrix(),matrices.mat4():scale(1/16))
         -- end

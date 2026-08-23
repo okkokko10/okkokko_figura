@@ -329,7 +329,7 @@ end
 
 function KineticPath:extend(pathLength)
     local start = (self.common or {}).length
-    local path, common =  KineticPath:make((self.common or {}).last_valid_pos or self.start_pos,(start or 1) + pathLength - 1,start,self.path,self.common)
+    local path, common =  KineticPath:make((self.common or {}).last_valid_pos or self.start_pos,(start or 1) + pathLength,start,self.path,self.common)
     self.path =  path
     self.common = common
     return self
@@ -767,7 +767,7 @@ end
 
 function KineticPath:extendVisual(pathLength)
     local start = (self.common or {}).length
-    return self:extend(pathLength+1):resetVisual(start,(start or 1) + pathLength )
+    return self:extend(pathLength):resetVisual(start,(start or 1) + pathLength )
 end
 
 function KineticPath.test(pathLength,lifetime,byLength,ticks)

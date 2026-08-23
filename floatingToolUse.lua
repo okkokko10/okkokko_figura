@@ -38,7 +38,7 @@ local Eyes = Positioning.make.entityFollower(
         return player:isLoaded()
     end,
     getPos = function (self,delta)
-        return nil
+        return vec(0,0,0)
     end,
     getRot = function (self,delta)
         if GIZMO.cameraTracking then

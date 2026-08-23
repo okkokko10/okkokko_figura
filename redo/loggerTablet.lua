@@ -11,7 +11,7 @@ local oldLog = log
 
 
 
-local LogText = Positioning.parts.MyBase:newPart("LogText"):setPos(PS*1,PS/2,PS*3)
+local LogText = Positioning.parts.MyBase:newPart("LogText"):setPos(PS*3,PS/2,-PS*1):setRot(0,90)
 Utils.ID.field.LogText = LogText
 
 local rect = Rect.fromEndpoints(vec(0,0,0),PS*vec(-1,1,1/PS))
@@ -29,7 +29,7 @@ LOG_DISABLE = true
 
 local function appendLogText(text,silent) 
     if silent then return text end
-    history = text .. "\n" .. history
+    history = (text or "nil printed") .. "\n" .. history
     logText:setText(history)
     return text
 end
@@ -62,28 +62,28 @@ end
 
 pings.LogCurrentTime = LogCurrentTime
 
-LogCurrentTime("init loggerTablet")
+-- LogCurrentTime("init loggerTablet")
 
-events.ENTITY_INIT:register(function ()
-    LogCurrentTime("entity_init")
-end)
+-- events.ENTITY_INIT:register(function ()
+--     LogCurrentTime("entity_init")
+-- end)
 
-local tick_started = false
-events.TICK:register(function ()
-    if not tick_started then
-        tick_started = true
-        LogCurrentTime("first tick")
-    end
-end)
+-- local tick_started = false
+-- events.TICK:register(function ()
+--     if not tick_started then
+--         tick_started = true
+--         LogCurrentTime("first tick")
+--     end
+-- end)
 
 
-local world_tick_started = false
-events.WORLD_TICK:register(function ()
-    if not world_tick_started then
-        world_tick_started = true
-        LogCurrentTime("first world tick")
-    end
-end)
+-- local world_tick_started = false
+-- events.WORLD_TICK:register(function ()
+--     if not world_tick_started then
+--         world_tick_started = true
+--         LogCurrentTime("first world tick")
+--     end
+-- end)
 
 
 require("redo.Grab").addSelectableGenerate("LogText")

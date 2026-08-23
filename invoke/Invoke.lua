@@ -34,7 +34,7 @@
 
 
 
-local Invoke = {}
+Invoke = {}
 
 
 ---comment
@@ -79,50 +79,6 @@ function Invoke:parse_line(text)
     else
         logTable(dt)
     end
-end
-
-local areSneaking = {
-
-}
-
-function Invoke.updateSneaking(plr)
-    if not plr:isLoaded() then 
-       return 
-    end
-    local name = plr:getUUID()
-    if plr:isCrouching() then
-        areSneaking[name] = (areSneaking[name] or 0) + 1
-    else
-        if areSneaking[name] == 0 then
-            areSneaking[name] = nil
-        elseif areSneaking[name] ~= nil then
-            areSneaking[name] = 0
-        end
-    end
-end
-
-function Invoke.startedSneaking(plr)
-    if not plr:isLoaded() then 
-       return 
-    end
-    local name = plr:getUUID()
-    return areSneaking[name] == 1
-end
-
-function Invoke.stoppedSneaking(plr)
-    if not plr:isLoaded() then 
-       return 
-    end
-    local name = plr:getUUID()
-    return areSneaking[name] == 0
-end
-
-function Invoke.sneaking(plr)
-    if not plr:isLoaded() then
-       return 
-    end
-    local name = plr:getUUID()
-    return areSneaking[name] ~= nil
 end
 
 
@@ -201,7 +157,7 @@ function Invoke:contents(content,plr)
     local page_index = content.previously_opened_page + 1
     local current_page = pages[page_index]
     if not current_page then
-        logTable(content,4)
+        -- logTable(content,4)
         return
     end
     for index, line in ipairs(current_page) do
@@ -235,12 +191,19 @@ end
 events.WORLD_TICK:register(Invoke.readPlayers)
 
 
-events.SKULL_RENDER:register(function (delta, block, item)
+events.SKULL_RENDER:register(function (delta, block, item,...)
     -- if block then
     --     Invoke:createInfo(block:getPos(),"okkokko's skull")
     -- end
-    return Invoke.infosPart
+    -- log(delta,block,item,...)
+    if not player:isLoaded() then return end
+    if Invoke.startedSneaking(player) then
+        -- log(infoSkull:partToWorldMatrix())
+    end
+
+    -- return true
 end)
 -- events.SKULL_RENDER:register(Invoke.readPlayers)
 
 
+return Invoke

@@ -231,7 +231,7 @@ function Positioning.make.coordinateFollower(pos,name,parent)
     if events.WORLD_TICK:getRegisteredCount(tick_name) == 0 then
         events.WORLD_TICK:register(onTick,tick_name)
     end
-    return (parent or models):newPart(nm,"World")
+    return (parent or models):newPart(nm)
         :setPreRender(onPreRender)
 end
 

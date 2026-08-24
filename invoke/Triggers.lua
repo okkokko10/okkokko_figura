@@ -2,46 +2,180 @@
 require"invoke.Invoke"
 
 
-local areSneaking = {
-
+local playerTrackedMetatable = {
 }
 
-function Invoke.updateSneaking(plr)
-    if not plr:isLoaded() then 
-       return 
-    end
+function playerTrackedMetatable:update(plr,truth)
+    
+    
     local name = plr:getUUID()
-    if plr:isCrouching() then
-        areSneaking[name] = (areSneaking[name] or 0) + 1
+    if truth then
+        self[name] = (self[name] or 0) + 1
     else
-        if areSneaking[name] == 0 then
-            areSneaking[name] = nil
-        elseif areSneaking[name] ~= nil then
-            areSneaking[name] = 0
+        if self[name] == 0 then
+            self[name] = nil
+        elseif self[name] ~= nil then
+            self[name] = 0
         end
-    end
+    end 
 end
 
-function Invoke.startedSneaking(plr)
-    if not plr:isLoaded() then 
-       return 
-    end
-    local name = plr:getUUID()
-    return areSneaking[name] == 1
-end
 
-function Invoke.stoppedSneaking(plr)
-    if not plr:isLoaded() then 
-       return 
+function playerTrackedMetatable:active(plr)
+    if not plr:isLoaded() then
+       return
     end
     local name = plr:getUUID()
-    return areSneaking[name] == 0
+    return self[name] ~= nil
 end
 
-function Invoke.sneaking(plr)
+function playerTrackedMetatable:inactive(plr)
+    if not plr:isLoaded() then
+       return
+    end
+    local name = plr:getUUID()
+    return self[name] == nil
+end
+
+
+function playerTrackedMetatable:started(plr)
     if not plr:isLoaded() then
        return 
     end
     local name = plr:getUUID()
-    return areSneaking[name] ~= nil
+    return self[name] == 1
 end
+
+function playerTrackedMetatable:stopped(plr)
+    if not plr:isLoaded() then
+       return
+    end
+    local name = plr:getUUID()
+    return self[name] == 0
+end
+function playerTrackedMetatable:changed(plr)
+    if not plr:isLoaded() then
+       return
+    end
+    local name = plr:getUUID()
+    return (self[name] == 0) or (self[name] == 1)
+end
+
+playerTrackedMetatable.__index = playerTrackedMetatable
+
+
+-- ---a function
+-- ---@param key string
+-- ---@param func fun(self:Invoke,value:table,plr:Entity):...
+-- function Invoke:registerCondition(key,func)
+--     Invoke:register(key,function (self, value, plr)
+--         if func(self,value, plr) then
+--             return self:materializeBranch(value,plr)
+--         end
+--     end)
+-- end
+
+Invoke.playerTrackedFuncs = {}
+Invoke.triggers = {}
+---comment
+---@param key string
+---@param func fun(plr:Entity):boolean
+function Invoke.registerPlayerTracked(key,func)
+    Invoke.playerTrackedFuncs[key] = func
+    Invoke.triggers[key] = setmetatable({},playerTrackedMetatable)
+    
+    func = nil
+    local w =  Invoke.triggers[key]
+
+    Invoke:register("on."..key,function (self, value, plr)
+        if w:started(plr) then
+            return self:materializeBranch(value,plr)
+        end
+    end)
+    Invoke:register("while."..key,function (self, value, plr)
+        if w:active(plr) then
+            return self:materializeBranch(value,plr)
+        end
+    end)
+    Invoke:register("unless."..key,function (self, value, plr)
+        if w:inactive(plr) then
+            return self:materializeBranch(value,plr)
+        end
+    end)
+    Invoke:register("off."..key,function (self, value, plr)
+        if w:stopped(plr) then
+            return self:materializeBranch(value,plr)
+        end
+    end)
+    
+    Invoke:register("change."..key,function (self, value, plr)
+        if w:changed(plr) then
+            return self:materializeBranch(value,plr)
+        end
+    end)
+end
+function Invoke.updatePlayerTracked(players)
+    
+    local players = players or world.getPlayers()
+    for name, plr in pairs(players) do
+        if plr:isLoaded() then
+            local name = plr:getUUID()
+            for key, func in pairs(Invoke.playerTrackedFuncs) do
+                Invoke.triggers[key]:update(plr,func(plr))
+            end
+        end
+    end
+end
+
+Invoke.registerPlayerTracked("sneak",figuraMetatables.EntityAPI.__index.isSneaking)
+
+Invoke.registerPlayerTracked("offhand",function (plr)
+    local item = plr:getItem(2)
+    return item.id == "create:clipboard"
+end)
+
+
+-- Invoke:register("onSneak",function (self, value)
+--     if Invoke.startedSneaking(self.plr) then
+--         self:runTable(value,self.plr)
+--     end
+-- end)
+
+
+
+Invoke:register("gsub",function (self, value)
+    local pattern = value[1] or value.pattern or value.p
+    local repl = value[2] or value.repl or value.r
+    local rec = value[3] or value.rec
+    if type(pattern) == "string" and  type(repl) == "string" then
+        self:addgsub(pattern,repl,nil,rec)
+    end
+end)
+
+
+
+
+Invoke:registerKeyword("cancel",function (self, rest, plr)
+    if rest == "page" then
+        self:cancelPage()
+    else
+        self:cancelEarly()
+    end
+end)
+
+
+Invoke:register("and",function (self, value, plr)
+    local out
+    logTable(value,2)
+    if type(value) == "table" then
+        for index, value in ipairs(value) do
+            out = self:materializeBranch(value,plr)
+            log(index,out)
+            if not out then
+                break
+            end
+        end
+    end
+    return out
+end)
+

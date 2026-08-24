@@ -20,7 +20,8 @@
         "vectors",
         "avatar",
         "renderer",
-        "parseJson"
+        "parseJson",
+        "figuraMetatables"
     ],
     "Lua.diagnostics.disable": [
         "duplicate-set-field"

@@ -67,11 +67,13 @@ end
 Invoke.hostname = "okkokko"
 
 
+--- todo: when a line is parsed wrong, the clipboard will stop execution until it is reopened
+
 ---comment
 ---@param text string
 function Invoke:parse_line(text)
     if type(text) ~= "string" then
-        log("not text",type(text),text)
+        self:logUnexpected("not text",type(text),text)
         return
     end
     local _, _, minus, name, rest = string.find(text,"(%-?)invoke%s+(%S*)%s+(.*)$")
@@ -93,19 +95,22 @@ function Invoke:parse_line(text)
         return dt
     else
         -- logTable(dt)
-        log(dt,"\n",rest,"\n",text)
+        self:logParseError(dt,"\n",rest,"\n",text)
         -- log(rest)
     end
 end
 
 Invoke.functions = {}
 -- Invoke.keywords = {}
+Invoke.function_docs = {}
 
 ---a function
 ---@param key string
 ---@param func fun(self:Invoke,value:table,rest:string,plr:Entity):...
-function Invoke:register(key,func)
+---@param doc string?
+function Invoke:register(key,func,doc)
     self.functions[key] = func
+    self.function_docs[key] = doc
 end
 function Invoke:run(key,tbl,rest,plr)
     if self.functions[key] then
@@ -113,7 +118,7 @@ function Invoke:run(key,tbl,rest,plr)
         if succ then
             return val
         else
-            log(val)
+            self:log(val)
         end
     end
 end
@@ -134,8 +139,10 @@ end
 --- rest is the captured part: "key(.sub1.sub2)"
 ---@param key string
 ---@param func fun(self:Invoke,tbl:table,rest:string,plr:Entity):unknown?
-function Invoke:registerKeyword(key,func)
+---@param doc string?
+function Invoke:registerKeyword(key,func,doc)
     self.functions[key] = func
+    self.function_docs[key] = doc
 end
 
 ---currently calls the key with value={}
@@ -229,15 +236,31 @@ function Invoke:substitute(text,page)
     for index, value in ipairs(self.substitutions) do
         local count
         if ((not self.frozengsub) or self.frozengsub >= index) and ((not value.page) or value.page == page) then
-            -- log(":", value.pattern, value.repl)
-            -- log("+",text)
+            self:logSubstitution(":", value.pattern, value.repl)
+            self:logSubstitution("+",text)
             repeat
                 text, count = string.gsub(text,value.pattern,value.repl)
-                -- log("-",text)
+                self:logSubstitution("-",text)
             until (not value.rec) or count == 0
         end
     end
     return text
+end
+
+
+function Invoke:logSubstitution(...)
+    -- return log(...)
+end
+
+function Invoke:pageTagPresent(page,tag)
+    local w = page and page[1]
+    if not (w and w.checked == 0) then
+        return false
+    end
+    local text = w.text
+    local st,en, q = string.find(text,tag)
+    return not not st
+    
 end
 
 
@@ -248,7 +271,7 @@ function Invoke:isPageActive(index)
         return true
     end
     local page = self.content.pages[index]
-    if page and page[1] and ((page[1].text == globalPageTag) and (page[1].checked == 0)) then
+    if self:pageTagPresent(page,globalPageTag) then
         return true
     end
     return false
@@ -335,6 +358,24 @@ function Invoke.readPlayers()
 
     end
 end
+
+function Invoke:log(...)
+    return log(...)
+end
+
+function Invoke:logUnexpected(...)
+    return log(...)
+end
+
+function Invoke:logParse(...)
+    return log(...)
+end
+
+function Invoke:logParseError(...)
+    return log(...)
+end
+
+
 
 
 events.WORLD_TICK:register(Invoke.readPlayers)

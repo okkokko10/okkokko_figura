@@ -30,6 +30,9 @@ LOG_DISABLE = true
 local function appendLogText(text,silent) 
     if silent then return text end
     history = (text or "nil printed") .. "\n" .. history
+    if history:len() > 10000 then
+        history = string.sub(history,1,10000)
+    end
     logText:setText(history)
     return text
 end

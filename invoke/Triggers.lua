@@ -87,33 +87,36 @@ function Invoke.registerPlayerTracked(key,func)
     func = nil
     local w =  Invoke.triggers[key]
 
-    Invoke:register("on."..key,function (self, value, plr)
-        if w:started(plr) then
-            return self:materializeBranch(value,plr)
-        end
-    end)
-    Invoke:register("while."..key,function (self, value, plr)
-        if w:active(plr) then
-            return self:materializeBranch(value,plr)
-        end
-    end)
-    Invoke:register("unless."..key,function (self, value, plr)
-        if w:inactive(plr) then
-            return self:materializeBranch(value,plr)
-        end
-    end)
-    Invoke:register("off."..key,function (self, value, plr)
-        if w:stopped(plr) then
-            return self:materializeBranch(value,plr)
-        end
-    end)
     
-    Invoke:register("change."..key,function (self, value, plr)
-        if w:changed(plr) then
-            return self:materializeBranch(value,plr)
-        end
-    end)
 end
+
+Invoke:register("on",function  (self, value, rest, plr)
+    if Invoke.triggers[rest] and Invoke.triggers[rest]:started(plr) then
+        return (not value) or self:materializeBranch(value,plr)
+    end
+    end)
+Invoke:register("while",function  (self, value, rest, plr)
+    if Invoke.triggers[rest] and Invoke.triggers[rest]:active(plr) then
+        return (not value) or self:materializeBranch(value,plr)
+    end
+end)
+Invoke:register("unless",function  (self, value, rest, plr)
+    if Invoke.triggers[rest] and Invoke.triggers[rest]:inactive(plr) then
+        return (not value) or self:materializeBranch(value,plr)
+    end
+end)
+Invoke:register("off",function  (self, value, rest, plr)
+    if Invoke.triggers[rest] and Invoke.triggers[rest]:stopped(plr) then
+        return (not value) or self:materializeBranch(value,plr)
+    end
+end)
+
+Invoke:register("change",function  (self, value, rest, plr)
+    if Invoke.triggers[rest] and Invoke.triggers[rest]:changed(plr) then
+        return (not value) or self:materializeBranch(value,plr)
+    end
+end)
+
 function Invoke.updatePlayerTracked(players)
     
     local players = players or world.getPlayers()
@@ -143,7 +146,13 @@ end)
 
 
 
-Invoke:register("gsub",function (self, value)
+Invoke:register("gsub",function (self, value, rest, plr)
+    if rest == "freeze" then
+        self:freezegsub()
+    elseif rest == "unfreeze" then
+        self:unfreezegsub()
+    end
+    
     local pattern = value[1] or value.pattern or value.p
     local repl = value[2] or value.repl or value.r
     local rec = value[3] or value.rec
@@ -155,7 +164,7 @@ end)
 
 
 
-Invoke:registerKeyword("cancel",function (self, rest, plr)
+Invoke:registerKeyword("cancel",function  (self, value, rest, plr)
     if rest == "page" then
         self:cancelPage()
     else
@@ -164,9 +173,9 @@ Invoke:registerKeyword("cancel",function (self, rest, plr)
 end)
 
 
-Invoke:register("and",function (self, value, plr)
+Invoke:register("and",function  (self, value, rest, plr)
     local out
-    logTable(value,2)
+    logTable(value,3)
     if type(value) == "table" then
         for index, value in ipairs(value) do
             out = self:materializeBranch(value,plr)
@@ -175,7 +184,49 @@ Invoke:register("and",function (self, value, plr)
                 break
             end
         end
+    else
+        log(type(value))
     end
     return out
 end)
 
+--[[
+invoke okkokko gsub={p="^%s*>>",r="invoke okkokko "}
+; >> gsub = {p="%-%-(.*)$",r=""}
+;
+>> gsub ={ p="<|(.*)$", r="={ %1 }",rec=true}
+
+invoke okkokko gsub={p="^%s*>>",r="invoke okkokko "}
+;>> gsub.freeze ={ p="$", r="ö"}
+;>> gsub ={ p="([%]}])", r="ö%1"}
+;>> gsub ={ p="([%[{])", r="%1ä"}
+;>> gsub ={ p="<|(.-%bäö.-)ö", r="={ä %1 ö}",rec=true}
+;>> gsub.unfreeze ={ p="[äö]", r=""}
+
+
+@`
+
+invoke okkokko gsub={p="^%s*>>",r="invoke okkokko "}
+;>> gsub.freeze ={ p="$", r="`"}
+;>> gsub ={ p="([%]}])", r="`%1"}
+;>> gsub ={ p="([%[{])", r="%1@"}
+;>> gsub ={ p="<|(.-%b@`.-`)", r="={@ %1 `}",rec=true}
+;>> gsub.unfreeze ={ p="[@`]", r=""}
+
+
+invoke okkokko gsub={p="^%s*>>",r="invoke okkokko "}
+;>> gsub.freeze ={ p="$", r="`"}
+;>> gsub ={ p="([%]}])", r="`%1"}
+;>> gsub ={ p="([%[{])", r="%1@"}
+;>> gsub ={ p="<|(.-`)", r="={ %1 `}",rec=true}
+;>> gsub.unfreeze ={ p="[@`]", r=""}
+
+
+
+invoke okkokko gsub={p="^%s*>>",r="invoke okkokko "}
+;>> gsub ={ p="<|(.*)$", r="={ %1 }",rec=true}
+;>> gsub = {p='SL%s*=%s*(%b{})',r= ' sub={r=",\n",p=",",s=%1}'}
+
+
+
+]]

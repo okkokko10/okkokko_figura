@@ -93,7 +93,7 @@ function Invoke:parse_line(text)
         return dt
     else
         -- logTable(dt)
-        log(dt,rest,text)
+        log(dt,"\n",rest,"\n",text)
         -- log(rest)
     end
 end
@@ -103,13 +103,13 @@ Invoke.functions = {}
 
 ---a function
 ---@param key string
----@param func fun(self:Invoke,value:table,plr:Entity):...
+---@param func fun(self:Invoke,value:table,rest:string,plr:Entity):...
 function Invoke:register(key,func)
     self.functions[key] = func
 end
-function Invoke:run(key,tbl,plr)
+function Invoke:run(key,tbl,rest,plr)
     if self.functions[key] then
-        local succ, val = pcall(self.functions[key],self,tbl,plr)
+        local succ, val = pcall(self.functions[key],self,tbl,rest or "",plr)
         if succ then
             return val
         else
@@ -124,7 +124,7 @@ end
 function Invoke:runTable_(tbl,plr)
     local out
     for key, value in pairs(tbl) do
-        out = self:run(key,value,plr)
+        out = self:materializeBranch(key,plr,value)
     end
     return out
 end
@@ -133,20 +133,22 @@ end
 --- currently identical to :register
 --- rest is the captured part: "key(.sub1.sub2)"
 ---@param key string
----@param func fun(self:Invoke,rest:string,plr:Entity):unknown?
+---@param func fun(self:Invoke,tbl:table,rest:string,plr:Entity):unknown?
 function Invoke:registerKeyword(key,func)
     self.functions[key] = func
 end
 
 ---currently calls the key with value={}
 ---@param word string|table
-function Invoke:materializeBranch(word,plr)
+function Invoke:materializeBranch(word,plr,tbl)
+    if not word then return end
     if type(word) == "table" then
         return self:runTable_(word,plr or self.plr)
     end
     local _,_,start,rest = string.find(word,"^([^%.]*)%.?(.*)$")
     if self.functions[start] then
-        return self:run(start,rest,plr or self.plr)
+        -- log(start,rest)
+        return self:run(start,tbl,rest,plr or self.plr)
     else
         return word
     end
@@ -214,12 +216,24 @@ function Invoke:addgsub(pattern,repl,page,rec)
     self.substitutions[#self.substitutions+1] = {pattern=pattern,repl=repl,page=page,rec=rec}
 end
 
+--- makes it so gsub doesn't affect things until unfreezegsub is called.
+--- allows making multiple gsubs that would error when partially applied
+function Invoke:freezegsub()
+    self.frozengsub = #self.substitutions
+end
+function Invoke:unfreezegsub()
+    self.frozengsub = nil
+end
+
 function Invoke:substitute(text,page)
     for index, value in ipairs(self.substitutions) do
         local count
-        if (not value.page) or value.page == page then
+        if ((not self.frozengsub) or self.frozengsub >= index) and ((not value.page) or value.page == page) then
+            -- log(":", value.pattern, value.repl)
+            -- log("+",text)
             repeat
                 text, count = string.gsub(text,value.pattern,value.repl)
+                -- log("-",text)
             until (not value.rec) or count == 0
         end
     end

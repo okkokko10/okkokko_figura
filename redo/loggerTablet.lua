@@ -25,7 +25,7 @@ local history = ""
 
 local oldLogTable = logTable
 
-LOG_DISABLE = true
+LOG_DISABLE = false
 
 local function appendLogText(text,silent) 
     if silent then return text end

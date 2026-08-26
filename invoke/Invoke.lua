@@ -76,7 +76,7 @@ function Invoke:parse_line(text)
         self:logUnexpected("not text",type(text),text)
         return
     end
-    local _, _, minus, name, rest = string.find(text,"(%-?)invoke%s+(%S*)%s+(.*)$")
+    local _, _, minus, name, rest = string.find(text,"^%s*(%-?)invoke%s+(%S*)%s+(.*)$")
     -- if not rest then
     --     _, _, minus, rest = string.find(text,"(%-?)%>%>%s+(.*)$")
     --     name = Invoke.hostname
@@ -102,15 +102,54 @@ end
 
 Invoke.functions = {}
 -- Invoke.keywords = {}
+---@type {[string] : FunctionDoc}
 Invoke.function_docs = {}
+
+---@class FunctionDoc
+---@field docs {text: string?, rest:string?, value:any?,  example:string?}[]
+---@field alt_keys string[]
+---@field invoke Invoke
+---@field func fun()
+local function_metatable = {
+}
+function_metatable.__index = function_metatable
+
+---@param tbl {text: string?, rest:string?, value:any?, example:string?}
+function function_metatable:addDoc(tbl)
+    self.docs[#self.docs+1] = tbl
+    return self
+end
+
+---@param name string
+---@return FunctionDoc
+function function_metatable:addAlternateNames(name,...)
+    for index, value in ipairs({name,...}) do
+        self.alt_keys[#self.alt_keys+1] = value
+        self.invoke:_registerDoc(value,self)
+    end
+    return self
+end
+function function_metatable:explain()
+    return toJson({docs = self.docs, alternative_keys = self.alt_keys[1] and self.alt_keys})
+end
+
+function Invoke:_registerDoc(key,doc)
+    if self.functions[key] then
+        error("multiple assignments for the same function name: " .. tostring(key))
+    end
+    self.functions[key] = doc.func
+    self.function_docs[key] = doc
+    return doc
+end
 
 ---a function
 ---@param key string
 ---@param func fun(self:Invoke,value:table,rest:string,plr:Entity):...
----@param doc string?
-function Invoke:register(key,func,doc)
-    self.functions[key] = func
-    self.function_docs[key] = doc
+---@return FunctionDoc
+function Invoke:register(key,func)
+    return self:_registerDoc(key,
+        setmetatable({invoke=self,key=key,docs={},alt_keys={},func=func},function_metatable)
+    )
 end
 function Invoke:run(key,tbl,rest,plr)
     if self.functions[key] then
@@ -139,10 +178,8 @@ end
 --- rest is the captured part: "key(.sub1.sub2)"
 ---@param key string
 ---@param func fun(self:Invoke,tbl:table,rest:string,plr:Entity):unknown?
----@param doc string?
-function Invoke:registerKeyword(key,func,doc)
-    self.functions[key] = func
-    self.function_docs[key] = doc
+function Invoke:registerKeyword(key,func)
+    return self:register(key,func)
 end
 
 ---currently calls the key with value={}
@@ -231,16 +268,21 @@ end
 function Invoke:unfreezegsub()
     self.frozengsub = nil
 end
-
+Invoke.max_substitutions = 0x400
 function Invoke:substitute(text,page)
     for index, value in ipairs(self.substitutions) do
         local count
+        local total_count = 0
         if ((not self.frozengsub) or self.frozengsub >= index) and ((not value.page) or value.page == page) then
             self:logSubstitution(":", value.pattern, value.repl)
             self:logSubstitution("+",text)
             repeat
                 text, count = string.gsub(text,value.pattern,value.repl)
-                self:logSubstitution("-",text)
+                total_count = total_count + count
+                self:logSubstitution("-",text,count)
+                if total_count > self.max_substitutions then
+                    error("exceeded max substitution limit of " .. self.max_substitutions .. "for one line: " .. text)
+                end
             until (not value.rec) or count == 0
         end
     end
@@ -377,22 +419,23 @@ end
 
 
 
+if avatar:getPermissionLevel() == "MAX" then
+    events.WORLD_TICK:register(Invoke.readPlayers)
+end
 
-events.WORLD_TICK:register(Invoke.readPlayers)
 
+-- events.SKULL_RENDER:register(function (delta, block, item,...)
+--     -- if block then
+--     --     Invoke:createInfo(block:getPos(),"okkokko's skull")
+--     -- end
+--     -- log(delta,block,item,...)
+--     if not player:isLoaded() then return end
+--     -- if Invoke.startedSneaking(player) then
+--     --     -- log(infoSkull:partToWorldMatrix())
+--     -- end
 
-events.SKULL_RENDER:register(function (delta, block, item,...)
-    -- if block then
-    --     Invoke:createInfo(block:getPos(),"okkokko's skull")
-    -- end
-    -- log(delta,block,item,...)
-    if not player:isLoaded() then return end
-    -- if Invoke.startedSneaking(player) then
-    --     -- log(infoSkull:partToWorldMatrix())
-    -- end
-
-    -- return true
-end)
+--     -- return true
+-- end)
 -- events.SKULL_RENDER:register(Invoke.readPlayers)
 
 

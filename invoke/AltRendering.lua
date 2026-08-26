@@ -37,3 +37,6 @@ Invoke.infosPart = infoSkull:newPart("infos"):setPreRender(
     end
 ):newPart("root")
 
+if true then
+    models:newPart("infosWorld","World"):addChild(Invoke.infosPart)
+end

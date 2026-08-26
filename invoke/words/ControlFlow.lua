@@ -17,4 +17,14 @@ Invoke:register("and",function  (self, value, rest, plr)
         self:log(type(value))
     end
     return out
-end)
+end):addDoc{
+    text = "returns <valueN> if all are true. has short-circuiting, so a falsey stops latter arguments from evaluating",
+    value = "[<value1>,<value2>,...<valueN>]"
+}
+
+
+
+
+--- todo: set.x = <value>,  var.x,   filter.x, map.x, bind the variable x to use with var.x
+
+--- todo: filter = {f = }

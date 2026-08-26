@@ -61,18 +61,46 @@ function Invoke:getInfos(pos)
 
 end
 
-function Utils.table.getNest(tbl,path)
+-- function Utils.table.getNest(tbl,path)
     
-    for w in string.gmatch(path,"[^%.]+") do
-        if type(tbl) == "table" then
-            tbl = tbl[w]
-        else
-            return nil
+--     for w in string.gmatch(path,"[^%.]+") do
+--         if type(tbl) == "table" then
+--             tbl = tbl[w]
+--         else
+--             return nil
+--         end
+--     end
+--     return tbl
+    
+-- end
+
+
+function Utils.table.getNest(tbl,path)
+    local tp = type(path)
+    if tp == "string" then
+        for w in string.gmatch(path,"[^%.]+") do
+            if type(tbl) == "table" then
+                tbl = tbl[w]
+            else
+                return nil
+            end
         end
+    elseif tp == "table" then
+        for index, value in ipairs(path) do
+            if type(tbl) == "table" then
+                tbl = Utils.table.getNest(tbl,value)
+            else
+                return nil
+            end
+        end
+    else
+        return tbl[path]
     end
     return tbl
     
 end
+
+
 
 --- todo: instead of rest being the same as the assigned, have both. plr.okkokko={}
 
@@ -99,9 +127,9 @@ function Utils.table.getKeys(tbl)
 end
 
 
-Invoke:register("display",function  (self, value, rest, plr)
+local w = Invoke:register("display",function  (self, value, rest, plr)
     local w = self:materializeBranch(value.text)
-    local o = self:materializeBranch(value.on)
+    local o = self:materializeBranch(value.on or value.target)
     if not o then return end
     o
     :newText("text")
@@ -112,6 +140,17 @@ Invoke:register("display",function  (self, value, rest, plr)
         :setOpacity(0.75)
 
 end)
+w:addDoc{
+    text = "adds a TextTask to target with text",
+    value = "{text=<text>, on=<target>}",
+    types = {
+        text = "string",
+        on = "ModelPart"
+    },
+    alts = {
+        on = {"target"}
+    }
+}
 
 Invoke:register("clear",function  (self, value, rest, plr)
     local w = self:materializeBranch(value)
@@ -127,6 +166,5 @@ Invoke:register("clear",function  (self, value, rest, plr)
     end
 
 end)
-
 
 

@@ -74,11 +74,31 @@ end
     
 -- end
 
-
-function Utils.table.getNest(tbl,path)
+--- basically returns the result of `"tbl." .. path`:
+--- getNest({x={y={z=5}}},"x.y.z") == 5    
+--- 
+--- if path is an array, it is flattened:
+---     getNest(tbl,{A,...}) == getNest(getNest(tbl,A),{...})
+--- if path is not a string or table, returns tbl[path]
+--- if substitutions is present, the key "$xyz" is replaced with substitutions[xyz], but this is literal, and is not split by .
+---   ^ this feature is not used anywhere yet
+---@param tbl table
+---@param path string|table|any
+---@param substitutions table?
+---@return any
+function Utils.table.getNest(tbl,path,substitutions)
+    if substitutions and type(substitutions) ~="table" then
+        --- what should happen
+    end
     local tp = type(path)
     if tp == "string" then
         for w in string.gmatch(path,"[^%.]+") do
+            if substitutions then
+                local _,_,d = string.find(w,"^%s*%$%s*(.-)%s*$") -- finds "key word" in " $ key word  "
+                if d then
+                    w = substitutions[tonumber(d) or d]
+                end
+            end
             if type(tbl) == "table" then
                 tbl = tbl[w]
             else
@@ -88,7 +108,7 @@ function Utils.table.getNest(tbl,path)
     elseif tp == "table" then
         for index, value in ipairs(path) do
             if type(tbl) == "table" then
-                tbl = Utils.table.getNest(tbl,value)
+                tbl = Utils.table.getNest(tbl,value,substitutions)
             else
                 return nil
             end

@@ -86,8 +86,6 @@ function Invoke.registerPlayerTracked(key,func)
     
     func = nil
     local w =  Invoke.triggers[key]
-
-    
 end
 
 Invoke:register("on",function  (self, value, rest, plr)
@@ -95,27 +93,36 @@ Invoke:register("on",function  (self, value, rest, plr)
         return (not value) or self:materializeBranch(value,plr)
     end
     end)
+:setSection("triggers")
+
 Invoke:register("while",function  (self, value, rest, plr)
     if Invoke.triggers[rest] and Invoke.triggers[rest]:active(plr) then
         return (not value) or self:materializeBranch(value,plr)
     end
 end)
+:setSection("triggers")
 Invoke:register("unless",function  (self, value, rest, plr)
     if Invoke.triggers[rest] and Invoke.triggers[rest]:inactive(plr) then
         return (not value) or self:materializeBranch(value,plr)
     end
 end)
+:setSection("triggers")
 Invoke:register("off",function  (self, value, rest, plr)
     if Invoke.triggers[rest] and Invoke.triggers[rest]:stopped(plr) then
         return (not value) or self:materializeBranch(value,plr)
     end
 end)
+:setSection("triggers")
 
 Invoke:register("change",function  (self, value, rest, plr)
     if Invoke.triggers[rest] and Invoke.triggers[rest]:changed(plr) then
         return (not value) or self:materializeBranch(value,plr)
     end
 end)
+:setSection("triggers")
+
+-- todo: make these accept any variable
+
 
 function Invoke.updatePlayerTracked(players)
     

@@ -37,6 +37,8 @@ Invoke.infosPart = infoSkull:newPart("infos"):setPreRender(
     end
 ):newPart("root")
 
-if true then
+if false then
     models:newPart("infosWorld","World"):addChild(Invoke.infosPart)
 end
+
+Utils.ID.field.InvokeVisual = Invoke.infosPart

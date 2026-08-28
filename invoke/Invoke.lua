@@ -96,6 +96,7 @@ function Invoke:parse_line(text)
     else
         -- logTable(dt)
         self:logParseError(dt,"\n",rest,"\n",text)
+        self:stop_for_player()
         -- log(rest)
     end
 end
@@ -104,12 +105,15 @@ Invoke.functions = {}
 -- Invoke.keywords = {}
 ---@type {[string] : FunctionDoc}
 Invoke.function_docs = {}
+Invoke.function_docs_by_section = {}
 
 ---@class FunctionDoc
+---@field key string
 ---@field docs {text: string?, rest:string?, value:any?,  example:string?}[]
 ---@field alt_keys string[]
 ---@field invoke Invoke
 ---@field func fun()
+---@field section string?
 local function_metatable = {
 }
 function_metatable.__index = function_metatable
@@ -129,6 +133,17 @@ function function_metatable:addAlternateNames(name,...)
     end
     return self
 end
+
+---@param section string
+function function_metatable:setSection(section)
+    self.section = section
+    if not self.invoke.function_docs_by_section[section] then
+        self.invoke.function_docs_by_section[section] = {}
+    end
+    self.invoke.function_docs_by_section[section][#self.invoke.function_docs_by_section[section]] = self.key
+    return self
+end
+
 function function_metatable:explain()
     return toJson({docs = self.docs, alternative_keys = self.alt_keys[1] and self.alt_keys})
 end
@@ -182,6 +197,10 @@ function Invoke:registerKeyword(key,func)
     return self:register(key,func)
 end
 
+
+--- todo: add tags that set the result to a variable, and... 
+---     could this be implemented by wrapping tbl in {Literal=<tbl>}
+---     is the start.rest split done with arguments? 
 ---currently calls the key with value={}
 ---@param word string|table
 function Invoke:materializeBranch(word,plr,tbl)
@@ -300,7 +319,7 @@ function Invoke:pageTagPresent(page,tag)
         return false
     end
     local text = w.text
-    local st,en, q = string.find(text,tag)
+    local st, en, q = string.find(text,tag)
     return not not st
     
 end
@@ -344,13 +363,39 @@ function Invoke:runPage(index)
         end
     end
 end
+Invoke.erroredPlayers = {}
+
+function Invoke:stop_for_player()
+    if self.plr:isLoaded() then
+        Invoke.erroredPlayers[self.plr:getUUID()] = true
+    end
+end
+function Invoke:is_stopped()
+    if self.plr:isLoaded() then
+        return Invoke.erroredPlayers[self.plr:getUUID()]
+    else
+        return true
+    end
+end
+
+function Invoke:resume_for_player()
+    if self.plr:isLoaded() then
+        Invoke.erroredPlayers[self.plr:getUUID()] = nil
+    end
+end
 
 ---comment
 ---@param content ClipboardContent
 ---@param plr Entity
 function Invoke:contents(content,plr)
     if not content then return end
-    if content.type ~= "written" then return end
+    if content.type ~= "written" then
+        self:resume_for_player()
+        return
+    end
+    if self:is_stopped() then
+        return
+    end
     self:reinitialize()
     local pages = content.pages
     for i = 1, #pages do
@@ -397,7 +442,6 @@ function Invoke.readPlayers()
             pcall(Invoke.contents,Invoke.newInstance(content,plr),content,plr)
             -- Invoke:contents(content,plr)
         end
-
     end
 end
 
@@ -416,6 +460,7 @@ end
 function Invoke:logParseError(...)
     return log(...)
 end
+
 
 
 

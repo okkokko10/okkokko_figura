@@ -401,7 +401,9 @@ mainPage:newAction()
     :onLeftClick(function()
       pings.dismissSharedKineticsPath(true)
     end):onRightClick(function()
-      host:setClipboard(KineticsPath.firstNBT)
+      if type(KineticsPath.firstNBT) == "string" then
+        host:setClipboard(KineticsPath.firstNBT)
+      end
     end)
 
 

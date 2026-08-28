@@ -207,6 +207,9 @@ function Positioning.functions.coordinate(pos)
         local cm = Positioning._CoordinateMatrices[pos]
         cm.old = cm.current
         cm.current, cm.loaded = Utils.Sublevel.sublevelPositionMatrix(pos)
+        if not cm.loaded then
+            cm.current = cm.old
+        end
     end, function (delta, ctx, part)
         local cm = Positioning._CoordinateMatrices[pos]
         if cm and cm.loaded then

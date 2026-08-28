@@ -80,13 +80,21 @@ function Positioning.functions.followEntity(entity,followRot)
         if ent then entity = ent end
         if not t then return Positioning.setActive(part,false) end
         -- root:setPreRender(function (delta,ctx,part) part:setPos(16*(player:getPos(delta))) end)
-        part:setPos(PS*(entity:getPos(delta)))
+        local b = entity:getPos(delta)
+        if b then
+            part:setPos(PS*b)
+        end
         if followRot then
             if (followRot == "body") then
-                part:setRot( 0,-entity:getBodyYaw(delta))
+                local a = entity:getBodyYaw(delta)
+                if a then
+                    part:setRot( 0,-a)
+                end
             else
                 local rot = entity:getRot(delta)
-                part:setRot( (followRot == 2) and rot.x or 0,-rot.y)
+                if rot then
+                    part:setRot( (followRot == 2) and rot.x or 0,-rot.y)
+                end
             end
             
         end
@@ -105,12 +113,49 @@ function Positioning.functions.followEntityEyes(entity)
         if not t then return Positioning.setActive(part,false) end
 
         local eyePos = Utils.entity.entityEyePos(entity,delta)
-        part:setPos(PS*(eyePos))
+        if eyePos then
+            part:setPos(PS*(eyePos))
+        end
         local rot = entity:getRot(delta)
-        part:setRot(rot.x,-rot.y)
+        if rot then
+            part:setRot(rot.x,-rot.y)
+        end
         Positioning.setActive(part,true)
     end
 end
+
+
+--- in preRender, as a root World part.
+---@param entity Entity
+---@param followRot nil|number|"eyes"|"body"
+---@return PreRenderFunction
+function Positioning.functions.followEntityRot(entity,followRot)
+    if followRot == "eyes" then
+        return Positioning.functions.followEntityEyes(entity)
+    end
+    return function(delta, ctx, part)
+
+        local ent, t = materializeEntity(entity)
+        if ent then entity = ent end
+        if not t then return Positioning.setActive(part,false) end
+        
+        if (followRot == "body") then
+            local a = entity:getBodyYaw(delta)
+            if a then
+                part:setRot( 0,-a)
+            end
+        else
+            local rot = entity:getRot(delta)
+            if rot then
+                part:setRot( (followRot == 2) and rot.x or 0,-rot.y)
+            end
+        end
+            
+        
+        Positioning.setActive(part,true)
+    end
+end
+
 
 
 
@@ -143,17 +188,32 @@ function Positioning.functions.worldRotation()
     return Positioning.functions._worldRotation
 end
 
-
+---@type {[Vector] : {old?: Matrix, current: Matrix, loaded: boolean}}
+Positioning._CoordinateMatrices = {}
 
 
 --- moves to the position. moves with sublevels.
+--- lerps matrices, which is not ideal.
+---@return fun() world_tick_function
 ---@return PreRenderFunction
 function Positioning.functions.coordinate(pos)
-
-    return function(delta, ctx, part)
-        
-        local mat, loaded = Utils.Sublevel.sublevelPositionMatrix(pos)
-        if loaded then
+    -- local matri = matrices.mat4()
+    -- local oldMatri = matri
+    -- local loaded = false
+    if not Positioning._CoordinateMatrices[pos] then
+        Positioning._CoordinateMatrices[pos] = {current = matrices.mat4()}
+    end
+    return function()
+        local cm = Positioning._CoordinateMatrices[pos]
+        cm.old = cm.current
+        cm.current, cm.loaded = Utils.Sublevel.sublevelPositionMatrix(pos)
+        if not cm.loaded then
+            cm.current = cm.old
+        end
+    end, function (delta, ctx, part)
+        local cm = Positioning._CoordinateMatrices[pos]
+        if cm and cm.loaded then
+            local mat = math.lerp(cm.old or cm.current,cm.current,delta)
             part:setMatrix(mat)
             Positioning.setActive(part,true)
         else
@@ -167,9 +227,15 @@ Positioning.make = {}
 
 
 
-function Positioning.make.coordinateFollower(pos,name)
-    return models:newPart(name or ("follows " ..Utils.vectorString(pos)),"World")
-            :setPreRender(Positioning.functions.coordinate(pos))
+function Positioning.make.coordinateFollower(pos,name,parent)
+    local nm = name or ("follows " ..Utils.vectorString(pos))
+    local onTick, onPreRender = Positioning.functions.coordinate(pos)
+    local tick_name = "tick_coordinate_" .. tostring(pos)
+    if events.WORLD_TICK:getRegisteredCount(tick_name) == 0 then
+        events.WORLD_TICK:register(onTick,tick_name)
+    end
+    return (parent or models):newPart(nm)
+        :setPreRender(onPreRender)
 end
 
 
@@ -177,10 +243,11 @@ end
 ---@param entity Entity
 ---@param name any
 ---@param followRot nil|number|"eyes"|"body"
+---@param onlyRot boolean?
 ---@return ModelPart
-function Positioning.make.entityFollower(entity,name,followRot)
+function Positioning.make.entityFollower(entity,name,followRot,onlyRot)
     return models:newPart(name or entity:getUUID(),"World")
-            :setPreRender(Positioning.functions.followEntity(entity,followRot))
+            :setPreRender((onlyRot and Positioning.functions.followEntityRot or Positioning.functions.followEntity)(entity,followRot))
 end
 
 --- common parts
@@ -196,7 +263,7 @@ Positioning.parts.PlayerFollowerYaw = Positioning.make.entityFollower(require"pl
 Positioning.parts.PlayerFollowerFull = Positioning.make.entityFollower(require"playerValues","PlayerFollowerFull",2):moveTo(Utils.ID.field.FollowMe)
 Positioning.parts.PlayerFollowerBody = Positioning.make.entityFollower(require"playerValues","PlayerFollowerBody","body"):moveTo(Utils.ID.field.FollowMe)
 
-Positioning.parts.MyBase = Positioning.parts.PlayerFollower:newPart("MyBase")
+Positioning.parts.MyBase = Positioning.parts.PlayerFollower:newPart("MyBase"):setPos(0,PS*3,0)
 
 Positioning.parts.Disabled = Utils.ID.field.FollowMe:newPart("Disabled"):setVisible(false)
 

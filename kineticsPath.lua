@@ -16,8 +16,6 @@ KineticsPath = {
   sourcePath = {}, -- {x,y,z,type}
 }
 
-local iconsKey = keybinds:newKeybind("show named item icons", "key.keyboard.z", true)
-
 
 ---@return vec3|nil
 function KineticsPath.getFirstPos()
@@ -46,21 +44,13 @@ function events.entity_init()
     models.pathRoot[i]
       :newPart("block")
       :newPart("pointing")
-    -- kineticsPath.modelPath[i].block_pointing1 = 
-    --   kineticsPath.modelPath[i].block_pointing
-    --   -- :newBlock("path"..i .. " block glass")
-    --   -- :setBlock("light_blue_stained_glass")
       :newItem("glass")
         :setItem("light_blue_stained_glass")
         :setPos(vec(0,0,8))
-
-        -- :setBlock("comparator")
         :setLight(15,15)
-        -- :setPos(-vec(1,1,1) * 16 / 2)
         :setScale(.5,.5,1)
     local text = main:newPart("text","BILLBOARD"):newText("text")
       :setLight(15,15)
-      -- :setPos(vec(1,1,0) * 16 / 2)
       :setText("NONE")
       :setWidth(16*4*3)
       :setScale(1/4)
@@ -68,8 +58,6 @@ function events.entity_init()
     if host:isHost() then
       text:setSeeThrough(true)
     end
-
-    
   end
   models.pathRoot
     :newPart("last"):setVisible(false)
@@ -81,52 +69,102 @@ function events.entity_init()
 
 end
 
-
-
-
-function KineticsPath.make(pos)
-
-    -- local block, hitPos, side = host:getPickBlock()
-    
-    ---@type KineticPathNode[]
-    local path = {}
-    for i = 1, KineticsPath.pathLength do
-      path[i] = {pos=pos}
-      
-      local block = world.getBlockState(pos)
-      local blockData = block:getEntityData()
-      if not blockData then break end
-      local network = blockData.Network
-      if not (network and network.Stress) then break end
-      path[i].network = network
-      local speed = blockData.Speed
-      local source = blockData.Source
-      if not source then
-        break
-      end
-
-      -- logTable(network,5)
-      -- log(speed)
-      local source_vec = vec(table.unpack(source))
-      pos = source_vec
-
-      -- source_vec = source_vec + 1/2
-      -- local sv = sableSublevelToWorld(source_vec)
-      -- log(sv)
-      -- models.target:setPos(sv*16)
-      
-    end
-    
-    -- if not (path[1] and path[1].network and path[1].network.Stress) then
-    --   path = {}
-    -- end
-
-
-
-    return path
+---not exact. relies on a (possibly unfounded) assumption that sublevels will not be over 1000 blocks in diameter
+--- not used for important logic here
+---returns true if both are in the world
+---@param pos1 Vector
+---@param pos2 Vector
+---@return boolean
+function Utils.Sublevel.areInSameSublevel(pos1,pos2)
+  if (Utils.Sublevel.isInSublevel(pos1) or Utils.Sublevel.isInSublevel(pos2)) then
+    return (pos1-pos2):lengthSquared() < 1000*1000
+  else
+    return true
+  end
+  
 end
 
----@class vec3: Vector
+
+-- todo: option to force camera to face toward path vertices, going through them.
+-- also, report both world and plot positions of a faraway connection.
+
+-- random thought: you can see the sublevel uuid using a swivel bearing?
+
+
+----@param path KineticPathNode[]?
+
+---
+
+--- todo: maybe abstract it so you can track more kinds of networks with it.
+---@param pos vec3
+---@param pathLength number?
+---@param noList boolean? if true, discards the intermediate path. todo: still saves the second-to-last to determine if the unloaded endpoint is in a different (sub)level
+---@return KineticPathNode[]
+---@return number length
+---@return Vector endpoint
+---@return Vector? penultimate_point
+---@return "exceeds_length"|"unloaded"|"not_block_entity"|"no_network"|"root_reached" status 
+function KineticsPath.make(pos,pathLength,noList)
+    pathLength = pathLength or KineticsPath.pathLength
+    ---@type KineticPathNode[]
+    local path = {}
+    local status = "exceeds_length"
+    local i1
+    local prevPos
+    for i = 1, pathLength do
+      i1 = i
+      if not noList then
+        path[i] = {pos=pos}
+      end
+      local block = world.getBlockState(pos)
+      ---@type {Network: {Id:number,Stress:number,Capacity:number,Size:number}?, Speed:number, Source:{[1]:number,[2]:number,[3]:number}? }?
+      local blockData = block:getEntityData()
+      if not blockData then
+        -- either not loaded, or something weirder (or just the first block. append "_start" to the status if i==1. or return the index).
+        -- todo: differentiate between being unloaded in the same level and in different levels
+        if block.id == "minecraft:void_air" then -- void_air exists in unloaded chunks and beyond the build height limits. so technically this branch could also occur when a source is somehow above the build height limit.
+          -- normal if on the ground, weird if the last vertex is on a sublevel.
+          -- todo: report somewhere on whether the last connection is across (sub)levels.
+          status = "unloaded"
+        else
+          -- it would be strange if this happened outside of i==1. a kinetic source that isn't a block entity.
+          status = "not_block_entity"
+        end
+        break
+      end
+      local network = blockData.Network
+      -- hm, technically this check doesn't have to be required, and if omitted could track other relationships where "Source" points toward a root. 
+      if not (network and network.Stress) then -- there exist nbt components titled "Network" other than kinetic networks, such as big radars data networks
+        --- block isn't in a kinetic network.
+        --- happens if it isn't an active kinetic block.
+        --- it would be odd if this happened outside i==1
+        status = "no_network"
+        break
+      end
+      if not noList then
+        path[i].network = network
+      end
+      local speed = blockData.Speed -- currently unused, but could be displayed.
+      local source = blockData.Source -- the position of the "parent" vertex.
+      if not source then
+        -- a kinetic network vertex that does not have a source is a root.
+        -- although I wonder, would it be possible for a network to have multiple roots?
+        -- todo maybe: check whether the network id depends on the root position, making the root unique.
+        status = "root_reached"
+        break
+      end
+      prevPos = pos
+      local source_vec = vec(table.unpack(source))
+      pos = source_vec
+    end
+    
+
+    return path,i1,pos,prevPos,status
+end
+
+---@alias vec3 Vector
+
+---@class Vector
 ---@field x number
 ---@field y number
 ---@field z number
@@ -137,43 +175,6 @@ end
 ---@field network? {Id:number,Stress:number,Capacity:number,Size:number}
 
 
--- kineticsPath.packingString = "dddLffl"
-
----comment
----@param node KineticPathNode
----@return "mat3"
-function KineticsPath.packNode(node)
-  local network = node.network or {}
-  -- return string.pack(kineticsPath.packingString,node.pos.x,node.pos.y,node.pos.z,node.network)
-  return matrices.mat3(node.pos,vec(network.Id or 0, network.Stress or 0,network.Capacity or 0),vec(network.Size or 0,0,0))
-end
-
----@param matr Matrix
----@return KineticPathNode
-function KineticsPath.unpackNode(matr)
-  return {pos = matr:getColumn(1), network = {Id = matr:getColumn(2)[1],Stress = matr:getColumn(2)[2],Capacity = matr:getColumn(2)[3],Size = matr:getColumn(3)[1]}}
-end
-
-function KineticsPath.packPath(path)
-  local packeds = {}
-  for i = 1, #path do
-    packeds[i] = KineticsPath.packNode(path[i])
-  end
-  return packeds
-  
-end
-
-function KineticsPath.unpackPath(packedPath)
-  local path = {}
-  for i = 1, #packedPath do
-    path[i] = KineticsPath.unpackNode(packedPath[i])
-  end
-  return path
-  
-end
-
-
--- function kineticsPath.
 
 
 function KineticsPath.pretty(network,oldNetwork,repeats)
@@ -370,60 +371,6 @@ end
 
 pings.localKineticsPath = localKineticsPath
 
----@deprecated
-function pings.newKineticsPath(isFinal,firstNBT,...)
-  local tbl = table.pack(...)
-
-  for i = 1, #tbl do
-    if not tbl[i] then
-      break
-    end
-    pingBuffer[#pingBuffer+1] = tbl[i]
-  end
-  if not isFinal then
-    return
-  end
-
-  -- log("if you can see this please tell me this number: " .. #tbl)
-  -- logTable(tbl)
-  local path = KineticsPath.unpackPath(pingBuffer)
-  pingBuffer = {}
-  -- logTable(path,3)
-  KineticsPath.setPath(path)
-  
-  KineticsPath.firstNBT = firstNBT
-
-  -- kineticsPath.updateRender()
-end
-
-local function pingHeavyKinetics ()
-  if host:isHost() then
-
-    local block, hitPos, side = host:getPickBlock()
-    
-    if not block or block:getID() == "minecraft:air" then
-      pings.newKineticsPath(true)
-    
-    else
-      local blockData = block:getEntityData()
-      local firstNBT = blockData and toJson(blockData.BlockEntityTag)
-      local path = KineticsPath.make(block:getPos())
-      local packedPath = KineticsPath.packPath(path)
-      local batch = 5
-      for i = 1, #packedPath, batch do
-        pings.newKineticsPath(false, nil, table.unpack(packedPath,i,i+batch-1))
-      end
-      pings.newKineticsPath(true, firstNBT)
-
-    end
-    -- kineticsPath.setPath(path)
-    -- log(block)
-    -- logTable(kineticsPath.sourcePath,5)
-    
-  end
-  
-end
-
 local function pingLightKinetics(shared,showNBT)
   if host:isHost() then
     local block, hitPos, side = host:getPickBlock()
@@ -454,7 +401,9 @@ mainPage:newAction()
     :onLeftClick(function()
       pings.dismissSharedKineticsPath(true)
     end):onRightClick(function()
-      host:setClipboard(KineticsPath.firstNBT)
+      if type(KineticsPath.firstNBT) == "string" then
+        host:setClipboard(KineticsPath.firstNBT)
+      end
     end)
 
 
@@ -488,33 +437,5 @@ function events.tick()
   end
   KineticsPath.updateRender()
 
-  -- models.compassRoot.compass:setPos(16*(player:getPos())):setRot(0,compassRotation,0)
-  -- models.compassRoot.compass
 
 end
-
--- function events.world_render(delta)
--- end
-
--- --render event, called every time your avatar is rendered
--- --it have two arguments, "delta" and "context"
--- --"delta" is the percentage between the last and the next tick (as a decimal value, 0.0 to 1.0)
--- --"context" is a string that tells from where this render event was called (the paperdoll, gui, player render, first person)
--- function events.render(delta, context)
-
---   -- kineticsPath.updateRender()
-
-
---   -- if iconsKey:isPressed() then
---   --   log(delta,context)
---   -- end
---   -- if context == "MINECRAFT_GUI" then
---   --   local windowScale = client.getScaledWindowSize()/client.getWindowSize()
---   --   local mous = client.getMousePos() * windowScale
---   --   -- models.model.Item:setPos((-mous):augmented(-10000))
-
-    
---   -- end
---   --code goes here
--- end
-

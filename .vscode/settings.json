@@ -19,7 +19,9 @@
         "events",
         "vectors",
         "avatar",
-        "renderer"
+        "renderer",
+        "parseJson",
+        "figuraMetatables"
     ],
     "Lua.diagnostics.disable": [
         "duplicate-set-field"

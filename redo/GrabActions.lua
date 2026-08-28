@@ -12,6 +12,7 @@ local airKey = keybinds:newKeybind("fix gizmo", "key.keyboard.x", false)
 
 function grabKey.press()
     if not player:isLoaded() then return end
+    if Grabbing.disable then return end
         
     local rc2 = Grabbing.raycastLook(Grabbing.Selectable)
     -- logTable(rc2)
@@ -60,10 +61,23 @@ function Actions.releaseToLook()
     local piv = client.getCameraPos()
 
     local block, pos, side = raycast:block(piv,piv + client.getCameraDir()*1000)
-    Actions.releaseToCoordinate(pos)
+    if block then
+        Actions.releaseToCoordinate(pos)
+    end
 
 
 end
+function Actions.releaseToLookCenter()
+    local piv = client.getCameraPos()
+
+    local block, pos, side = raycast:block(piv,piv + client.getCameraDir()*1000)
+    if block then
+        Actions.releaseToCoordinate(block:getPos())
+    end
+
+
+end
+
 
 
 -- function airKey.press()
@@ -107,6 +121,13 @@ page:newAction()
     :item("minecraft:green_wool")
     :hoverColor(0.9,0.9,0.9)
     :onLeftClick(Actions.releaseToCenter)
+    :onScroll(function ()
+        local pos = Utils.ID.field.TestObject:getPositionMatrix():apply(vec(0,0,0))/16
+        pos:applyFunc(math.floor)
+
+
+        pings.part_alter("TestObject",nil,matrices.mat4():translate((pos + 0.5)*16))
+    end)
 
 page:newAction()
     :title("release to world")
@@ -114,7 +135,35 @@ page:newAction()
     :hoverColor(0.9,0.9,0.9)
     :onLeftClick(Actions.releaseToWorld)
 page:newAction()
-    :title("release to world")
+    :title("release to look")
     :item("minecraft:blaze_rod")
     :hoverColor(0.9,0.9,0.9)
     :onLeftClick(Actions.releaseToLook)
+    :onRightClick(Actions.releaseToLookCenter)
+    :onScroll(function ()
+        pings.part_alter("TestObject",nil,matrices.mat4():translate(8,8,8))
+    end)
+page:newAction()
+    :title("toggle grab UI")
+    :item("minecraft:wooden_sword")
+    :hoverColor(0.9,0.9,0.9)
+    :onLeftClick(function ()
+        Grabbing.GUI:setVisible(false)
+    end)
+    :onRightClick(function ()
+        Grabbing.GUI:setVisible(true)
+    end)
+
+page:newAction()
+    :title("toggle grab")
+    :item("minecraft:iron_sword")
+    :hoverColor(0.9,0.9,0.9)
+    :onLeftClick(function ()
+        Grabbing.disable=true
+    end)
+    :onRightClick(function ()
+        Grabbing.disable=false
+        
+    end)
+
+-- /figura run pings.part_alter("TestObject",nil,matrices.mat4():translate(8,8,8))

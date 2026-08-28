@@ -241,7 +241,13 @@ local tablet2 = Tablet.newTablet("tablet2",{
             host:sendChatCommand("queue status")
         end
 
-    },{}
+    },{
+        text = "enable regular log",
+        onPress = function ()
+            LOG_DISABLE = false
+        end
+        
+    }
 })
 
 tablet2.part:moveTo(Positioning.parts.MyBase):setPos(PS*(0.1),PS*1.5,PS*2)

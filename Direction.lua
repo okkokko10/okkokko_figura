@@ -49,5 +49,9 @@ function Direction.toVector(dir)
     return Direction.vectors[dir]
 end
 
+function Direction.toEulerAngles(dir)
+    return Utils.math.directionToEulerAngle(Direction.toVector(dir))
+end
+
 
 return Direction

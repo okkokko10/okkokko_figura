@@ -27,10 +27,44 @@ Objects = {}
 
 local TestObject = Positioning.parts.MyBase:newPart("TestObject"):setPos(PS*1,PS/2,PS*3)
 Utils.ID.field.TestObject = TestObject
-TestObject:newItem("Item"):setItem("minecraft:glass")
+TestObject:newItem("Item"):setItem("minecraft:glass"):setScale(0.5)
 -- TestObject.part:addChild(vanilla_model.PLAYER)
 local TestCompass = Positioning.make.absoluteRot("wa",TestObject)
 TestCompass:newItem("Item"):setItem("minecraft:green_stained_glass")--:setScale(1/16)
+-- local eye_text
+local Eyes = Positioning.make.entityFollower(
+{
+    isLoaded = function (self)
+        return player:isLoaded()
+    end,
+    getPos = function (self,delta)
+        return vec(0,0,0)
+    end,
+    getRot = function (self,delta)
+        if GIZMO.cameraTracking then
+            eye_text:setOpacity(1):setSeeThrough(true)
+            return  player:getRot(delta)
+        else
+            eye_text:setOpacity(0.5):setSeeThrough(false)
+
+        end
+    end
+
+    },"FreecamEyes",2):moveTo(TestCompass)
+local Eyes2 = Eyes:newPart("inner"):setRot(0,180,0)
+
+eye_text = Eyes2:newText("face"):setText("O_O"):setAlignment("CENTER"):setSeeThrough(true):setPos(0,4.5,0)
+local eye_block = Eyes:newItem("block"):setItem("blue_stained_glass_pane"):setScale(0.75)
+
+
+function pings.setEyes(text,color,rotate)
+    local t = toJson{
+      text = text,
+      color = color or "blue"
+    }
+    eye_text:setText(t):setRot(0,0,((rotate == true) and -90 or rotate) or 0)
+    log("changed face to",t)
+end
 
 -- local text = TestObject.part:newText("text"):setSeeThrough(true)
 

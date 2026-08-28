@@ -25,7 +25,7 @@ freecam:setPostRender(
         end
         if freecamKey:isPressed() then
             local pare = AnchorAffix.info.getParentID("Freecam")
-            local change = player:getLookDir()*0.2
+            local change = player:getLookDir() * (16 / (client.getFPS()+1))
             AnchorAffix.complex.affixInPlace(pare,nil,Conversion.toMatrix(pare):translate(change),true)
         end
       end

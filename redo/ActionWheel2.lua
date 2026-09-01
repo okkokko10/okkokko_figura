@@ -30,18 +30,12 @@ page:newAction()
     :item("minecraft:glass_pane")
     :hoverColor(0.9,0.9,0.9)
     :onLeftClick(function()
-      pings.setGizmo("cameraTracking",true)
-
-      if GIZMO.trackingOther then
-        -- renderer:setCameraPivot(GIZMO.trackingOther + (vec(0,1,0) * (GIZMO.height)))
-        -- GIZMO.cameraTracking = true
-      end
-      
+        Freecam.enable()
+        pings.setFC(true)
+    --   pings.setGizmo("cameraTracking",true)
     end)
     :onRightClick(function()
-      renderer:setCameraPivot()
-      -- GIZMO.cameraTracking = false
-      pings.setGizmo("cameraTracking",false)
+        Freecam.disable()
     end)
 
 return page

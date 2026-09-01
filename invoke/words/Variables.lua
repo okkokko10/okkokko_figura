@@ -93,3 +93,15 @@ Invoke:register("evaluate", function (self, value, rest, plr)
     -- return out
 end)
 
+
+Invoke:register("UtilsID", function (self, value, rest, plr)
+    
+    return Utils.ID.from(self:materializeBranch(value))
+    -- local out = self:materializeBranch(value)
+    -- self:setVariable(rest,out)
+    -- return out
+end)
+
+
+
+--- todo: get Utils.ID

@@ -326,5 +326,24 @@ end
 
 Utils.Nop = setmetatable({},{__index = function (t,k) return Utils.nop end})
 
+Utils.functions = {}
+
+function Utils.functions.compose(f,g)
+  return function (...)
+    return f(g(...))
+  end
+end
+
+function Utils.functions.composed(f,g,...)
+  return f(g(...))
+end
+
+
+--[[ 
+/figura run Sleep:queue(30,Utils.functions.composed, log, host.getScreenSlot, host,0)
+
+slot 0 in inventory is the crafting result
+
+]]
 
 return Utils

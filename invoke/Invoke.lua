@@ -45,6 +45,49 @@ function Invoke.newInstance(content,plr)
     return setmetatable({content=content,plr=plr},Invoke)
 end
 
+local Clipboard = {}
+
+---should this line be ignored? by default whether there's a -- at the start.
+---@param line string
+function Clipboard:lineDisabled(line)
+    return not not string.find(line,"^%s*%-%-")
+end
+
+function Clipboard:pageIter(index)
+    local current_page = self.pages[index]
+    if not current_page then
+        return Utils.nop
+    end
+    local i = 0
+    local f = Utils.nop
+    return function ()
+        local w = f()
+        while w == nil do
+            local line
+            repeat
+                i = i + 1
+                line = current_page[i]
+            until (not line) or line.checked ~= 1
+            if not line then
+                return
+            end
+            f = string.gmatch(line.text, "[^;]+")
+            w = f()
+        end
+
+        return w
+    end
+end
+function Clipboard:selectedPageIndex()
+    return self.previously_opened_page + 1
+    
+end
+function Clipboard:isOpen()
+    return self.type ~= "written"
+end
+
+
+
 
 ---comment
 ---@param entity Entity
@@ -224,41 +267,6 @@ Invoke.runTable = Invoke.materializeBranch
 function Invoke:execute(data,plr)
     -- logTable(data)
     self:materializeBranch(data,plr)
-    
-
-
-    -- if data.updateOn == "Sneak" then
-    -- end
-    -- if not Invoke.startedSneaking(plr) then
-    --     return
-    -- end
-
-    -- if data.clear == "PickBlock" then
-        
-    --     local block, hitPos, side = plr:getTargetedBlock()
-    --     if block then
-    --         Invoke:createInfo(block:getPos(),nil,plr)
-    --     end
-    -- end
-    -- if data.clear == "All" then
-    --     for key, value in pairs(self.infos) do
-    --         self:createInfo(key)
-    --     end
-    -- end
-
-    -- if data.log then
-    --     if data.log == "PickBlock" then
-    --         local block, hitPos, side = plr:getTargetedBlock()
-    --         if block then
-    --             Invoke:createInfo(block:getPos(),block:toStateString(),plr)
-                
-    --             -- log(block:toStateString())
-    --         end
-    --     else
-    --         -- logTable(data.log)
-    --     end
-    -- end
-    
 end
 
 local globalPageTag = "global"

@@ -34,7 +34,7 @@
 
 
 ---@class Invoke
----@field content ClipboardContent
+---@field content Writing
 ---@field plr Entity
 Invoke = {}
 
@@ -45,7 +45,11 @@ function Invoke.newInstance(content,plr)
     return setmetatable({content=content,plr=plr},Invoke)
 end
 
+
+---@class Writing
+---@field content unknown
 local Clipboard = {}
+Clipboard.__index = Clipboard
 
 ---should this line be ignored? by default whether there's a -- at the start.
 ---@param line string
@@ -54,37 +58,65 @@ function Clipboard:lineDisabled(line)
 end
 
 function Clipboard:pageIter(index)
-    local current_page = self.pages[index]
+    local current_page = type(index) ~= "number" and index or self.content.pages[index]
     if not current_page then
         return Utils.nop
     end
     local i = 0
     local f = Utils.nop
     return function ()
-        local w = f()
-        while w == nil do
-            local line
-            repeat
-                i = i + 1
-                line = current_page[i]
-            until (not line) or line.checked ~= 1
-            if not line then
-                return
-            end
-            f = string.gmatch(line.text, "[^;]+")
+        local w
+        repeat
             w = f()
-        end
+            while w == nil do
+                local line
+                repeat
+                    i = i + 1
+                    line = current_page[i]
+                until (not line) or line.checked ~= 1
+                if not line then
+                    return
+                end
+                f = string.gmatch(line.text, "[^;]+")
+                w = f()
+            end
+        until not (w and self:lineDisabled(w))
 
         return w
     end
 end
+function Clipboard:pageCount()
+    return #self.content.pages
+end
+
+function Clipboard:pageIndices()
+    return Utils.table.range(#self.content.pages)
+end
+
+
 function Clipboard:selectedPageIndex()
-    return self.previously_opened_page + 1
+    return self.content.previously_opened_page + 1
     
 end
 function Clipboard:isOpen()
-    return self.type ~= "written"
+    return self.content.type ~= "written"
 end
+
+function Clipboard.extract(item)
+    if item.id ~= "create:clipboard" then return end
+    local content = item.tag["create:clipboard_content"]
+    if content then
+        return setmetatable({content=content}, Clipboard)
+    end
+end
+function Clipboard:pageTagPresent(index,tag)
+    local text = self:pageIter(index)()
+    if not text then return false end
+    local st, en, q = string.find(text,tag)
+    return not not st
+    
+end
+
 
 
 
@@ -93,9 +125,10 @@ end
 ---@param entity Entity
 function Invoke.extract(entity,slot)
     local item = entity:getItem(slot or 1)
-    if item.id ~= "create:clipboard" then return end
-    local content = item.tag["create:clipboard_content"]
-    return content
+    return Clipboard.extract(item)
+    -- if item.id ~= "create:clipboard" then return end
+    -- local content = item.tag["create:clipboard_content"]
+    -- return content
 
 
 end
@@ -334,13 +367,12 @@ end
 
 
 function Invoke:isPageActive(index)
-    if self.content.type ~= "written" then return false end
+    if self.content:isOpen() then return false end
     if self.canceledEarly then return false end
-    if index == self.content.previously_opened_page + 1 then
+    if index == self.content:selectedPageIndex() then
         return true
     end
-    local page = self.content.pages[index]
-    if self:pageTagPresent(page,globalPageTag) then
+    if self.content:pageTagPresent(index,globalPageTag) then
         return true
     end
     return false
@@ -350,24 +382,17 @@ function Invoke:runPage(index)
     if not self:isPageActive(index) then
         return
     end
-    local current_page = self.content.pages[index]
-    if not current_page then
-        return
-    end
-    for i, line in ipairs(current_page) do
-        local text = line.text
-        local checked = line.checked==1
-        if not checked then
-            for word in string.gmatch(text, "[^;]+") do -- ; is a line separator
-                local dt = self:parse_line(self:substitute(word,index))
-                if dt then
-                    self:execute(dt,self.plr)
-                end
-                if self.canceledEarly then
-                    return
-                end
-            end
-
+    -- local current_page = self.content.pages[index]
+    -- if not current_page then
+    --     return
+    -- end
+    for word in self.content:pageIter(index) do
+        local dt = self:parse_line(self:substitute(word,index))
+        if dt then
+            self:execute(dt,self.plr)
+        end
+        if self.canceledEarly then
+            return
         end
     end
 end
@@ -393,11 +418,9 @@ function Invoke:resume_for_player()
 end
 
 ---comment
----@param content ClipboardContent
----@param plr Entity
-function Invoke:contents(content,plr)
-    if not content then return end
-    if content.type ~= "written" then
+function Invoke:contents()
+    if not self.content then return end
+    if self.content:isOpen() then
         self:resume_for_player()
         return
     end
@@ -405,8 +428,7 @@ function Invoke:contents(content,plr)
         return
     end
     self:reinitialize()
-    local pages = content.pages
-    for i = 1, #pages do
+    for i in self.content:pageIndices() do
         self:runPage(i)
         if self.canceledEarly == "page" then
             self.canceledEarly = false
@@ -447,7 +469,7 @@ function Invoke.readPlayers()
     for name, plr in pairs(players) do
         local content = Invoke.extract(plr) or Invoke.extract(plr,2)
         if content then
-            pcall(Invoke.contents,Invoke.newInstance(content,plr),content,plr)
+            pcall(Invoke.contents,Invoke.newInstance(content,plr))
             -- Invoke:contents(content,plr)
         end
     end

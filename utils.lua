@@ -338,6 +338,15 @@ function Utils.functions.composed(f,g,...)
   return f(g(...))
 end
 
+function Utils.table.range(stop,start)
+  local i = (start or 1) - 1
+  return function ()
+    i = i + 1
+    if i > stop then return end
+    return i
+  end
+end
+
 
 --[[ 
 /figura run Sleep:queue(30,Utils.functions.composed, log, host.getScreenSlot, host,0)

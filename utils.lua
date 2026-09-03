@@ -312,7 +312,7 @@ end
 function Utils.table.compose(left,right,out)
   out = out or {}
   for key, value in pairs(left) do
-    out[key] = value
+    out[key] = right[value]
   end
   return out
   

@@ -57,8 +57,12 @@ function Clipboard:lineDisabled(line)
     return not not string.find(line,"^%s*%-%-")
 end
 
+function Clipboard:getPage(index)
+    return type(index) ~= "number" and index or self.content.pages[index]
+end
+
 function Clipboard:pageIter(index)
-    local current_page = type(index) ~= "number" and index or self.content.pages[index]
+    local current_page = self:getPage(index)
     if not current_page then
         return Utils.nop
     end
@@ -90,7 +94,7 @@ function Clipboard:pageCount()
 end
 
 function Clipboard:pageIndices()
-    return Utils.table.range(#self.content.pages)
+    return Utils.table.range(self:pageCount())
 end
 
 
@@ -118,6 +122,12 @@ function Clipboard:pageTagPresent(index,tag)
 end
 
 
+local Book = setmetatable({},Clipboard)
+Book.__index = Book
+
+-- function Book:()
+    
+-- end
 
 
 

@@ -30,3 +30,12 @@ end
 ---@class ItemStack
 ---@field tag table
 ---@field id string
+
+---@generic T
+---@param a T
+---@param b T
+---@param t number
+---@return T
+function math.lerp(a,b,t)
+    
+end

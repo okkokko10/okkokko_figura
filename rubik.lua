@@ -46,13 +46,152 @@ end
 
 local RubiksCubeSides = {}
 
+---@alias Fin<x> integer
+---@alias Range<from,to> integer
+
+---@alias RubiksCubeTileIndex Fin<54>
+---@alias RubiksCubeSideTileIndex Fin<9>
+
 ---comment
----@param index integer
+---@param index RubiksCubeTileIndex
 ---@return DirectionNum
----@return integer
+---@return RubiksCubeSideTileIndex
 function RubiksCubeSides.sideTileIndex(index)
     return math.floor(index / 9), index % 9
 end
+
+---comment
+---@param tileIndex RubiksCubeSideTileIndex
+---@return Range<-1,1>
+---@return Range<-1,1>
+function RubiksCubeSides.planeYX(tileIndex)
+    return  math.floor(tileIndex/3) - 1, tileIndex % 3 - 1
+end
+
+
+
+function RubiksCubeSides.initialize()
+
+    ---@type {[DirectionNum] : RubiksCubeTileIndex[] }
+    RubiksCubeSides.sideIncluded = {}
+    for i = 0, 5 do
+        RubiksCubeSides.sideIncluded[i] = {}
+    end
+    RubiksCubeSides.indexCount = 6 * 9
+    ---@type { [RubiksCubeTileIndex] : RubiksCubeTile}
+    RubiksCubeSides.tiles = {}
+
+    -- ---imagine a 3x3x3 cube covered with 6 3x3 planes. this maps from a point to the tile.
+    -- ---@type {[Vector] : RubiksCubeTileIndex}
+    -- RubiksCubeSides.points = {}
+
+    RubiksCubeSides.packeds = {}
+
+    for index = 0, RubiksCubeSides.indexCount - 1 do
+        ---@class RubiksCubeTile
+        local tile = {}
+        RubiksCubeSides.tiles[index] = tile
+        ---@type RubiksCubeTileIndex
+        tile.index = index
+        tile.side, tile.tileIndex = RubiksCubeSides.sideTileIndex(index)
+
+        ---@type {[DirectionNum] : boolean?}
+        tile.connected = {}
+
+        local planeY, planeX = RubiksCubeSides.planeYX(tile.tileIndex)
+
+        if planeX ~= 0 then
+            local q = Direction.flip(Direction.normalX(tile.side), planeX == 1)
+            table.insert(RubiksCubeSides.sideIncluded[q],index)
+            tile.connected[q] = true
+            ---@type DirectionNum?
+            tile.adjacentX = q
+        end
+        if planeY ~= 0 then
+            local q = Direction.flip(Direction.normalY(tile.side), planeY == 1)
+            table.insert(RubiksCubeSides.sideIncluded[q],index)
+            tile.connected[q] = true
+            ---@type DirectionNum?
+            tile.adjacentY = q
+        end
+        table.insert(RubiksCubeSides.sideIncluded[tile.side],index)
+        tile.connected[tile.side] = true
+        
+        tile.projection = Direction.toVector(tile.adjacentX) + Direction.toVector(tile.adjacentY)
+        tile.normal = Direction.toVector(tile.side)
+        tile.position = tile.normal + tile.projection
+        tile.extruded = tile.position + tile.normal
+
+        --- the tile is described by its side, adjacentMin and adjacentMax when disregarding rotation, and they each rotate
+        -- tile.adjacentMin = math.min(tile.adjacentX or Direction.null, tile.adjacentY or tile.side)
+        -- tile.adjacentMax = math.max(tile.adjacentX or tile.side, tile.adjacentY or tile.side)
+        
+        tile.packed = Direction.packSort23(Direction.packMany(tile.side,tile.adjacentX,tile.adjacentY))
+        RubiksCubeSides.packeds[tile.packed] = tile.index
+        ---@type {[DirectionNum] : RubiksCubeTileIndex}
+        tile.rotated = {}
+
+    end
+    for index = 0, RubiksCubeSides.indexCount - 1 do 
+        local tile = RubiksCubeSides.tiles[index]
+        for i = 0, 5 do
+            local p = Direction.packSort23(Direction.rot(i,tile.packed))
+            tile.rotated[i] = assert(RubiksCubeSides.packeds[p])
+        end
+    end
+end
+
+RubiksCubeSides.initialize()
+local DrawLine = require("scanning.DrawLine")
+---comment
+---@param part ModelPart
+function RubiksCubeSides.makeParts(part)
+    -- local size = 16
+    for index = 0, RubiksCubeSides.indexCount - 1 do
+        local tile = RubiksCubeSides.tiles[index]
+        
+        for i = 0, 5 do
+            DrawLine.line(part:newPart("" .. index .. " " .. i),
+                tile.extruded*PS + tile.normal,
+                RubiksCubeSides.tiles[tile.rotated[i]].extruded*PS,
+                {
+                    width = 1/2,
+                    color = Direction.colors[i],
+                    opacity = 0.5,
+                    seeThrough=true
+                }
+            )
+            
+            
+        end
+        part:newText(index)
+            :setPos(tile.extruded*PS + tile.normal)
+            :setText(("%s : %s"):format(tile.index,table.concat(tile.rotated,"  ")))
+            :setScale(1/8)
+            :setRot(Utils.math.directionToEulerAngle(tile.normal))
+            :setAlignment("CENTER")
+            :setSeeThrough(true)
+
+    end
+
+    part:newItem("center"):setItem("glass")
+
+
+end
+require("utils")
+local RubikBase = Positioning.parts.World:newPart("RubikBase"):setPos(PS*1,PS*1,PS*-3)
+
+RubiksCubeSides.makeParts(RubikBase)
+
+
+Utils.ID.field.RubikBase = RubikBase
+
+DrawLine.test(RubikBase)
+
+require("redo.Grab").addSelectableGenerate("RubikBase")
+
+
+
 
 function RubiksCubeSides.getPosRot(index,index2,interpolation)
     if index2 and interpolation and (interpolation ~= 0) then
@@ -64,7 +203,8 @@ function RubiksCubeSides.getPosRot(index,index2,interpolation)
     Direction.toVector(sideIndex)
     local xTile = tileIndex % 3 - 1
     local yTile = math.floor(tileIndex/3) - 1
-
+    
+    
     local projectedVec = Direction.toVector(Direction.normalX(sideIndex)) * xTile + Direction.toVector(Direction.normalY(sideIndex)) * yTile
     --- todo: use Direction.normalX to find the adjacent sides
     

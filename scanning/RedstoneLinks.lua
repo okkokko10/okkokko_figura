@@ -186,28 +186,8 @@ function Frequency:createPath(from,to)
     if (not from.Transmitter) or to.Transmitter then return end    
     if from.paths[to] then return end
     
-    from.paths[to] = self.pathsPart:newPart(tostring(from.pos).."<>"..tostring(to.pos))
-    
-    local difference = to.pos - from.pos
-    local midpoint = (to.pos + from.pos) / 2
-    local toCamera = (client.getCameraPos() - midpoint):normalize()
-    local orthogonalToCam = difference:crossed(toCamera):normalize()
+    from.paths[to] = DrawLine.line(self.pathsPart:newPart(tostring(from.pos).."<>"..tostring(to.pos)),from.pos*PS,to.pos*PS)
 
-
-    from.paths[to]:setMatrix(matrices.mat4(
-        difference.xyz_,orthogonalToCam:augmented(0),(toCamera):augmented(0),((from.pos + 0.5)*PS):augmented(1)
-    ))
-    
-
-    local rep = 5
-    local text =  '[{"text"="'..("--"):rep(rep)..'", color="#0088FF"}]'
-    local text2 = '[{"text"="'..("=="):rep(rep)..'", color="#FF8800"}]'
-    from.paths[to]:newText("a"):setSeeThrough(true):setText(text):setAlignment("RIGHT"):setWidth(16*rep):setScale(1/rep,1,1)
-    from.paths[to]:newText("b"):setSeeThrough(true):setText(text2):setAlignment("RIGHT"):setWidth(16*rep):setScale(1/rep,1,1)
-    
-    --:setPos(from.pos*PS)
-    -- from.paths[to]:newText("b"):setSeeThrough(true):setPos(to.pos*PS)
-    -- log(from.pos,to.pos)
     
 
 

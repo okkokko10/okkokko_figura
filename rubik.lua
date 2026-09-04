@@ -46,6 +46,10 @@ end
 
 local RubiksCubeSides = {}
 
+---comment
+---@param index integer
+---@return DirectionNum
+---@return integer
 function RubiksCubeSides.sideTileIndex(index)
     return math.floor(index / 9), index % 9
 end
@@ -58,6 +62,16 @@ function RubiksCubeSides.getPosRot(index,index2,interpolation)
     end
     local sideIndex, tileIndex = RubiksCubeSides.sideTileIndex(index)
     Direction.toVector(sideIndex)
+    local xTile = tileIndex % 3 - 1
+    local yTile = math.floor(tileIndex/3) - 1
+
+    local projectedVec = Direction.toVector(Direction.normalX(sideIndex)) * xTile + Direction.toVector(Direction.normalY(sideIndex)) * yTile
+    --- todo: use Direction.normalX to find the adjacent sides
+    
+    -- have the side vector, then the offset vector that is normal to that.
+    -- to generate the permutations, use rotation matrices and compare.
+    -- maybe have a position vector that is 1(or some other) unit extruded from the cube
+    
 
 
 

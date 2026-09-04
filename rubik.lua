@@ -15,18 +15,18 @@ local Permutation = {}
 Permutation.__index = Permutation
 
 function Permutation.new(arr)
-    return setmetatable({arr=arr},Permutation)
+    return setmetatable(arr,Permutation)
 end
 
 ---comment
 ---@param other Permutation
 ---@return Permutation
 function Permutation:__mul(other)
-    return Permutation.new(Utils.table.compose(self.arr,other.arr))
+    return Permutation.new(Utils.table.compose(self,other))
 end
 
 function Permutation:inverse()
-    return Permutation.new(Utils.table.inverted(self.arr))
+    return Permutation.new(Utils.table.inverted(self))
 end
 
 
@@ -139,9 +139,49 @@ function RubiksCubeSides.initialize()
             tile.rotated[i] = assert(RubiksCubeSides.packeds[p])
         end
     end
+    return RubiksCubeSides
 end
 
-RubiksCubeSides.initialize()
+
+function RubiksCubeSides.initialize_permutations()
+    ---@type {[DirectionNum]:Permutation}
+    RubiksCubeSides.permute_whole = {}
+    ---@type {[DirectionNum]:Permutation}
+    RubiksCubeSides.permute_side = {}
+    for side = 0, 5 do 
+        RubiksCubeSides.permute_whole[side] = Permutation.new{}
+        RubiksCubeSides.permute_side[side] = Permutation.new{}
+    end
+
+    for index = 0, RubiksCubeSides.indexCount - 1 do
+        local t = RubiksCubeSides.tiles[index]
+        for side = 0, 5 do
+            RubiksCubeSides.permute_whole[side][index] = t.rotated[side]
+            RubiksCubeSides.permute_side[side][index] = t.connected[side] and t.rotated[side] or t.index
+        end
+    end
+    ---@type {[DirectionNum]:Permutation}
+    RubiksCubeSides.permute_side_reverse = {}
+    for side = 0, 5 do
+        RubiksCubeSides.permute_side_reverse[side] =RubiksCubeSides.permute_side[side]:inverse()
+    end
+    
+    ---@type {[DirectionNum]:Permutation}
+    RubiksCubeSides.permute_whole_reverse = {}
+    for side = 0, 5 do
+        RubiksCubeSides.permute_whole_reverse[side] =RubiksCubeSides.permute_whole[Direction.flip(side)]
+    end
+
+
+
+    -- for side = 0, 5 do 
+    --     RubiksCubeSides.permute_whole[side] = Permutation.new{}
+    -- end
+    return RubiksCubeSides
+end
+
+RubiksCubeSides.initialize().initialize_permutations()
+
 local DrawLine = require("scanning.DrawLine")
 ---comment
 ---@param part ModelPart
@@ -153,11 +193,11 @@ function RubiksCubeSides.makeParts(part)
         for i = 0, 5 do
             DrawLine.line(part:newPart("" .. index .. " " .. i),
                 tile.extruded*PS + tile.normal,
-                RubiksCubeSides.tiles[tile.rotated[i]].extruded*PS,
+                RubiksCubeSides.tiles[tile.rotated[i]].extruded*PS+ tile.normal,
                 {
                     width = 1/2,
                     color = Direction.colors[i],
-                    opacity = 0.5,
+                    opacity = 1/4,
                     seeThrough=true
                 }
             )
@@ -186,7 +226,7 @@ RubiksCubeSides.makeParts(RubikBase)
 
 Utils.ID.field.RubikBase = RubikBase
 
-DrawLine.test(RubikBase)
+-- DrawLine.test(RubikBase)
 
 require("redo.Grab").addSelectableGenerate("RubikBase")
 

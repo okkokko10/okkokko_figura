@@ -9,9 +9,15 @@ local placeKey = keybinds:newKeybind("fix gizmo", "key.mouse.left", false)
 local airKey = keybinds:newKeybind("fix gizmo", "key.keyboard.x", false)
 
 
+Grabbing.toggle = true
 
 function grabKey.press()
     if not player:isLoaded() then return end
+    if action_wheel:isEnabled() then return end
+
+    if Grabbing.toggle and Grabbing:isGrabbing() then
+        return Grabbing.release()
+    end
     if Grabbing.disable then return end
         
     local rc2 = Grabbing.raycastLook(Grabbing.Selectable)
@@ -26,7 +32,7 @@ end
 
 
 function grabKey.release()
-    return Grabbing.release()
+    return (not Grabbing.toggle) and Grabbing.release()
 end
 
 local Actions = {}
@@ -73,6 +79,7 @@ function Actions.releaseToLookCenter()
     local block, pos, side = raycast:block(piv,piv + client.getCameraDir()*1000)
     if block then
         Actions.releaseToCoordinate(block:getPos())
+        return true
     end
 
 
@@ -140,10 +147,10 @@ page:newAction()
     :item("minecraft:blaze_rod")
     :hoverColor(0.9,0.9,0.9)
     :onLeftClick(Actions.releaseToLook)
-    :onRightClick(Actions.releaseToLookCenter)
     :onScroll(function ()
         pings.part_alter(Freecam.ParentID(),nil,matrices.mat4():translate(8,8,8))
     end)
+    :onRightClick(Actions.releaseToLookCenter)
 page:newAction()
     :title("toggle grab UI")
     :item("minecraft:wooden_sword")

@@ -218,17 +218,6 @@ function RubiksCubeSides.makeParts(part)
 
 
 end
-require("utils")
-local RubikBase = Positioning.parts.World:newPart("RubikBase"):setPos(PS*1,PS*1,PS*-3)
-
-RubiksCubeSides.makeParts(RubikBase)
-
-
-Utils.ID.field.RubikBase = RubikBase
-
--- DrawLine.test(RubikBase)
-
-require("redo.Grab").addSelectableGenerate("RubikBase")
 
 
 
@@ -239,24 +228,18 @@ function RubiksCubeSides.getPosRot(index,index2,interpolation)
         local pos2, rot2 = RubiksCubeSides.getPosRot(index2)
         return math.lerp(pos1,pos2,interpolation), math.lerpAngle(rot1,rot2,interpolation) -- does this work?
     end
-    local sideIndex, tileIndex = RubiksCubeSides.sideTileIndex(index)
-    Direction.toVector(sideIndex)
-    local xTile = tileIndex % 3 - 1
-    local yTile = math.floor(tileIndex/3) - 1
+
+    local tile = RubiksCubeSides.tiles[index]
     
     
-    local projectedVec = Direction.toVector(Direction.normalX(sideIndex)) * xTile + Direction.toVector(Direction.normalY(sideIndex)) * yTile
+    return tile.position, Utils.math.directionToEulerAngle(tile.normal)
+    
+    
     --- todo: use Direction.normalX to find the adjacent sides
     
     -- have the side vector, then the offset vector that is normal to that.
     -- to generate the permutations, use rotation matrices and compare.
     -- maybe have a position vector that is 1(or some other) unit extruded from the cube
-    
-
-
-
-
-
 end
 
 function RubiksCubeSides.rotPermutation(side,dir)
@@ -264,26 +247,101 @@ function RubiksCubeSides.rotPermutation(side,dir)
 end
 
 
+---@class RubiksCube
 local RubiksCube = {}
 RubiksCube.__index = RubiksCube
 
 local RubiksCubePiece = {}
 RubiksCubePiece.__index = RubiksCubePiece
 
-function RubiksCubePiece:isOnSide(side)
+function RubiksCube.new(part)
+    assert(type(part)== "ModelPart")
+    local perm = {}
+    local parts = {}
+    for i = 0, RubiksCubeSides.indexCount - 1 do
+        perm[i] = i
+        local tile = RubiksCubeSides.tiles[i]
+        local ipart = part:newPart(i)
+        parts[i] = ipart
+        local scale = 2
+        -- ▒ ▓ █
+        local text = ('[{"text"="%s", color="%s"}]'):format(("▓"),Direction.colors[tile.side])
+        ipart:newText("text")
+        :setText(text)
+        :setPos(vec(4,4,-4)*scale)
+        :setScale(scale)
+        ipart:newText("text3")
+        :setText("█")
+        :setPos(vec(4,4,-3)*scale)
+        :setScale(scale)
+        ipart:newText("text2")
+        :setText(text)
+        :setPos(vec(4,-4,-4)*scale)
+        :setRot(180,0,0)
+        :setScale(scale)
+    end
+    ---@class RubiksCube
+    local out = {perm = Permutation.new(perm),
+        oldPerm = perm,
+        parts = parts,
+        part = part,
+        timestep = 0
+        }
+    
 
+    -- events.WORLD_TICK:register(function ()
+    --     out:update(0.05)
+    --     out:updateParts()
+    --     out:random()
+
+    -- end)
+    part.preRender = function ()
+        out:update(0.05)
+        out:updateParts()
+        out:random()
+
+    end
+
+    return setmetatable(out,RubiksCube)
 end
 
-function RubiksCube:facingSide(side)
+
+function RubiksCube:getTileOrientation(index)
+    return RubiksCubeSides.getPosRot(self.perm[index],self.oldPerm[index],self.timestep)
+end
+
+function RubiksCube:rotate(side,flip)
+    self.oldPerm = self.perm
+    self.perm = self.perm * (flip and RubiksCubeSides.permute_side_reverse or RubiksCubeSides.permute_side)[side]
+    self.timestep = 1
     
 end
 
+function RubiksCube:updateParts()
+    for index = 0, RubiksCubeSides.indexCount - 1 do 
+        local p = self.parts[index]
+        local pos, rot = self:getTileOrientation(index)
+        p:setPos(pos*PS):setRot(rot)
+    end
+end
 
+function RubiksCube:update(time)
+    self.timestep = math.max(0,self.timestep - (time or 0.01))
+end
+
+function RubiksCube:random()
+    if self.timestep == 0 then
+        local side = math.random(0,5)
+        local flip = math.random(2)==1
+        self:rotate(side,flip)
+
+    end
+end
 
 --- returns the state after a rotation.
-function RubiksCube.calculateRotate(side,dir,startState)
+-- function RubiksCube.calculateRotate(side,dir,startState)
     
-end
+-- end
 
 function RubiksCube:rotateSide(side,dir)
     
@@ -294,5 +352,28 @@ function RubiksCube:rotateSideAnimation(side,dir,endState)
     
 end
 
+
+require("utils")
+local RubikBase = Positioning.parts.World:newPart("RubikBase"):setPos(PS*1,PS*1,PS*-3)
+
+RubiksCubeSides.makeParts(RubikBase)
+
+
+Utils.ID.field.RubikBase = RubikBase
+
+require"invoke.AltRendering"
+
+
+Utils.ID.field.SkullStabilized = Positioning.make.absoluteRot("rubikR",Utils.ID.field.Skull:newPart("Rubik1"):setPos(0,0,-PS*7))
+
+Utils.ID.field.Rubik =Utils.ID.field.SkullStabilized:newPart("Rubik"):setLight(8):setRot(45,0,35.264):setScale(1/3)
+Utils.ID.field.Rubik:newItem("center"):setItem("target")
+
+-- DrawLine.test(RubikBase)
+
+require("redo.Grab").addSelectableGenerate("RubikBase")
+require("redo.Grab").addSelectableGenerate("Rubik")
+
+TheCube = RubiksCube.new(Utils.ID.field.Rubik)
 
 -- for synchronization, rotateSide returns a serialized state

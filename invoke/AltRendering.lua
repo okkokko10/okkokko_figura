@@ -6,7 +6,8 @@ infoSkull:newItem("infoItem"):setItem("minecraft:player_head[minecraft:profile={
 local infoSkullText = infoSkull:newText("infoText"):setText("okkokko's skull"):setPos(0,8,-5):setScale(0.25):setAlignment("CENTER")
 
 events.WORLD_TICK:register(function (delta)
-    infoSkullText:setText(("okkokko's skull\n%s\n%s"):format(client.getFrameTime() or "", world.getTime()))
+    -- infoSkullText:setText(("okkokko's skull\n%s\n%s"):format(client.getFrameTime() or "", world.getTime()))
+    infoSkullText:setText(("okkokko's skull"))
 end)
 
 
@@ -14,7 +15,7 @@ end)
 
 local time = 0
 
-Invoke.infosPart = infoSkull:newPart("infos"):setPreRender(
+local infoSkullDedup = infoSkull:newPart("infos"):setPreRender(
     
     function(delta, ctx, part)
         --- this should make it so infos are only drawn once
@@ -35,10 +36,16 @@ Invoke.infosPart = infoSkull:newPart("infos"):setPreRender(
         return true
 
     end
-):newPart("root")
+)
+
+Invoke.infosPart = infoSkullDedup:newPart("root")
 
 if false then
-    models:newPart("infosWorld","World"):addChild(Invoke.infosPart)
+    models:newPart("infosWorld","World"):addChild(infoSkullDedup)
 end
 
+
+
+
 Utils.ID.field.InvokeVisual = Invoke.infosPart
+Utils.ID.field.Skull = infoSkull

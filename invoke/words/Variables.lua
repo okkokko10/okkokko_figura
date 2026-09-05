@@ -73,6 +73,24 @@ Invoke:register("set", function (self, value, rest, plr)
     return out
 end)
 
+
+Invoke:register("init", function (self, value, rest, plr)
+    if rest == "" then
+        rest = self:materializeBranch(value.key)
+        value = value.value
+    end
+    
+    local old = self:getVariable(rest)
+    if old then return old end
+    local out = self:materializeBranch(value)
+    self:setVariable(rest,out)
+    return out
+end)
+:addDoc{
+    text = "like `set`, but only runs if the variable didn't exist beforehand."
+}
+
+
 --- return the value. 
 
 Invoke:register("var", function (self, value, rest, plr)

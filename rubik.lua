@@ -182,10 +182,10 @@ end
 
 RubiksCubeSides.initialize().initialize_permutations()
 
-local DrawLine = require("scanning.DrawLine")
----comment
+---draws lines connecting permutations.
 ---@param part ModelPart
-function RubiksCubeSides.makeParts(part)
+function RubiksCubeSides.drawPermutationDebug(part)
+    local DrawLine = require("scanning.DrawLine")
     -- local size = 16
     for index = 0, RubiksCubeSides.indexCount - 1 do
         local tile = RubiksCubeSides.tiles[index]
@@ -206,7 +206,21 @@ function RubiksCubeSides.makeParts(part)
         end
         part:newText(index)
             :setPos(tile.extruded*PS + tile.normal)
-            :setText(("%s : %s"):format(tile.index,table.concat(tile.rotated,"  ")))
+            :setText(
+                ("%s : %s"):format(tile.index,
+                toJson(
+                Utils.table.flatmap(
+                function (x,i)
+                    return {{
+                        text = tostring(x),
+                        color = Direction.colors[i]
+                    },"  "}
+                end,
+                tile.rotated)
+                
+                )
+            )
+            )
             :setScale(1/8)
             :setRot(Utils.math.directionToEulerAngle(tile.normal))
             :setAlignment("CENTER")
@@ -356,7 +370,7 @@ end
 require("utils")
 local RubikBase = Positioning.parts.World:newPart("RubikBase"):setPos(PS*1,PS*1,PS*-3)
 
-RubiksCubeSides.makeParts(RubikBase)
+RubiksCubeSides.drawPermutationDebug(RubikBase)
 
 
 Utils.ID.field.RubikBase = RubikBase

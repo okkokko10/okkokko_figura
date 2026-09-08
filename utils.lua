@@ -282,10 +282,10 @@ Utils.entity = {}
 Utils.table = {}
 
 
----@generic K,V
----@param from {[K]: V}
----@param out {[V]: K}?
----@return {[V]: K}
+-- -@generic K,V
+-- -@param from {[K]: V}
+-- -@param out {[V]: K}?
+-- -@return {[V]: K}
 
 
 
@@ -303,18 +303,54 @@ function Utils.table.inverted(from,out)
   
 end
 
-
+--- `out[a] = left[ right[ a : A ] : B ] : C`
 ---@generic A,B,C
----@param left {[A]: B}
----@param right {[B]: C}
+---@param left {[B]: C}
+---@param right {[A]: B}
 ---@param out {[A]: C}?
 ---@return {[A]: C}
 function Utils.table.compose(left,right,out)
   out = out or {}
-  for key, value in pairs(left) do
-    out[key] = right[value]
+  for key, value in pairs(right) do
+    out[key] = left[value]
   end
   return out
+end
+
+
+--- composition of function and table. 
+--- `out[a] = left( right[ a ] )`
+---@generic A,B,C
+---@param f fun(b:B,index:A):C
+---@param t {[A]: B}
+---@param out {[A]: C}?
+---@return {[A]: C}
+function Utils.table.map(f,t,out)
+  out = out or {}
+  for key, value in pairs(t) do
+    out[key] = f(value,key)
+  end
+  return out
+
+  
+end
+
+---
+---@generic B,C
+---@param f fun(b:B,index:integer): { [integer] : C }
+---@param t {[integer]: B}
+---@param out {[integer]: C}?
+---@return {[integer]: C}
+function Utils.table.flatmap(f,t,out)
+  out = out or {}
+  for key, value in ipairs(t) do
+    local cl = f(value,key)
+    for index, v in ipairs(cl) do
+      out[#out+1] = v
+    end
+  end
+  return out
+
   
 end
 
@@ -327,6 +363,7 @@ end
 Utils.Nop = setmetatable({},{__index = function (t,k) return Utils.nop end})
 
 Utils.functions = {}
+
 
 function Utils.functions.compose(f,g)
   return function (...)

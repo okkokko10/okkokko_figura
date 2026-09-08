@@ -172,6 +172,15 @@ function RubiksCubeSides.initialize_permutations()
         RubiksCubeSides.permute_whole_reverse[side] =RubiksCubeSides.permute_whole[Direction.flip(side)]
     end
 
+    ---@type {[DirectionNum]:Permutation}
+    RubiksCubeSides.permute_side_twice = {}
+    for side = 0, 5 do
+        RubiksCubeSides.permute_side_twice[side] = RubiksCubeSides.permute_side[side]^2
+    end
+    ---@type Permutation
+    RubiksCubeSides.permute_whole_twice = RubiksCubeSides.permute_whole[1]^2
+    
+
 
 
     -- for side = 0, 5 do 
@@ -181,6 +190,57 @@ function RubiksCubeSides.initialize_permutations()
 end
 
 RubiksCubeSides.initialize().initialize_permutations()
+
+
+
+local Direction = require"Direction"
+RubiksCubeSides.SingmasterDirection = {
+    U = Direction.names_to_num.up,
+    D = Direction.names_to_num.down,
+    R = Direction.names_to_num.east,
+    L = Direction.names_to_num.west,
+    F = Direction.names_to_num.south,
+    B = Direction.names_to_num.north,
+}
+
+
+RubiksCubeSides.Singmaster = Utils.table.remap(
+    RubiksCubeSides.SingmasterDirection,
+    function (v, k)
+        return RubiksCubeSides.permute_side[v],k
+    end,
+    Utils.table.remap(
+    RubiksCubeSides.SingmasterDirection,
+    function (v, k)
+        return RubiksCubeSides.permute_side_reverse[v],k.."'"
+    end
+)
+)
+
+-- RubiksCubeSides.Singmaster2 = Utils.table.remap(
+--     RubiksCubeSides.SingmasterDirection,
+--     function (v, k)
+--         return Direction.packMany(v,v),k
+--     end,
+--     Utils.table.remap(
+--     RubiksCubeSides.SingmasterDirection,
+--     function (v, k)
+--         return Direction.packMany(v,Direction.flip(v)),k.."'"
+--     end
+-- )
+-- )
+
+---@param s string
+function RubiksCubeSides.fromSingmaster(s)
+    
+    
+end
+
+
+function RubiksCubeSides.fromString(str)
+    
+    
+end
 
 ---draws lines connecting permutations.
 ---@param part ModelPart
@@ -210,13 +270,13 @@ function RubiksCubeSides.drawPermutationDebug(part)
                 ("%s : %s"):format(tile.index,
                 toJson(
                 Utils.table.flatmap(
+                tile.rotated,
                 function (x,i)
                     return {{
                         text = tostring(x),
                         color = Direction.colors[i]
                     },"  "}
-                end,
-                tile.rotated)
+                end)
                 
                 )
             )
@@ -232,7 +292,6 @@ function RubiksCubeSides.drawPermutationDebug(part)
 
 
 end
-
 
 
 

@@ -318,14 +318,14 @@ function Utils.table.compose(left,right,out)
 end
 
 
---- composition of function and table. 
---- `out[a] = left( right[ a ] )`
+
+--- `out[a] = f( t[ a ] )`
 ---@generic A,B,C
----@param f fun(b:B,index:A):C
 ---@param t {[A]: B}
+---@param f fun(b:B,index:A):C
 ---@param out {[A]: C}?
 ---@return {[A]: C}
-function Utils.table.map(f,t,out)
+function Utils.table.map(t,f,out)
   out = out or {}
   for key, value in pairs(t) do
     out[key] = f(value,key)
@@ -341,7 +341,7 @@ end
 ---@param t {[integer]: B}
 ---@param out {[integer]: C}?
 ---@return {[integer]: C}
-function Utils.table.flatmap(f,t,out)
+function Utils.table.flatmap(t,f,out)
   out = out or {}
   for key, value in ipairs(t) do
     local cl = f(value,key)
@@ -350,8 +350,39 @@ function Utils.table.flatmap(f,t,out)
     end
   end
   return out
+end
 
-  
+
+---takes a key-value pair ⟨k,v⟩ from t and sets the key-value pair f(v,k) to out
+---@generic K,V,V2,K2
+---@param t {[K] : V}
+---@param f fun(v:V,k:K):V2,K2
+---@param out {[K2] : V2}?
+---@return {[K2] : V2}
+function Utils.table.remap(t,f,out)
+  out = out or {}
+  for key, value in pairs(t) do
+    local v,k = f(value,key)
+    out[k] = v
+  end
+  return out
+end
+
+
+---@generic K,V,V2,K2
+---@param t {[K] : V}
+---@param f fun(v:V,k:K): {[K2] : V2}
+---@param out {[K2] : V2}?
+---@return {[K2] : V2}
+function Utils.table.flatremap(t,f,out)
+  out = out or {}
+  for key, value in pairs(t) do
+    local cl = f(value,key)
+    for k, v in pairs(cl) do
+      out[k] = v
+    end
+  end
+  return out
 end
 
 

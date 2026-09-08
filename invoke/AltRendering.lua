@@ -5,10 +5,10 @@ local infoSkull = models:newPart("infoSkull","SKULL")
 infoSkull:newItem("infoItem"):setItem("minecraft:player_head[minecraft:profile={name:okkokko}]"):setPos(0,8,0)
 local infoSkullText = infoSkull:newText("infoText"):setText("okkokko's skull"):setPos(0,8,-5):setScale(0.25):setAlignment("CENTER")
 
-events.WORLD_TICK:register(function (delta)
-    -- infoSkullText:setText(("okkokko's skull\n%s\n%s"):format(client.getFrameTime() or "", world.getTime()))
-    infoSkullText:setText(("okkokko's skull"))
-end)
+-- events.WORLD_TICK:register(function (delta)
+--     -- infoSkullText:setText(("okkokko's skull\n%s\n%s"):format(client.getFrameTime() or "", world.getTime()))
+--     infoSkullText:setText(("okkokko's skull"))
+-- end)
 
 
 -- Invoke.infosPart = infoSkull:newPart("infos","World")

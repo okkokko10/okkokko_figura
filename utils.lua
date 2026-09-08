@@ -330,13 +330,44 @@ Utils.functions = {}
 
 function Utils.functions.compose(f,g)
   return function (...)
-    return f(g(...))
+    return Utils.functions.composed(f,g,...)
   end
+end
+function Utils.functions.call(f,x,...)
+  if type(f) == "function" then
+    return f(x,...)
+  elseif type(f) == "table" and f[1] then
+    return Utils.functions.call(f[1],f[2],x,...)
+  -- else
+  --   return f[x](f,...)
+  -- elseif type(f) == "string" then
+  end
+
+  
 end
 
 function Utils.functions.composed(f,g,...)
-  return f(g(...))
+  return Utils.functions.call(f,Utils.functions.call(g,...))
 end
+function Utils.functions.bothd(f,g,...)
+  Utils.functions.call(f,...)
+  return Utils.functions.call(g,...)
+end
+
+function Utils.functions.both(f,g,...)
+  return function (...)
+    return Utils.functions.bothd(f,g,...)
+  end
+end
+
+function Utils.functions.curry(f,x)
+  return function (...)
+    return f(x,...)
+  end
+  
+end
+
+FU = Utils.functions
 
 function Utils.table.range(stop,start)
   local i = (start or 1) - 1

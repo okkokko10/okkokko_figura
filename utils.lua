@@ -282,10 +282,10 @@ Utils.entity = {}
 Utils.table = {}
 
 
----@generic K,V
----@param from {[K]: V}
----@param out {[V]: K}?
----@return {[V]: K}
+-- -@generic K,V
+-- -@param from {[K]: V}
+-- -@param out {[V]: K}?
+-- -@return {[V]: K}
 
 
 
@@ -303,19 +303,86 @@ function Utils.table.inverted(from,out)
   
 end
 
-
+--- `out[a] = left[ right[ a : A ] : B ] : C`
 ---@generic A,B,C
----@param left {[A]: B}
----@param right {[B]: C}
+---@param left {[B]: C}
+---@param right {[A]: B}
 ---@param out {[A]: C}?
 ---@return {[A]: C}
 function Utils.table.compose(left,right,out)
   out = out or {}
-  for key, value in pairs(left) do
-    out[key] = right[value]
+  for key, value in pairs(right) do
+    out[key] = left[value]
   end
   return out
+end
+
+
+
+--- `out[a] = f( t[ a ] )`
+---@generic A,B,C
+---@param t {[A]: B}
+---@param f fun(b:B,index:A):C
+---@param out {[A]: C}?
+---@return {[A]: C}
+function Utils.table.map(t,f,out)
+  out = out or {}
+  for key, value in pairs(t) do
+    out[key] = f(value,key)
+  end
+  return out
+
   
+end
+
+---
+---@generic B,C
+---@param f fun(b:B,index:integer): { [integer] : C }
+---@param t {[integer]: B}
+---@param out {[integer]: C}?
+---@return {[integer]: C}
+function Utils.table.flatmap(t,f,out)
+  out = out or {}
+  for key, value in ipairs(t) do
+    local cl = f(value,key)
+    for index, v in ipairs(cl) do
+      out[#out+1] = v
+    end
+  end
+  return out
+end
+
+
+---takes a key-value pair ⟨k,v⟩ from t and sets the key-value pair f(v,k) to out
+---@generic K,V,V2,K2
+---@param t {[K] : V}
+---@param f fun(v:V,k:K):V2,K2
+---@param out {[K2] : V2}?
+---@return {[K2] : V2}
+function Utils.table.remap(t,f,out)
+  out = out or {}
+  for key, value in pairs(t) do
+    local v,k = f(value,key)
+    out[k] = v
+  end
+  return out
+end
+
+
+---@generic K,V,V2,K2
+---@param t {[K] : V}
+---@param f fun(v:V,k:K): {[K2] : V2}
+---@param out {[K2] : V2}?
+---@return {[K2] : V2}
+function Utils.table.flatremap(t,f,out)
+  out = out or {}
+  for key, value in pairs(t) do
+    local cl = f(value,key)
+    for k, v in pairs(cl) do
+      out[k] = v
+    end
+  end
+  return out
 end
 
 
@@ -327,6 +394,7 @@ end
 Utils.Nop = setmetatable({},{__index = function (t,k) return Utils.nop end})
 
 Utils.functions = {}
+
 
 function Utils.functions.compose(f,g)
   return function (...)

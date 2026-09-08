@@ -177,6 +177,10 @@ function Direction.unpack(packed)
         return packed
     end
 end
+
+---@param x DirectionNum|false
+---@param ... DirectionNum|false
+---@return DirectionNumPacked
 function Direction.packMany(x,...)
     if select("#",...) == 0 then
         return x or NullDirection

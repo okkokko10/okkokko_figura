@@ -63,7 +63,11 @@ Invoke:registerKeyword("PickBlock",function (self, tbl, rest, plr)
     if rest == "id" then
         return block.id
     end
-    return rest
+    
+    if rest == "pos" then
+        return centerPos
+    end
+    -- return rest
     
 
 

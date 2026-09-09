@@ -658,19 +658,46 @@ end
 ---@param path_part ModelPart
 ---@param node_data KineticPathNodeData
 ---@return Vector|nil color
+---@return Vector|nil color2
 function KineticPath:textBgColor(path_part,node_data)
-    return vectors.intToRGB((((node_data.Id or 0) % 0x1001000) * (2654435761 % 0x1000000)))* 0.9
+    return  vectors.intToRGB((((node_data.Id or 0) % 0x1001000) * (2654435761 % 0x1000000))),
+            vectors.intToRGB((((node_data.Id or 0) % 0x1001000) * (2664435763 % 0x1000000)))
+end
+
+function KineticPath:lineToNext(path_part,next_difference,node_data,color)
+    -- local angle = Utils.math.directionToEulerAngle(-next_difference)
+    -- path_part:newPart("to_next"):setRot(angle):setScale(1,1,next_difference:length())
+    -- :newItem("glass")
+    -- :setItem("light_blue_stained_glass")
+    -- :setPos(vec(0,0,8))
+    -- :setLight(15,15)
+    -- :setScale(.5,.5,1)
+    
+    DrawLine.line(path_part:newPart("line"),vec(0,0,0),next_difference*PS,{
+        seeThrough = true,
+        color = color and "#"..vectors.rgbToHex(math.lerp(color,1,0.5))
+    })
+
+    
 end
 
 ---overrideable.
 ---@param path_part ModelPart
 ---@param node_data KineticPathNodeData
 function KineticPath:init_pathPart(path_part,node_data)
+
+    
+    local colo,colo2 = self:textBgColor(path_part,node_data)
+    if node_data.next_difference and node_data.next_difference ~= vec(0,0,0) then
+        self:lineToNext(path_part,node_data.next_difference,node_data,colo)
+    end
+
+
     local text = path_part:newPart("text","BILLBOARD"):newText("text")
         :setLight(15,15)
         :setWidth(16*4*3)
         :setScale(1/4)
-        :setOpacity(0.5)
+        -- :setOpacity(0.5)
     if VectorWithLayer.isPointingToExtraKinetics(node_data.pos) then
         text:setAlignment("RIGHT")
     end
@@ -678,26 +705,16 @@ function KineticPath:init_pathPart(path_part,node_data)
     if host:isHost() then
     end
     text:setSeeThrough(true)
-    local colo = self:textBgColor(path_part,node_data)
+    
+    local t = self:make_text(node_data)
     if colo then
-        text:setBackground(true):setBackgroundColor(colo)
+        text:setBackground(true)--:setBackgroundColor(colo)
+        t = toJson({text = (t or ""), color = "#"..vectors.rgbToHex(math.lerp(colo,1,0.1))})
     end
 
 
-    local t = self:make_text(node_data)
     text:setText(t)
     -- log(t)
-
-    if node_data.next_difference and node_data.next_difference ~= vec(0,0,0) then
-        local angle = Utils.math.directionToEulerAngle(-node_data.next_difference)
-        path_part:newPart("to_next"):setRot(angle):setScale(1,1,node_data.next_difference:length())
-        :newItem("glass")
-        :setItem("light_blue_stained_glass")
-        :setPos(vec(0,0,8))
-        :setLight(15,15)
-        :setScale(.5,.5,1)
-        
-    end
 
 
     
@@ -712,13 +729,15 @@ function KineticPath:setLifetime(ticks)
     end
     return self
 end
-function KineticPath:lengthenEveryTicks(byLength,ticks,lifetimeAfter)
-    if (not self.removed) and ((not self.common) or self.common.status == "exceeds_length" or self.common.status == "unloaded") then
+function KineticPath:lengthenEveryTicks(byLength,ticks,lifetimeAfter,continue_unloaded)
+    if (not self.removed) and ((not self.common) or self.common.status == "exceeds_length" or (self.common.status == "unloaded" and continue_unloaded)) then
         self:extendVisual(byLength or 1)
         require("Sleep"):queue(ticks or 1, self.lengthenEveryTicks, self, byLength, ticks)
     else
-        self:setLifetime(lifetimeAfter)
-        log(self.common.end_pos)
+        if (not self.removed) then 
+            self:setLifetime(lifetimeAfter)
+        end
+        -- log(self.common.end_pos)
     end
     return self
 end
@@ -786,6 +805,84 @@ function KineticPath.test(pathLength,lifetime,byLength,ticks)
 end
 
 
+KineticPath.action = {}
 
+---@type KineticPath[]
+KineticPath.action.actives = {}
+
+---@param pos VectorWithLayer
+function KineticPath.action.activate(pos)
+    local initialPathLength = 10
+    local byLength = 2
+    local ticks = 1
+
+    local p = KineticPath.create(pos)
+        :createVisual(models,"kineticTest")
+        :extendVisual(initialPathLength)
+        :lengthenEveryTicks(byLength,ticks)
+        -- :setLifetime(lifetime)
+    KineticPath.action.actives[#KineticPath.action.actives+1] = p
+    return p
+
+end
+
+function KineticPath.action.removeWithAfter(index)
+    assert(type(index) == "number")
+    if index > #KineticPath.action.actives then
+        return
+    end
+    for i = #KineticPath.action.actives, index, -1 do
+        local p = KineticPath.action.actives[i]
+        if p then p:remove() end
+        KineticPath.action.actives[i] = nil
+    end
+end
+
+function KineticPath.action.removeLatest()
+    KineticPath.action.removeWithAfter(#KineticPath.action.actives)
+
+end
+
+function KineticPath.action.removeAll()
+    KineticPath.action.removeWithAfter(1)
+
+end
+
+function KineticPath.action.activateAtLook()
+    if not host:isHost() then return end
+    local block, hitPos, side = host:getPickBlock()
+    if not block then return end
+    local pos = block:getPos()
+end
+
+require("invoke.Invoke")
+Invoke:register("KineticPath",function (self, value, rest, plr)
+    if self:restContains(rest,"clear") then
+        KineticPath.action.removeAll()
+        return
+    end
+    if self:restContains(rest,"pop") then
+        KineticPath.action.removeLatest()
+        return
+    end
+
+    local pos = self:materializeBranch(value.pos)
+    if not pos then return end
+    assert(({Vector3 = true,Vector4 = true})[type(pos)], "invalid input to KineticPath. Vector3|Vector4|nil")
+    local EK = self:materializeBranch(value.EK)
+    if self:restContains(rest,"swap") then
+        KineticPath.action.removeLatest()
+    end
+
+    KineticPath.action.activate(pos)
+end):addDoc{
+    text = "creates a KineticPath",
+    value = "{pos=<pos>, EK=<EK>?}",
+    rest = "clear: clears all. pop: clears latest. swap: if there is a position, clears latest, then makes new one",
+    types = {
+        pos = "Vector|Vector4?",
+        EK = "boolean?"
+    }
+}
 
 return KineticPath

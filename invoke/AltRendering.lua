@@ -37,11 +37,12 @@ local infoSkullDedup = infoSkull:newPart("infos"):setPreRender(
 
     end
 )
+Utils.ID.field.SkullWorld = infoSkullDedup:newPart("root")
 
 if Invoke.RENDER_ON_SKULLS then
     Invoke.infosPart = models:newPart("infos","World")
 else
-    Invoke.infosPart = infoSkullDedup:newPart("root")
+    Invoke.infosPart = Utils.ID.field.SkullWorld:newPart("infosPart")
 end
 
 -- Invoke.infosPart = infoSkullDedup:newPart("root")

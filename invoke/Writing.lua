@@ -51,6 +51,9 @@ end
 ---@type {[string] : fun(item:ItemStack,entity:Entity):Writing?}
 Writing._items = {}
 
+function Writing.isWritingItem(item,entity)
+    return Writing._items[item.id] ~= nil
+end
 
 function Writing.extract(item,entity)
     local f = Writing._items[item.id]

@@ -3,11 +3,22 @@
 DrawLine = {}
 
 
+---@class DrawLineConfig
+---@field char string?
+---@field charHeight number?
+---@field charStartY number?
+---@field charWidth number?
+---@field color string?
+---@field opacity number?
+---@field seeThrough boolean?
+---@field width number?
+
+
 ---changes part into a line. in pixel scale, draw a line between two points with the width config.width
 ---@param part ModelPart
 ---@param from Vector
 ---@param to Vector
----@param config table?
+---@param config DrawLineConfig?
 ---@return ModelPart
 function DrawLine.line(part,from,to,config)
 
@@ -38,7 +49,8 @@ function DrawLine.line(part,from,to,config)
     
     -- local text =  '[{"text"="'..("--"):rep(rep)..'", color="#0088FF"}]'
     -- local text =  ('[{"text"="%s", color="%s"}]'):format((config.line or "--"):rep(rep),config.color or "#0088FF")
-    local text =  ('[{"text"="%s", color="%s"}]'):format((config.char or "."),config.color or "#0088FF")
+    -- local text =  ('[{"text"="%s", color="%s"}]'):format((config.char or "."),config.color or "#0088FF")
+    local text = toJson{text = config.char or ".", color = config.color}
     -- local text2 = '[{"text"="'..("=="):rep(rep)..'", color="#FF8800"}]'
     local function wf(textTask)
         return textTask:setSeeThrough(config.seeThrough)

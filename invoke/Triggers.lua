@@ -121,6 +121,14 @@ Invoke:register("change",function  (self, value, rest, plr)
 end)
 :setSection("triggers")
 
+
+-- Invoke:register("long",function  (self, value, rest, plr)
+--     if Invoke.triggers[rest] and Invoke.triggers[rest]:changed(plr) then
+--         return (not value) or self:materializeBranch(value,plr)
+--     end
+-- end)
+-- :setSection("triggers")
+
 -- todo: make these accept any variable
 
 
@@ -139,9 +147,17 @@ end
 
 Invoke.registerPlayerTracked("sneak",figuraMetatables.EntityAPI.__index.isSneaking)
 
+local Writing = require"invoke.Writing"
+
 Invoke.registerPlayerTracked("offhand",function (plr)
     local item = plr:getItem(2)
-    return item.id == "create:clipboard"
+    return Writing.isWritingItem(item,plr)
+end)
+
+Invoke.registerPlayerTracked("open",function (plr)
+    local w = Invoke.extract(plr,1) or Invoke.extract(plr,2)
+    -- log(w, w and w:isOpen())
+    return w and w:isOpen()
 end)
 
 

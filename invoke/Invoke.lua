@@ -40,7 +40,7 @@ Invoke = {}
 
 
 
-Invoke.RENDER_ON_SKULLS = false
+Invoke.RENDER_ON_SKULLS = true
 Invoke.RENDER_NEAR_ME = true
 Invoke.ENABLE = true
 Invoke.ENABLE_OTHERS = true
@@ -445,6 +445,11 @@ end
 --     -- return true
 -- end)
 -- events.SKULL_RENDER:register(Invoke.readPlayers)
+
+function Invoke:restContains(rest,pat)
+    if not pat then return end
+    return string.match("."..(rest or "") .. ".","%."..pat.."%.")
+end
 
 
 return Invoke

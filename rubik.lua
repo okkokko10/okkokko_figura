@@ -25,10 +25,49 @@ function Permutation:__mul(other)
     return Permutation.new(Utils.table.compose(self,other))
 end
 
-function Permutation:inverse()
+local mode_k = {__mode='k'}
+local cached_funcs =  setmetatable({},mode_k)
+local function memoize(f,x)
+    local cf = cached_funcs[f]
+    if not cf then
+        cf = setmetatable({},mode_k)
+        cached_funcs[f] = cf
+    end
+    local o = cf[x]
+    if o then return o end
+    o = f(x)
+    cf[x] = o
+    return o
+end
+local function memoize_involution(f,x)
+    local cf = cached_funcs[f]
+    if not cf then
+        cf = setmetatable({},mode_k)
+        cached_funcs[f] = cf
+    end
+    local o = cf[x]
+    if o then return o end
+    o = f(x)
+    cf[x] = o
+    cf[o] = x
+    return o
+end
+
+function Permutation:_inverse()
     return Permutation.new(Utils.table.inverted(self))
 end
 
+function Permutation:inverse()
+    return memoize_involution(Permutation._inverse,self)
+end
+
+function Permutation:_square()
+    return self*self
+end
+
+function Permutation:square()
+    return memoize(Permutation._square,self)
+end
 
 ---comment
 ---@param num integer
@@ -203,7 +242,7 @@ RubiksCubeSides.SingmasterDirection = {
     B = Direction.names_to_num.north,
 }
 
-
+--- U, U' 
 RubiksCubeSides.Singmaster = Utils.table.remap(
     RubiksCubeSides.SingmasterDirection,
     function (v, k)
@@ -232,6 +271,7 @@ RubiksCubeSides.Singmaster = Utils.table.remap(
 
 ---@param s string
 function RubiksCubeSides.fromSingmaster(s)
+    local a,b = string.match(s,"([UDRLFBxyz])(['2w]?)")
     
     
 end

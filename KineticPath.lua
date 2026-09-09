@@ -82,6 +82,7 @@ end
 ---@field penultimate_pos VectorWithLayer?  -- if status=="root_reached", is the location prior to root. else, is the location of the last valid position
 ---@field status KineticPathStatus?
 ---@field last_valid_pos VectorWithLayer? -- basically path[length].pos
+---@field owner Entity?
 
 
 ---@class PathNodeData<S>
@@ -429,13 +430,14 @@ end
 
 --- overrideable
 KineticPath.pretty_rules = {
-    {format = function (node_data)
-        local succ, name = pcall(player.getName,player)
-        if not succ then
-            name = ""
-        end
-        return name .. "'s kinetic path"
-    end, condition = "isStart"},
+    -- {format = function (node_data)
+    --     local succ, name = pcall(player.getName,player)
+    --     if not succ then
+    --         name = ""
+    --     end
+    --     return name .. "'s kinetic path"
+    -- end, condition = "isStart"},
+    {vars = "owner", format = "%s's kinetic path", condition = {"found","isStart"}},
     {vars = "index", format = "(%i)", condition = "always"},
     {vars = "Id", format = "Kinetic Network %i", condition = "change"}, -- change looks at vars and checks whether they are equal to the previous
     {vars = "Stress Capacity", format = "%s/%s SU", condition = "change"},
@@ -804,6 +806,12 @@ function KineticPath.test(pathLength,lifetime,byLength,ticks)
   end
 end
 
+function KineticPath:attribution(player)
+    if not self.common then self.common = {} end
+    self.common.owner = player:isLoaded() and player:getName() or nil
+    return self
+end
+
 
 KineticPath.action = {}
 
@@ -811,12 +819,13 @@ KineticPath.action = {}
 KineticPath.action.actives = {}
 
 ---@param pos VectorWithLayer
-function KineticPath.action.activate(pos)
+function KineticPath.action.activate(pos,player)
     local initialPathLength = 10
     local byLength = 2
     local ticks = 1
 
     local p = KineticPath.create(pos)
+        :attribution(player)
         :createVisual(models,"kineticTest")
         :extendVisual(initialPathLength)
         :lengthenEveryTicks(byLength,ticks)
@@ -826,7 +835,7 @@ function KineticPath.action.activate(pos)
 
 end
 
-function KineticPath.action.removeWithAfter(index)
+function KineticPath.action.removeWithAfter(index,player)
     assert(type(index) == "number")
     if index > #KineticPath.action.actives then
         return
@@ -838,12 +847,12 @@ function KineticPath.action.removeWithAfter(index)
     end
 end
 
-function KineticPath.action.removeLatest()
+function KineticPath.action.removeLatest(player)
     KineticPath.action.removeWithAfter(#KineticPath.action.actives)
 
 end
 
-function KineticPath.action.removeAll()
+function KineticPath.action.removeAll(player)
     KineticPath.action.removeWithAfter(1)
 
 end
@@ -858,11 +867,11 @@ end
 require("invoke.Invoke")
 Invoke:register("KineticPath",function (self, value, rest, plr)
     if self:restContains(rest,"clear") then
-        KineticPath.action.removeAll()
+        KineticPath.action.removeAll(self.plr)
         return
     end
     if self:restContains(rest,"pop") then
-        KineticPath.action.removeLatest()
+        KineticPath.action.removeLatest(self.plr)
         return
     end
 
@@ -871,10 +880,10 @@ Invoke:register("KineticPath",function (self, value, rest, plr)
     assert(({Vector3 = true,Vector4 = true})[type(pos)], "invalid input to KineticPath. Vector3|Vector4|nil")
     local EK = self:materializeBranch(value.EK)
     if self:restContains(rest,"swap") then
-        KineticPath.action.removeLatest()
+        KineticPath.action.removeLatest(self.plr)
     end
 
-    KineticPath.action.activate(pos)
+    KineticPath.action.activate(pos,self.plr)
 end):addDoc{
     text = "creates a KineticPath",
     value = "{pos=<pos>, EK=<EK>?}",

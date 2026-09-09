@@ -52,10 +52,10 @@ end
 Writing._items = {}
 
 
-function Writing.extract(item)
+function Writing.extract(item,entity)
     local f = Writing._items[item.id]
     if f then
-        return f(item)
+        return f(item,entity)
     end
     
 end
@@ -121,7 +121,8 @@ local Book = setmetatable({},Writing)
 Book.__index = Book
 
 Writing._items["minecraft:writable_book"] = function(item,entity)
-    local content = item.tag["writable_book_content"]
+    local content = item.tag["minecraft:writable_book_content"]
+    -- logTable(item.tag)
     if content then
         return setmetatable({content=content,is_open = require("./HostScreen").is(entity,"BookEditScreen")}, Book)
     end

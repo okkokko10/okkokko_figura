@@ -38,9 +38,16 @@ local infoSkullDedup = infoSkull:newPart("infos"):setPreRender(
     end
 )
 
-Invoke.infosPart = infoSkullDedup:newPart("root")
+if Invoke.RENDER_ON_SKULLS then
+    Invoke.infosPart = models:newPart("infos","World")
+else
+    Invoke.infosPart = infoSkullDedup:newPart("root")
+end
 
-if false then
+-- Invoke.infosPart = infoSkullDedup:newPart("root")
+-- Invoke.infosPart = models:newPart("infos","World")
+
+if Invoke.RENDER_NEAR_ME then
     models:newPart("infosWorld","World"):addChild(infoSkullDedup)
 end
 

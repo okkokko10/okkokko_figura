@@ -26,7 +26,7 @@ Grabbing.isSelectable = {}
 
 -- function Grabbing.addSelectable(gizmo) end
 
-Grabbing.GUI = models:newPart("GrabbingGUI2","GUI"):setPos(-client.getScaledWindowSize().xy_*vec(0.7,0.3,1))
+Grabbing.GUI = models:newPart("GrabbingGUI2","GUI"):setPos(-client.getScaledWindowSize().xy_*vec(0.7,0.3,1)):setVisible(false)
 
 Grabbing.GUI:newText("text"):setAlignment("LEFT") --:setScale(1/2)
 

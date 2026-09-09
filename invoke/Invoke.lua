@@ -38,6 +38,14 @@ local Clipboard = require"./Writing"
 ---@field plr Entity
 Invoke = {}
 
+
+
+Invoke.RENDER_ON_SKULLS = false
+Invoke.RENDER_NEAR_ME = true
+Invoke.ENABLE = true
+Invoke.ENABLE_OTHERS = true
+
+
 Invoke.__index = Invoke
 
 
@@ -50,7 +58,7 @@ end
 ---@param entity Entity
 function Invoke.extract(entity,slot)
     local item = entity:getItem(slot or 1)
-    return Clipboard.extract(item)
+    return Clipboard.extract(item,entity)
     -- if item.id ~= "create:clipboard" then return end
     -- local content = item.tag["create:clipboard_content"]
     -- return content
@@ -419,7 +427,7 @@ end
 
 
 
-if avatar:getPermissionLevel() == "MAX" then
+if Invoke.ENABLE and avatar:getPermissionLevel() == "MAX" and (host:isHost() or Invoke.ENABLE_OTHERS)  then
     events.WORLD_TICK:register(Invoke.readPlayers)
 end
 

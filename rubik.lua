@@ -207,7 +207,7 @@ function RubiksCubeSides.initialize()
     return RubiksCubeSides
 end
 
---- in incomplete state
+
 function RubiksCubeSides.initialize_permutations()
     ---@type {[DirectionNum]:Permutation}
     RubiksCubeSides.permute_whole = {}
@@ -275,8 +275,12 @@ function RubiksCubeSides.initialize_permutations()
     for side = 0, 5 do
         RubiksCubeSides.permute_side_twice[side] = RubiksCubeSides.permute_side[side]:square()
     end
-    ---@type Permutation
-    RubiksCubeSides.permute_whole_twice = RubiksCubeSides.permute_whole[1]:square()
+    -- ---@type Permutation
+    -- RubiksCubeSides.permute_whole_twice = {} -- RubiksCubeSides.permute_whole[1]:square()
+    -- for side = 0, 5 do
+    --     RubiksCubeSides.permute_whole[side]:assign_square(RubiksCubeSides.permute_whole_twice)
+    -- end
+
     
 
 

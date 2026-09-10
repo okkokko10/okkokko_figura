@@ -20,9 +20,10 @@ end
 
 ---comment
 ---@param other Permutation
+---@param out Permutation? -- table
 ---@return Permutation
-function Permutation:__mul(other)
-    return Permutation.new(Utils.table.compose(self,other))
+function Permutation:__mul(other,out)
+    return Permutation.new(Utils.table.compose(self,other,out))
 end
 
 local mode_k = {__mode='k'}
@@ -52,6 +53,14 @@ local function memoize_involution(f,x)
     cf[o] = x
     return o
 end
+local function memoize_assign(f,x,y)
+    local cf = cached_funcs[f]
+    if not cf then
+        cf = setmetatable({},mode_k)
+        cached_funcs[f] = cf
+    end
+    cf[x] = f(x)
+end
 
 function Permutation:_inverse()
     return Permutation.new(Utils.table.inverted(self))
@@ -68,6 +77,23 @@ end
 function Permutation:square()
     return memoize(Permutation._square,self)
 end
+
+function Permutation:__eq(other)
+    return Utils.table.equals(self,other)
+end
+
+--- if sq is a table and not a permutation, it is assigned the square (as shortcut to initialize it)
+function Permutation:assign_square(sq)
+    if type(sq) == "table" and not getmetatable(sq) then
+        self:__mul(self,sq) -- converts sq into the square
+        memoize_assign(Permutation._square,self,sq)
+        return
+    end
+    local nsq = self:_square()
+    assert(nsq == sq)
+    memoize_assign(Permutation._square,self,sq)
+end
+
 
 ---comment
 ---@param num integer
@@ -181,24 +207,57 @@ function RubiksCubeSides.initialize()
     return RubiksCubeSides
 end
 
-
+--- in incomplete state
 function RubiksCubeSides.initialize_permutations()
     ---@type {[DirectionNum]:Permutation}
     RubiksCubeSides.permute_whole = {}
     ---@type {[DirectionNum]:Permutation}
     RubiksCubeSides.permute_side = {}
-    for side = 0, 5 do 
-        RubiksCubeSides.permute_whole[side] = Permutation.new{}
-        RubiksCubeSides.permute_side[side] = Permutation.new{}
-    end
-
-    for index = 0, RubiksCubeSides.indexCount - 1 do
-        local t = RubiksCubeSides.tiles[index]
-        for side = 0, 5 do
-            RubiksCubeSides.permute_whole[side][index] = t.rotated[side]
-            RubiksCubeSides.permute_side[side][index] = t.connected[side] and t.rotated[side] or t.index
+    -- for side = 0, 5 do 
+    --     RubiksCubeSides.permute_whole[side] = Permutation.new{}
+    --     RubiksCubeSides.permute_side[side] = Permutation.new{}
+    -- end
+    for side = 0, 5 do
+        local p = {}
+        for index = 0, RubiksCubeSides.indexCount - 1 do
+            local t = RubiksCubeSides.tiles[index]
+            p[index] = t.connected[side] and t.rotated[side] or t.index
         end
+        RubiksCubeSides.permute_side[side] = Permutation.new(p)
     end
+    --- this way 
+    for side = 0, 4, 2 do
+        local p = {}
+        for index = 0, RubiksCubeSides.indexCount - 1 do
+            local t = RubiksCubeSides.tiles[index]
+            p[index] = t.rotated[side]
+        end
+        RubiksCubeSides.permute_whole[side] = Permutation.new(p)
+        RubiksCubeSides.permute_whole[Direction.flip(side)] = RubiksCubeSides.permute_whole[side]:inverse()
+    end
+    -- for index = 0, RubiksCubeSides.indexCount - 1 do
+    --     local t = RubiksCubeSides.tiles[index]
+    --     for side = 0, 5 do
+    --         RubiksCubeSides.permute_side[side][index] = t.connected[side] and t.rotated[side] or t.index
+    --     end
+    --     for side = 0, 4, 2 do
+    --         RubiksCubeSides.permute_whole[side][index] = t.rotated[side]
+    --     end
+    -- end
+    -- for side = 1, 5, 2 do
+    --     RubiksCubeSides.permute_whole[side] = RubiksCubeSides.permute_whole[Direction.flip(side)]:inverse()
+    -- end
+
+
+    
+    
+    -- ---@type {[DirectionNum]:Permutation}
+    -- RubiksCubeSides.permute_wide = {}
+    -- for side = 0, 5 do
+
+    -- end
+    
+
     ---@type {[DirectionNum]:Permutation}
     RubiksCubeSides.permute_side_reverse = {}
     for side = 0, 5 do
@@ -214,10 +273,10 @@ function RubiksCubeSides.initialize_permutations()
     ---@type {[DirectionNum]:Permutation}
     RubiksCubeSides.permute_side_twice = {}
     for side = 0, 5 do
-        RubiksCubeSides.permute_side_twice[side] = RubiksCubeSides.permute_side[side]^2
+        RubiksCubeSides.permute_side_twice[side] = RubiksCubeSides.permute_side[side]:square()
     end
     ---@type Permutation
-    RubiksCubeSides.permute_whole_twice = RubiksCubeSides.permute_whole[1]^2
+    RubiksCubeSides.permute_whole_twice = RubiksCubeSides.permute_whole[1]:square()
     
 
 

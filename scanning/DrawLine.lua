@@ -110,5 +110,13 @@ function DrawLine.test(part)
     
 end
 
+---todo: draws a colored cube in the same fashion
+---@param part ModelPart
+---@param config DrawLineConfig
+function DrawLine.Cube(part,config)
+    
+end
+
+
 
 return DrawLine

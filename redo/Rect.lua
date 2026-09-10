@@ -1,5 +1,5 @@
 
-
+require"utils"
 
 ---@class HasGetScalePos
 ---@field getScale fun(self:self):Vector
@@ -20,6 +20,7 @@
 ---@field name? string
 Rect = {__type = "Rect"}
 
+---@type {[string] : fun(self:Rect):Vector}
 local Rect_index = {
     center = function (self)
         return (self[1]+self[2])/2
@@ -47,6 +48,17 @@ Rect_index.pos = Rect_index.center
 Rect_index.scale = Rect_index.size
 Rect.getScale = Rect_index.scale
 Rect.getPos = Rect_index.pos
+
+---@class Rect
+local rect_index_examples = {
+    center = vec(0,0,0),
+    size = vec(0,0,0),
+    signedSize = vec(0,0,0),
+    pos1 = vec(0,0,0),
+    pos2 = vec(0,0,0),
+    min = vec(0,0,0),
+    max = vec(0,0,0),
+}
 
 function Rect:__index(ind)
     local f = Rect_index[ind]
@@ -91,7 +103,7 @@ function Rect:set(from)
     return self
 end
 
---- works for ItemTask
+--- works for ItemTask of a block.
 ---@generic S : HasSetScalePos
 ---@param target S
 ---@param posScaling? number -- 

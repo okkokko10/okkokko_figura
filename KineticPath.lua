@@ -388,6 +388,8 @@ function Utils.Sublevel.sublevelIDname(slOrigin)
     return "sl"..tostring(slOrigin)
 end
 
+Utils.Sublevel.defaultSublevelParent = models:newPart("defaultSublevelParent","World")
+
 ---moves part to be a child of a child of `grandparent or models` that tracks the position of a sublevel.
 ---if part is string|nil, creates a new part named that or a generated name.
 ---@param pos Vector
@@ -395,7 +397,7 @@ end
 ---@param part ModelPart|string|nil
 ---@return ModelPart
 function Utils.Sublevel.SublevelPositionPart(pos,grandparent,part)
-    grandparent = grandparent or models
+    grandparent = grandparent or Utils.Sublevel.defaultSublevelParent
     local slOrigin, slOffset = Utils.Sublevel.getSublevelOriginOffset(pos)
     local sublevelID = Utils.Sublevel.sublevelIDname(slOrigin)
     if not grandparent[sublevelID] then

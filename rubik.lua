@@ -1,4 +1,5 @@
 
+require"Direction"
 --- could I get away with serializing the cube with raw tiles, instead of the 16 moving parts?
 --- do I store position -> color or tile -> position?
 --- tile -> position would be better for animating the change.

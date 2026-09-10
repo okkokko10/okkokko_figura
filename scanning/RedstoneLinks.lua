@@ -112,7 +112,7 @@ function Frequency.fromBlock(block)
 end
 
 function Frequency.makeStr(FrequencyFirst,FrequencyLast)
-    return RedstoneLinks.frequencyFromItem(FrequencyFirst) .. "|" .. RedstoneLinks.frequencyFromItem(FrequencyLast)
+    return RedstoneLinks.frequencyFromItem(FrequencyFirst) .. " | " .. RedstoneLinks.frequencyFromItem(FrequencyLast)
 end
 
 ---comment
@@ -249,50 +249,7 @@ function Utils.math.vectorMax(a,b)
     end)
 end
 
-Utils.Scan = {}
-
-Utils.Scan.queued_scans = {}
-Utils.Scan.queued_scans_index = 1
-
-
-
-function Utils.Scan.order_scan1(pos1,pos2,func,onFinish)
-    Utils.Scan.queued_scans[#Utils.Scan.queued_scans+1] = {pos1=pos1,pos2=pos2,func=func,onFinish=onFinish}
-end
-
-events.TICK:register(function ()
-    if #Utils.Scan.queued_scans > Utils.Scan.queued_scans_index then
-        local sc = Utils.Scan.queued_scans[Utils.Scan.queued_scans_index]
-        Utils.Scan.queued_scans_index = Utils.Scan.queued_scans_index + 1
-        local blocks = world.getBlocks(sc.pos1,sc.pos2)
-        
-    end
-end)
-
-
-
----comment
----@param rect Rect
----@param func fun(block:BlockState)
-function Utils.Scan.foreach(rect,func)
-    if not rect then return end
-    local pos1 = rect.min
-    local pos2 = rect.max
-    local size = rect.size
-    for x = 0, size.x, 8 do
-        for y = 0, size.y,8 do
-            for z = 0, size.z,8 do
-                local lpos = pos1+vec(x,y,z)
-                local lsize = vec(8,8,8)
-                local tbl = world.getBlocks(lpos,Utils.math.vectorMin(pos2,lpos+lsize))
-                for key, value in pairs(tbl) do
-                    func(value)
-                end
-            end
-        end
-    end
-end
-
+local Scan = require"./Scan"
 
 function Frequency.scanArea1(pos)
     pos = pos or select(2, (host:isHost() and host or Utils.Nop):getPickBlock()) or client.getCameraPos()
@@ -306,7 +263,9 @@ function Frequency.scanArea(pos)
     pos = pos or select(2, (host:isHost() and host or Utils.Nop):getPickBlock()) or client.getCameraPos()
     -- local min = pos - vec(4, 4, 4)
     -- local max = pos + vec(4, 4, 4)
-    Utils.Scan.foreach(Rect.fromPosSize(pos,vec(16,16,16)),Frequency.introduceBlock)
+    Scan.foreach(Rect.fromPosSize(pos,vec(16,16,16)),Frequency.introduceBlock,function ()
+        log("scan complete")
+    end)
     -- for key, value in pairs(blocks) do
     --     Frequency.introduceBlock(value)
     -- end

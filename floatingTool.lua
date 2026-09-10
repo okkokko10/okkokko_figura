@@ -252,34 +252,6 @@ function FloatingObject:addHitboxEdges(pos1,pos2,name)
     return self
 end
 
-function Utils.math.edgesToPosScale(pos1,pos2)
-    return (pos1+pos2)/2, Utils.math.vectorAbs(pos2-pos1)
-end
-
-
-function Utils.math.vectorAbs(vector)
-    return vector:applyFunc(math.abs)
-end
-
----@param matrix Matrix
----@param func fun(vector:Vector,col:number):Vector
-function Utils.math.matrix4ApplyFuncVector(matrix,func)
-    return matrices.mat4(func(matrix[1],1),func(matrix[2],2),func(matrix[3],3),func(matrix[4],4))
-end
----@param matrix Matrix
----@param func fun(vector:Vector,col:number):Vector
-function Utils.math.matrix3ApplyFuncVector(matrix,func)
-    return matrices.mat3(func(matrix[1].xyz,1),func(matrix[2].xyz,2),func(matrix[3].xyz,3))
-end
-function Utils.math.matrix4Abs(matrix)
-    return Utils.math.matrix4ApplyFuncVector(matrix,Utils.math.vectorAbs)
-end
-
--- works on matrix4 as well, deaugmenting it
-function Utils.math.matrix3Abs(matrix)
-    return Utils.math.matrix3ApplyFuncVector(matrix,Utils.math.vectorAbs)
-end
-
 ---comment
 ---@param aabb HasPosSize
 ---@param matrix Matrix

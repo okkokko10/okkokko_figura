@@ -257,6 +257,8 @@ function Grabbing.updateGUI()
                     and "#209030"
                 or isOntoIndexAncestor
                     and "#206030"
+                or isSelectable
+                    and "#B3DAD4"
                 or "#FFFFFF")
             )
         }

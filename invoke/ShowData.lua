@@ -25,7 +25,7 @@ function Invoke:createInfo(pos,text,plr,ephemeral)
         return
     end
     self.counter = (self.counter or 0) + 1
-    local p = Utils.Sublevel.moveToSublevelPosition((pos + 0.5),nil,Invoke.infosPart)
+    local p = Utils.Sublevel.SublevelPositionPart((pos + 0.5),Invoke.infosPart)
     -- local p = Invoke.infosPart:newPart(str .. "_"..self.counter):setPos((pos + 0.5)*PS)
 
     lis[str] = p
@@ -57,7 +57,7 @@ end
 
 function Invoke:getInfos(pos)
     return self:getInfosDefault(tostring(pos),
-        Utils.Sublevel.moveToSublevelPosition,(pos + 0.5),nil,self.infosPart)
+        Utils.Sublevel.SublevelPositionPart,(pos + 0.5),self.infosPart)
 
 end
 

@@ -50,6 +50,32 @@ function Utils.Sublevel.difference(pos1,pos2)
     return Utils.Sublevel.areInSameSublevel(pos1,pos2) and (pos1-pos2) or nil
 end
 
+
+---@param pos Vector
+---@param relativeTo Vector
+---@param delta number? todo: unimplemented, uses interpolated sublevel positions
+---@return Vector|nil
+function Utils.Sublevel.relativeMatrix(pos,relativeTo,delta)
+    if Utils.Sublevel.areInSameSublevel(pos,relativeTo) then
+        return matrices.translate4(pos-relativeTo)
+    else
+        return Utils.Sublevel.sublevelPositionMatrix(relativeTo,1):inverted() * Utils.Sublevel.sublevelPositionMatrix(pos,1)
+    end
+end
+--- returns 
+---@param pos Vector
+---@param relativeTo Vector
+---@param delta number? todo: unimplemented, uses interpolated sublevel positions
+---@return Vector|nil
+function Utils.Sublevel.relativePosition(pos,relativeTo,delta)
+    if Utils.Sublevel.areInSameSublevel(pos,relativeTo) then
+        return pos-relativeTo
+    else
+        return (Utils.Sublevel.sublevelPositionMatrix(relativeTo,1):inverted():apply(Utils.Sublevel.sableSublevelToWorld(pos)))
+    end
+    -- return Utils.Sublevel.areInSameSublevel(pos,relativeTo) and (pos-relativeTo) or nil
+end
+
 --- Vector<4> that encodes a 3d position and whether it points to Extra Kinetics. get the original with .xyz
 ---@alias VectorWithLayer Vector<4>|Vector<3>
 local VectorWithLayer = {}
@@ -358,17 +384,20 @@ end
 -- host:setClipboard (string.format("%X, %X, %X", 20481028, 126, 20560907 ) )
 -- 1388404, 7E, 139BC0B
 
+function Utils.Sublevel.sublevelIDname(slOrigin)
+    return "sl"..tostring(slOrigin)
+end
 
 ---moves part to be a child of a child of `grandparent or models` that tracks the position of a sublevel.
 ---if part is string|nil, creates a new part named that or a generated name.
 ---@param pos Vector
----@param part ModelPart|string|nil
 ---@param grandparent ModelPart?
+---@param part ModelPart|string|nil
 ---@return ModelPart
-function Utils.Sublevel.moveToSublevelPosition(pos,part,grandparent)
+function Utils.Sublevel.SublevelPositionPart(pos,grandparent,part)
     grandparent = grandparent or models
     local slOrigin, slOffset = Utils.Sublevel.getSublevelOriginOffset(pos)
-    local sublevelID = "sl"..tostring(slOrigin)
+    local sublevelID = Utils.Sublevel.sublevelIDname(slOrigin)
     if not grandparent[sublevelID] then
         Positioning.make.coordinateFollower(slOrigin,sublevelID,grandparent)
     end
@@ -753,7 +782,7 @@ function KineticPath:pre_init_pathPart(i)
     end
     local prevNode = self.path[i-1]
     local nextNode = self.path[i+1]
-    local main = Utils.Sublevel.moveToSublevelPosition(node.pos.xyz + 0.5,nil,self.part)
+    local main = Utils.Sublevel.SublevelPositionPart(node.pos.xyz + 0.5,self.part)
     self.path_parts[i] = main
     self:init_pathPart(main,node)
     

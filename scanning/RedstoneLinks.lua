@@ -137,8 +137,11 @@ function Frequency.fromItems(FrequencyFirst,FrequencyLast)
     return out
 end
 
-Frequency.uiRootPart = models:newPart("FrequenciesUI","GUI"):setPos(-client.getScaledWindowSize().xy_*vec(0.3,0.3,1))
-Frequency.uiRootPart:setPos(-client.getScaledWindowSize().xy_*vec(0.3,0.5,1))
+Frequency.uiRootPartRoot = models:newPart("FrequenciesUI","GUI"):setPos(-client.getScaledWindowSize().xy_*vec(0.3,0.3,1))
+    :setPos(-client.getScaledWindowSize().xy_*vec(0.3,0.5,1))
+Frequency.uiRootPart = Frequency.uiRootPartRoot:newPart("FrequencyDisplay")
+Utils.ID.field.FrequencyDisplay = Frequency.uiRootPart
+require("redo.Grab").addSelectableGenerate("FrequencyDisplay")
 Frequency.pathsRootPart = models:newPart("FrequenciesPaths","World")
 
 
@@ -185,8 +188,11 @@ function Frequency:createPath(from,to)
     end
     if (not from.Transmitter) or to.Transmitter then return end    
     if from.paths[to] then return end
-    
-    from.paths[to] = DrawLine.line(self.pathsPart:newPart(tostring(from.pos).."<>"..tostring(to.pos)),from.pos*PS,to.pos*PS)
+    -- log(from,to)
+    local toCenter = vec(1,1,1)/2
+    from.paths[to] = DrawLine.line(
+        Utils.Sublevel.SublevelPositionPart(from.pos+toCenter,Frequency.pathsRootPart, tostring(from.pos).."<>"..tostring(to.pos)):newPart("p"),
+        vec(0,0,0),Utils.Sublevel.relativePosition(to.pos+toCenter,from.pos+toCenter)*PS)
 
     
 

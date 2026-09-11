@@ -11,6 +11,13 @@ player = player
 ---@class Vector
 -- -@field [string] any
 
+---@class Vector
+local Vector = {}
+
+---comment
+---@param n number?
+---@return Vector
+function Vector:augmented(n) error() end
 
 
 
@@ -36,6 +43,20 @@ end
 ---@param b T
 ---@param t number
 ---@return T
-function math.lerp(a,b,t)
-    
-end
+function math.lerp(a,b,t) error() end
+---@generic T
+---@param a T
+---@param b T
+---@param t number
+---@return T
+function math.lerpAngle(a,b,t) error() end
+
+
+---@generic T
+---@param value T
+---@param oldMin T
+---@param oldMax T
+---@param newMin T
+---@param newMax T
+---@return T
+function math.map(value, oldMin, oldMax, newMin, newMax) error() end

@@ -14,6 +14,42 @@ DrawLine = {}
 ---@field width number?
 
 
+    --- goes rightmost in the matrix multiplication. 
+    --- transforms the text to occupy the rectangle [0, 1] × [-.5, .5]
+    --- from [0,widthChar] × [startY, startY + height]
+local function characterToLineMatrix(widthChar,height,startY,lineWidth,z)
+    ---     -.5 = a * startY + b
+    ---     .5 = a * (startY + height) + b
+    --- y' = (1/height) * y + (-.5 - startY/height)
+    return matrices.mat4(
+        vec(1/widthChar,0,0,0),
+        vec(0,(lineWidth/height),0,0),
+        vec(0,0,z,0),
+        vec(0,lineWidth*(-.5 - startY/height),0,1)
+    )
+end
+
+--- should return a matrix where the first column is v, and is orthogonal
+--- todo: make work
+---@param v Vector
+---@param o Vector
+---@return Matrix<4>
+local function pointingMatrix(v,o)
+    local toCamera = vec(0,1,0)
+    local orthogonalToCam = v:crossed(toCamera):normalize()
+    if orthogonalToCam:length() == 0 then
+        toCamera = vec(1,0,0)
+        orthogonalToCam = v:crossed(toCamera):normalize()
+    end
+
+    return matrices.mat4(
+        v:augmented(0),
+        orthogonalToCam:augmented(0),
+        (toCamera):augmented(0),
+        o:augmented(1)
+        )
+end
+
 ---changes part into a line. in pixel scale, draw a line between two points with the width config.width
 ---@param part ModelPart
 ---@param from Vector
@@ -26,19 +62,9 @@ function DrawLine.line(part,from,to,config)
     
     
     local difference = to - from
-    local midpoint = (to + from) / 2
-    -- local toCamera = (client.getCameraPos() - midpoint):normalize()
-    local toCamera = vec(0,1,0)
-    local orthogonalToCam = difference:crossed(toCamera):normalize()
-    if orthogonalToCam:length() == 0 then
-        toCamera = vec(1,0,0)
-        orthogonalToCam = difference:crossed(toCamera):normalize()
-    end
 
-
-    part:setMatrix(matrices.mat4(
-        -difference.xyz_,orthogonalToCam:augmented(0),(toCamera):augmented(0),((from)):augmented(1)
-    ))
+    local mat = pointingMatrix(-difference,from)
+    -- part:setMatrix(mat)
     
 
     -- local rep = config.rep or 5
@@ -46,33 +72,28 @@ function DrawLine.line(part,from,to,config)
     local height = 1 or config.charHeight
     local widthChar = 1 or config.charWidth
     local width = (config.width or 1)
+
+    --- todo: can you swizzle matrices? 
+    ---     add thickness to lines with cross. 
     
-    -- local text =  '[{"text"="'..("--"):rep(rep)..'", color="#0088FF"}]'
-    -- local text =  ('[{"text"="%s", color="%s"}]'):format((config.line or "--"):rep(rep),config.color or "#0088FF")
-    -- local text =  ('[{"text"="%s", color="%s"}]'):format((config.char or "."),config.color or "#0088FF")
+    --- goes rightmost in the matrix multiplication. 
+    local characterToLine1 = characterToLineMatrix(widthChar,height,startY,width,1)
+    local characterToLine2 = characterToLineMatrix(widthChar,height,startY,width,-1)
+    
     local text = toJson{text = config.char or ".", color = config.color}
-    -- local text2 = '[{"text"="'..("=="):rep(rep)..'", color="#FF8800"}]'
+
     local function wf(textTask)
         return textTask:setSeeThrough(config.seeThrough)
             :setText(text)
             :setAlignment("LEFT")
-            :setScale(1/widthChar,width,1)
             :setOpacity(config.opacity or 1)
         
     end
 
     --- a text task always has 1 pixel of space between symbols.
 
-    wf(part:newText("a"))
-            :setPos(0, (startY + height/2)*width,0)
-    wf(part:newText("b"):setRot(180,0,0))
-            :setPos(0,-(startY +height/2)*width,0)
-
-    -- part:newText("b"):setSeeThrough(true):setText(text2):setAlignment("RIGHT"):setWidth(16*rep):setScale(1/rep,1,1)
-    
-    --:setPos(from*PS)
-    -- part:newText("b"):setSeeThrough(true):setPos(to*PS)
-    -- log(from,to)
+    wf(part:newText("a")):setMatrix(mat*characterToLine1)
+    wf(part:newText("b")):setMatrix(mat*characterToLine2)
     return part
     
 end

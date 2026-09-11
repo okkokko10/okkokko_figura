@@ -851,9 +851,9 @@ KineticPath.action.actives = {}
 
 ---@param pos VectorWithLayer
 function KineticPath.action.activate(pos,player)
-    local initialPathLength = 10
-    local byLength = 2
-    local ticks = 1
+    local initialPathLength = 1
+    local byLength = 1
+    local ticks = 5
 
     local p = KineticPath.create(pos)
         :attribution(player)

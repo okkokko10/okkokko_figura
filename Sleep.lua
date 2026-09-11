@@ -165,7 +165,7 @@ Sleep._queued = {}
 
 function Sleep:queueAt(time,func,...)
     self:_init()
-    log("queued:",time,func,...)
+    -- log("queued:",time,func,...)
     time = math.floor(time or 0)
     if time <= self.last_time then
         time = self.last_time + 1

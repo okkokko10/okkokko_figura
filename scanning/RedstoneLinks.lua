@@ -139,8 +139,8 @@ end
 
 Frequency.uiRootPartRoot = models:newPart("FrequenciesUI","GUI"):setPos(-client.getScaledWindowSize().xy_*vec(0.3,0.3,1))
     :setPos(-client.getScaledWindowSize().xy_*vec(0.3,0.5,1))
-Frequency.uiRootPart = Frequency.uiRootPartRoot:newPart("FrequencyDisplay")
-Utils.ID.field.FrequencyDisplay = Frequency.uiRootPart
+Utils.ID.field.FrequencyDisplay = Frequency.uiRootPartRoot:newPart("FrequencyDisplay") 
+Frequency.uiRootPart = Utils.ID.field.FrequencyDisplay:newPart("q"):setScale(1/4)
 require("redo.Grab").addSelectableGenerate("FrequencyDisplay")
 Frequency.pathsRootPart = models:newPart("FrequenciesPaths","World")
 
@@ -192,7 +192,12 @@ function Frequency:createPath(from,to)
     local toCenter = vec(1,1,1)/2
     from.paths[to] = DrawLine.line(
         Utils.Sublevel.SublevelPositionPart(from.pos+toCenter,Frequency.pathsRootPart, tostring(from.pos).."<>"..tostring(to.pos)):newPart("p"),
-        vec(0,0,0),Utils.Sublevel.relativePosition(to.pos+toCenter,from.pos+toCenter)*PS)
+        vec(0,0,0),Utils.Sublevel.relativePosition(to.pos+toCenter,from.pos+toCenter)*PS,
+    {
+        seeThrough=true,
+        opacity=0.5,
+        color="#FF0000"
+    })
 
     
 
@@ -200,6 +205,7 @@ function Frequency:createPath(from,to)
     
 end
 
+Frequency.allPositions = {}
 
 ---it should already be checked that this
 ---@param block BlockState
@@ -208,8 +214,12 @@ function Frequency.introduceBlock(block)
     local freq = Frequency.fromBlock(block)
     if not freq then
         --- todo: if there used to be a link here, remove it?
+        if Frequency.allPositions[pos] then
+            -- Frequency.allPositions[pos]
+        end
         return
     end
+    Frequency.allPositions[pos] = freq
     local rl = freq.positions[pos] or {}
     local data = block:getEntityData()
 

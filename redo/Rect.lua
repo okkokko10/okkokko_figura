@@ -12,13 +12,24 @@ require"utils"
 ---@class HasGetSetScalePos : HasGetScalePos, HasSetScalePos
 
 
+local Rect_call = {}
+
+---@param pos1 Vector
+---@param pos2 Vector
+---@return Rect
+function Rect_call:__call(t, pos1,pos2)
+    return Rect.fromEndpoints(pos1,pos2)
+end
+
+
+
 ---@type ModelPart
 
 ---@class Rect : HasPosSize,HasGetScalePos
 ---@field [1] Vector
 ---@field [2] Vector
 ---@field name? string
-Rect = {__type = "Rect"}
+Rect = setmetatable({__type = "Rect"},Rect_call)
 
 ---@type {[string] : fun(self:Rect):Vector}
 local Rect_index = {
@@ -70,6 +81,32 @@ function Rect:__index(ind)
 end
 
 
+
+-- - a limited variant of Rect that is exclusively used for this: Rect(0,1) * {1,2} * {2,3}
+local Rect1D = {__type = "Rect1D"}
+
+local function make_Rect1D(pos1,pos2)
+    return setmetatable({pos1,pos2},Rect1D)
+end
+
+---[a,b] x [c,d]
+---@param other [number,number]
+---@return Rect
+function Rect1D:__mul(other)
+    return Rect.fromEndpoints(vec(self[1],other[1]),vec(self[2],other[2]))
+end
+
+---[a,b] x [c,d]
+---@param other [number,number]|Rect
+---@return Rect
+function Rect:__mul(other)
+    if type(self[1]) == "number" then
+        return Rect.fromEndpoints(vec(self[1],other[1]),vec(self[2],other[2]))
+    end
+    return Rect.fromEndpoints(self[1]:augmented(other[1]),self[2]:augmented(other[2]))
+end
+
+
 ---@param pos Vector
 ---@param size Vector
 ---@return Rect
@@ -82,6 +119,25 @@ end
 ---@return Rect
 function Rect.fromEndpoints(pos1,pos2)
     return setmetatable({pos1,pos2},Rect)
+end
+
+---@param ... [number,number]
+---@return Rect
+function Rect.fromIntervals(...)
+    local a = vec(
+        (select(1,...) or {})[1],
+        (select(2,...) or {})[1],
+        (select(3,...) or {})[1],
+        (select(4,...) or {})[1]
+    )
+    local b = vec(
+        (select(1,...) or {})[2],
+        (select(2,...) or {})[2],
+        (select(3,...) or {})[2],
+        (select(4,...) or {})[2]
+    )
+
+    return Rect.fromEndpoints(a,b)
 end
 
 ---returns a copy with min and max
@@ -186,5 +242,23 @@ end
 function Rect:transformed(matrix)
     return self:transformed_absMatrix(matrix,Utils.math.matrix3Abs(matrix))
 end
+
+
+--- gives a matrix that maps from Rect.fromPosSize(vec(0,0,0),vec(1,1,1)) to self
+---@return Matrix
+function Rect:matrix()
+    local a = self.pos1
+    local b = self.signedSize
+    return matrices.scale4(b):translate(a)
+
+end
+---
+---@param result Rect
+---@return Matrix
+function Rect:matrixInto(result)
+    return result:matrix() * self:matrix():invert()
+end
+
+
 
 return Rect

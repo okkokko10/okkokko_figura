@@ -212,6 +212,7 @@ end
 ---     is the start.rest split done with arguments? 
 ---currently calls the key with value={}
 ---@param word string|table
+---@return unknown?
 function Invoke:materializeBranch(word,plr,tbl)
     if not word then return end
     if type(word) == "table" then

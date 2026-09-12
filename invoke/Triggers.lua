@@ -75,6 +75,10 @@ playerTrackedMetatable.__index = playerTrackedMetatable
 --     end)
 -- end
 
+
+--- todo: a way to make any trigger. on a global page, maketrigger.sprint <| call.isSprinting = Holder
+
+
 Invoke.playerTrackedFuncs = {}
 Invoke.triggers = {}
 ---comment

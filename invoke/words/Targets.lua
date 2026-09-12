@@ -72,3 +72,31 @@ Invoke:registerKeyword("PickBlock",function (self, tbl, rest, plr)
 
 
 end)
+
+Invoke:register("Entities",function (self, value, rest, plr)
+    local entities = world.getEntities(-10000,-10000,-10000,10000,10000,10000)
+    local out = {}
+    for index, e in ipairs(entities) do
+        if ((value.living == nil) or value.living == e:isLiving()) or (value.type == nil or value.type == e:getType()) then
+            out[#out+1] = e
+        end
+    end
+    return out
+end)
+
+
+Invoke:register("call",function (self, value, rest, plr)
+    -- if rest == "getVariable" then
+    --     return
+    -- end
+    if rest == "" then
+        return
+    end
+    local p = self:materializeBranch(value)
+    if p and type(p) ~= "table" and type(p[rest]) =="function" then
+        return p[rest](p)
+    end
+
+end):addDoc{
+    text = "calls <value>:<rest>()"
+}

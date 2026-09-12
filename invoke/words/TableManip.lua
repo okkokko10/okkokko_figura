@@ -45,3 +45,27 @@ end
 }:addDoc{
     value = "{from = <table>, key = <key>}"
 }
+
+
+Invoke:register("map",function (self, value, rest, plr)
+    local tbl = self:materializeBranch(value.table)
+    local key = rest
+    if not tbl then
+        return
+    end
+    local out = {}
+    local old = self:getVariable(key)
+    for k, v in pairs(tbl) do
+        self:setVariable(key,v)
+        if (not value.filter) or self:materializeBranch(value.filter) then
+            if value.map then
+                out[k] = self:materializeBranch(value.map)
+            else
+                out[k] = v
+            end
+        end
+    end
+    self:setVariable(key,old)
+    return out
+    
+end)

@@ -128,6 +128,8 @@ function Invoke:getPos(value)
 
     if type(value) == "ModelPart" then
         return value:partToWorldMatrix():apply(vec(0,0,0))
+    elseif type(value) == "Vector3" then
+        return value
     else
         if value.isLoaded and value:isLoaded() then
             return value:getPos(client.getFrameTime())

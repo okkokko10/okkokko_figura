@@ -853,7 +853,7 @@ KineticPath.action.actives = {}
 function KineticPath.action.activate(pos,player)
     local initialPathLength = 1
     local byLength = 1
-    local ticks = 5
+    local ticks = 1
 
     local p = KineticPath.create(pos)
         :attribution(player)

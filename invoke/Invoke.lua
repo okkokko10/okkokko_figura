@@ -99,7 +99,7 @@ function Invoke:parse_line(text)
         -- private. exit if not the client holding this.
     end
 
-    local succ, dt = pcall(parseJson,"{"..rest.."}")
+    local succ, dt = pcall(parseJson,rest)
     if succ then
         return dt
     else
@@ -177,7 +177,7 @@ function Invoke:register(key,func)
     )
 end
 function Invoke:run(key,tbl,rest)
-    if self.functions[key] then
+    if false and self.functions[key] then
         local succ, val = pcall(self.functions[key],self,tbl,rest or "")
         if succ then
             return val
@@ -185,6 +185,7 @@ function Invoke:run(key,tbl,rest)
             self:log(val)
         end
     end
+    return self.functions[key](self,tbl,rest or "")
 end
 
 ---runs each command in the table
@@ -226,6 +227,7 @@ function Invoke:materializeBranch(word,tbl)
         -- log(start,rest)
         return self:run(start,tbl,rest)
     else
+        error("unknown word:\n"..word .. "\nstart: " .. (start or "nil") .. "\nrest: " .. (rest or "nil"))
         return word
     end
 end
@@ -236,7 +238,12 @@ Invoke.runTable = Invoke.materializeBranch
 
 function Invoke:execute(data)
     -- logTable(data)
-    self:materializeBranch(data)
+    local succ, ret = pcall(self.materializeBranch,self,data)
+    if not succ then
+        self:log(ret)
+        self:stop_for_player()
+    end
+    -- self:materializeBranch(data)
 end
 
 local globalPageTag = "global"

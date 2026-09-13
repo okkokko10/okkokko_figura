@@ -82,10 +82,17 @@ end)
 
 Invoke:register("Entities",function (self, value, rest)
     local entities = world.getEntities(-10000,-10000,-10000,10000,10000,10000)
+    -- if value.type then
+    --     log("type:",value)
+    -- end
+    -- log(value)
+    if not value then
+        return entities
+    end
     local out = {}
     for index, e in ipairs(entities) do
-        if ((value.living == nil) or value.living == e:isLiving()) or (value.type == nil or value.type == e:getType()) then
-            out[#out+1] = e
+        if ((value.living == nil) or value.living == e:isLiving()) and (value.type == nil or value.type == e:getType()) then
+            out[index] = e
         end
     end
     return out
@@ -98,17 +105,50 @@ end)
 
 
 Invoke:register("call",function (self, value, rest)
-    if rest == "getVariable" then
+    local start,sep, vars = string.match(rest,"^(%a*)(%s*)(.*)$")
+    -- log(start,vars)
+    if not start then
+        error("call: not parsed: " .. rest)
         return
     end
-    if rest == "" then
+    if start == "getVariable" then
         return
     end
+    if start == "" then
+        return
+    end
+
     local p = self:materializeBranch(value)
-    if p and type(p) ~= "table" and type(p[rest]) =="function" then -- not table, so that actual lists can't be passed onto functions they contain.
-        return p[rest](p)
+    if p and type(p) ~= "table" and type(p[start]) =="function" then -- not table, so that actual lists can't be passed onto functions they contain.
+    
+        
+        if sep ~= "" then
+            local vars3 = parseJson("[" .. vars .. "]")
+            -- log(vars3)
+            return p[start](p,table.unpack(vars3))
+        else
+            return p[start](p)
+        end    
+    else
+        error(("no method %s found on type %s"):format(start,type(p)))
     end
 
 end):addDoc{
     text = "calls <value>:<rest>()"
 }
+
+--- wait, I could just use call.getTargetedEntity
+Invoke:registerKeyword("PickEntity",function (self, tbl, rest)
+    local plr
+    if tbl then
+        plr = self:materializeBranch(tbl)
+        if not plr then return end
+    else
+        plr = self.plr
+    end
+    local ent, hitPos = plr:getTargetedEntity()
+    if rest == "pos" then
+        return hitPos
+    end
+    return ent
+end)

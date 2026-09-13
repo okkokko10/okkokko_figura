@@ -1,4 +1,7 @@
-invoke okkokko gsub={p="^%s*>>",r="invoke okkokko "}
+
+
+invoke okkokko {gsub={p="^%s*>>>(.*)",r="invoke okkokko %1"}}
+;invoke okkokko {gsub={p="^%s*>>(.*)",r="invoke okkokko {%1}"}}
 ;>> gsub ={ p="<[|:](.*)$", r="={ %1 }",rec=true}
 ;>> gsub = {p='SL%s*=%s*(%b{})',r= ' sub={r=",\n",p=",",s=%1}'};
 
@@ -24,3 +27,24 @@ invoke okkokko on.sprint = {display = {text = help, on = PickBlock.side}}
 >> on.sneak <| logJson <| Entities <| type = "minecraft:player"
 
 >> on.sneak <| log+1 <| Entities <| type = "minecraft:player"
+
+>> on.sneak <| log+1 <| "chain(eq.'minecraft:player')(call.getType)" = User
+>> on.sneak <| log+1 <| "mapchain(+chain(eq.'minecraft:player')(call.getType))" = Entities
+
+>> on.sneak <| log+1 <| "chain(count)(mapchain(call.getType))" = Entities
+
+>> on.sneak <| log+1 = "chain(count) (mapchain(call.getType)) (Entities)"
+
+>> on.sneak <| log+1 = "(count) (M(call.getType)) (Entities)"
+>> on.sneak <| log+1 = "(M(+(eq.'minecraft:sheep')(call.getType))) (Entities)"
+
+>> on.sneak <| log+1 = "[User][call.getTargetedEntity][?call.getItem]"
+
+>> on.sneak = "[User][call.getTargetedEntity][?call.getItem 1][log]"
+>> "(log)([User][call.getTargetedEntity][?call.getItem 1])(on.sneak)"
+
+
+>>"(log)([User][call.getTargetedEntity][?call.getItem 1])(+on.sneak)" = User
+
+>>>"(log)([User][call.getTargetedEntity][?call.getItem 1])(+on.sneak)"
+>>>"[+on.sneak][User][call.getTargetedEntity][?call.getItem 1][log]"

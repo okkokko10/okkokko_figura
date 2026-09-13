@@ -90,3 +90,7 @@ end)
     value = "<word>"
 }
 
+Invoke:register("error",function (self, value, rest)
+    local w = self:materializeBranch(value)
+    error("manual error: "..rest ..": "..toJson(w))
+end)

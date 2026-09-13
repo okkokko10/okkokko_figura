@@ -1,6 +1,6 @@
 require"invoke.Invoke"
 
-Invoke:register("Keys",function (self, value, rest, plr)
+Invoke:register("Keys",function (self, value, rest)
     return Utils.table.getKeys(self:materializeBranch(value))
     -- tostring(value)
 end)
@@ -12,7 +12,7 @@ end)
 }
 
 
-Invoke:register("Literal",function (self, value, rest, plr)
+Invoke:register("Literal",function (self, value, rest)
     return value
 end)
 :addAlternateNames("Lit")
@@ -22,7 +22,7 @@ end)
 }
 
 
-Invoke:register("get",function (self, value, rest, plr)
+Invoke:register("get",function (self, value, rest)
     if rest == "" then
         rest = self:materializeBranch(value.key)
         value = value.from
@@ -47,7 +47,7 @@ end
 }
 
 
-Invoke:register("map",function (self, value, rest, plr)
+Invoke:register("map",function (self, value, rest)
     local tbl = self:materializeBranch(value.table)
     local key = rest
     if not tbl then
@@ -70,7 +70,7 @@ Invoke:register("map",function (self, value, rest, plr)
     
 end)
 
-Invoke:register("filter",function (self, value, rest, plr)
+Invoke:register("filter",function (self, value, rest)
     local filters = {}
     local filterInverts = {}
     -- for modifier, st in string.gmatch(rest,"%(%s*(%-?)%s*(.*)%s*%)") do
@@ -90,7 +90,7 @@ Invoke:register("filter",function (self, value, rest, plr)
     local out = {}
     for k, v in pairs(tbl) do
         for i = 1, #filters do
-            local t = self:materializeBranch(filters[i],nil,{Literal = v}) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this?
+            local t = self:materializeBranch(filters[i],{Literal = v}) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this?
             if (not t) == (not filterInverts[i]) then
                 goto continue
             end
@@ -106,7 +106,7 @@ end)
 }
 
 
-Invoke:register("chain",function (self, value, rest, plr)
+Invoke:register("chain",function (self, value, rest)
     local commands = {}
     local modifiers = {}
     -- for modifier, st in string.gmatch(rest,"%(%s*([%-%?]?)%s*(.*)%s*%)") do
@@ -121,7 +121,7 @@ Invoke:register("chain",function (self, value, rest, plr)
         if modifiers[i] == "?" and v == nil then
             return
         end
-        v = self:materializeBranch(commands[i],nil,{Literal = v}) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this? 
+        v = self:materializeBranch(commands[i],{Literal = v}) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this? 
     end
     return v
     

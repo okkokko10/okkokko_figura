@@ -38,7 +38,7 @@ end
 --- "and" and _runTable have a similar structure?
 --- 
 
--- Invoke:register("set", function (self, value, rest, plr)
+-- Invoke:register("set", function (self, value, rest)
 --     if rest == "" then
 --         local out
 --         if type(value) ~= "table" then
@@ -57,7 +57,7 @@ end
 -- end)
 
 
-Invoke:register("set", function (self, value, rest, plr)
+Invoke:register("set", function (self, value, rest)
     if rest == "" then
         rest = self:materializeBranch(value.key)
         if value.onReplace then
@@ -74,7 +74,7 @@ Invoke:register("set", function (self, value, rest, plr)
 end)
 
 
-Invoke:register("init", function (self, value, rest, plr)
+Invoke:register("init", function (self, value, rest)
     if rest == "" then
         rest = self:materializeBranch(value.key)
         value = value.value
@@ -93,7 +93,7 @@ end)
 
 --- return the value. 
 
-Invoke:register("var", function (self, value, rest, plr)
+Invoke:register("var", function (self, value, rest)
     if rest == "" then
         rest = self:materializeBranch(value)
     end
@@ -104,7 +104,7 @@ Invoke:register("var", function (self, value, rest, plr)
 end)
 
 
-Invoke:register("evaluate", function (self, value, rest, plr)
+Invoke:register("evaluate", function (self, value, rest)
     return self:materializeBranch(self:materializeBranch(value))
     -- local out = self:materializeBranch(value)
     -- self:setVariable(rest,out)
@@ -112,7 +112,7 @@ Invoke:register("evaluate", function (self, value, rest, plr)
 end)
 
 
-Invoke:register("UtilsID", function (self, value, rest, plr)
+Invoke:register("UtilsID", function (self, value, rest)
     
     return Utils.ID.from(self:materializeBranch(value))
     -- local out = self:materializeBranch(value)

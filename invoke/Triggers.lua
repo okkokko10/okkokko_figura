@@ -85,16 +85,6 @@ end
 playerTrackedMetatable.__index = playerTrackedMetatable
 
 
--- ---a function
--- ---@param key string
--- ---@param func fun(self:Invoke,value:table,plr:Entity):...
--- function Invoke:registerCondition(key,func)
---     Invoke:register(key,function (self, value, plr)
---         if func(self,value, plr) then
---             return self:materializeBranch(value,plr)
---         end
---     end)
--- end
 
 
 --- todo: a way to make any trigger. on a global page, maketrigger.sprint <| call.isSprinting = Holder
@@ -113,12 +103,12 @@ function Invoke.registerPlayerTracked(key,func)
     local w =  Invoke.triggers[key]
 end
 
----
+--- func shouldn't make use of value
 ---@param key string
 ---@param func fun(self:Invoke,value:table,rest:string):...
 ---@return FunctionDoc
 function Invoke:registerCondition(key,func)
-    return self:register(key,function (self, value, rest, plr)
+    return self:register(key,function (self, value, rest)
         local r = func(self,value,rest)
         if r then
             if value == nil then
@@ -195,14 +185,7 @@ end)
 :setSection("triggers")
 
 
--- Invoke:register("long",function  (self, value, rest, plr)
---     if Invoke.triggers[rest] and Invoke.triggers[rest]:changed(plr) then
---         return (not value) or self:materializeBranch(value,plr)
---     end
--- end)
--- :setSection("triggers")
-
--- todo: make these accept any variable
+-- todo: when something is suddenly over some value. hm, could be achieved with a second maketrigger comparing the variable of the first
 
 
 function Invoke.updatePlayerTracked(players)
@@ -234,7 +217,7 @@ Invoke.registerPlayerTracked("open",function (plr)
 end)
 
 
-Invoke:register("maketrigger",function (self, value, rest, plr)
+Invoke:register("maketrigger",function (self, value, rest)
     self:setVariable(rest,playerTrackedFunctions.update(self:getVariable(rest),self:materializeBranch(value)))
 end):addAlternateNames("updatetrigger"):addDoc{
     text = "updates a trigger variable, to be used with on/off/while/unless/change",

@@ -896,7 +896,7 @@ function KineticPath.action.activateAtLook()
 end
 
 require("invoke.Invoke")
-Invoke:register("KineticPath",function (self, value, rest, plr)
+Invoke:register("KineticPath",function (self, value, rest)
     if self:restContains(rest,"clear") then
         KineticPath.action.removeAll(self.plr)
         return

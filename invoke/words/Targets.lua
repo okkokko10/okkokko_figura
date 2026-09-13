@@ -3,7 +3,7 @@ require"invoke.Invoke"
 
 
 
-Invoke:registerKeyword("plr", function (self,tbl, rest, plr)
+Invoke:registerKeyword("plr", function (self,tbl, rest)
     if rest == "" then
         return plr
     else
@@ -12,10 +12,10 @@ Invoke:registerKeyword("plr", function (self,tbl, rest, plr)
 end)
 
 --- deprecated. this should be a filter. also should be Infos
-Invoke:registerKeyword("All", function (self,tbl, rest, plr)
+Invoke:registerKeyword("All", function (self,tbl, rest)
     if type(tbl) == "table" then
         local radius = tbl.within or tbl.radius
-        local center = (not tbl.center) and plr or self:materializeBranch(tbl.center,plr)
+        local center = (not tbl.center) and self.plr or self:materializeBranch(tbl.center)
         radius = radius * radius
         if type(radius) ~= "number" then return end
         local pos = self:getPos(center)
@@ -35,13 +35,20 @@ Invoke:registerKeyword("All", function (self,tbl, rest, plr)
 
 end)
 
-
-Invoke:registerKeyword("PickBlock",function (self, tbl, rest, plr)
+--- value is now User by default but can be changed
+Invoke:registerKeyword("PickBlock",function (self, tbl, rest)
+    local plr
+    if tbl then
+        plr = self:materializeBranch(tbl)
+        if not plr then return end
+    else
+        plr = self.plr
+    end
     local block, hitPos, side = plr:getTargetedBlock()
     local centerPos = block:getPos()
     if not block then return end
     if rest == "" then
-        return self:getInfos(centerPos)
+        return block
     end
     if rest == "billboard" then
         -- local nm = tostring(centerPos)
@@ -73,7 +80,7 @@ Invoke:registerKeyword("PickBlock",function (self, tbl, rest, plr)
 
 end)
 
-Invoke:register("Entities",function (self, value, rest, plr)
+Invoke:register("Entities",function (self, value, rest)
     local entities = world.getEntities(-10000,-10000,-10000,10000,10000,10000)
     local out = {}
     for index, e in ipairs(entities) do
@@ -84,13 +91,13 @@ Invoke:register("Entities",function (self, value, rest, plr)
     return out
 end)
 
-Invoke:register("User",function (self, value, rest, plr)
+Invoke:register("User",function (self, value, rest)
     return self.plr:isLoaded() and self.plr
 end)
 
 
 
-Invoke:register("call",function (self, value, rest, plr)
+Invoke:register("call",function (self, value, rest)
     if rest == "getVariable" then
         return
     end

@@ -1,7 +1,7 @@
 require"invoke.Invoke"
 
 
-Invoke:register("gsub",function (self, value, rest, plr)
+Invoke:register("gsub",function (self, value, rest)
     if rest == "freeze" then
         self:freezegsub()
     elseif rest == "unfreeze" then
@@ -42,7 +42,7 @@ end)
 
 
 
-Invoke:registerKeyword("cancel",function  (self, value, rest, plr)
+Invoke:registerKeyword("cancel",function  (self, value, rest)
     if rest == "page" then
         self:cancelPage()
     else
@@ -64,7 +64,7 @@ function Invoke:listWords()
 end
 
 
-Invoke:registerKeyword("help",function  (self, value, rest, plr)
+Invoke:registerKeyword("help",function  (self, value, rest)
     if type(value) == "string" then
         rest = value
     end

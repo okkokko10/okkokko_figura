@@ -2,12 +2,12 @@ require"invoke.Invoke"
 
 
 
-Invoke:register("and",function  (self, value, rest, plr)
+Invoke:register("and",function  (self, value, rest)
     local out
     logTable(value,3)
     if type(value) == "table" then
         for index, value in ipairs(value) do
-            out = self:materializeBranch(value,plr)
+            out = self:materializeBranch(value)
             self:log(index,out)
             if not out then
                 break

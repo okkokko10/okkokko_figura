@@ -163,7 +163,7 @@ function DrawLine.test(part)
     
 end
 
-Invoke:register("DrawLine",function (self, value, rest, plr)
+Invoke:register("DrawLine",function (self, value, rest)
     if self:restContains(rest,"test") then
         DrawLine.test(self:materializeBranch(value))
     end

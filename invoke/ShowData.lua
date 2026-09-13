@@ -149,7 +149,7 @@ function Utils.table.getKeys(tbl)
 end
 
 
-local w = Invoke:register("display",function  (self, value, rest, plr)
+local w = Invoke:register("display",function  (self, value, rest)
     local w = self:materializeBranch(value.text)
     local o = self:materializeBranch(value.on or value.target)
     if not o then return end
@@ -174,7 +174,7 @@ w:addDoc{
     }
 }
 
-Invoke:register("clear",function  (self, value, rest, plr)
+Invoke:register("clear",function  (self, value, rest)
     local w = self:materializeBranch(value)
     if type(w) == "table" then
         for key, value in pairs(w) do

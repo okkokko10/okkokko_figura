@@ -23,3 +23,4 @@ invoke okkokko on.sprint = {display = {text = help, on = PickBlock.side}}
 
 >> on.sneak <| logJson <| Entities <| type = "minecraft:player"
 
+>> on.sneak <| log+1 <| Entities <| type = "minecraft:player"

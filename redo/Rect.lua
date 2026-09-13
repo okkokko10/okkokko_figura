@@ -101,8 +101,10 @@ end
 ---@return Rect
 function Rect:__mul(other)
     if type(self[1]) == "number" then
+---@diagnostic disable-next-line: param-type-mismatch
         return Rect.fromEndpoints(vec(self[1],other[1]),vec(self[2],other[2]))
     end
+---@diagnostic disable-next-line: param-type-mismatch
     return Rect.fromEndpoints(self[1]:augmented(other[1]),self[2]:augmented(other[2]))
 end
 

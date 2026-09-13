@@ -168,7 +168,7 @@ end
 
 ---a function
 ---@param key string
----@param func fun(self:Invoke,value:table,rest:string,plr:Entity):...
+---@param func fun(self:Invoke,value:table,rest:string):...
 ---@return FunctionDoc
 function Invoke:register(key,func)
     assert (string.match(key,"^%a*$")) -- the key must be made up of letters
@@ -176,9 +176,9 @@ function Invoke:register(key,func)
         setmetatable({invoke=self,key=key,docs={},alt_keys={},func=func},function_metatable)
     )
 end
-function Invoke:run(key,tbl,rest,plr)
+function Invoke:run(key,tbl,rest)
     if self.functions[key] then
-        local succ, val = pcall(self.functions[key],self,tbl,rest or "",plr)
+        local succ, val = pcall(self.functions[key],self,tbl,rest or "")
         if succ then
             return val
         else
@@ -190,10 +190,10 @@ end
 ---runs each command in the table
 ---@param tbl table
 ---@param plr Entity
-function Invoke:runTable_(tbl,plr)
+function Invoke:runTable_(tbl)
     local out
     for key, value in pairs(tbl) do
-        out = self:materializeBranch(key,plr,value)
+        out = self:materializeBranch(key,value)
     end
     return out
 end
@@ -202,7 +202,7 @@ end
 --- currently identical to :register
 --- rest is the captured part: "key(.sub1.sub2)"
 ---@param key string
----@param func fun(self:Invoke,tbl:table,rest:string,plr:Entity):unknown?
+---@param func fun(self:Invoke,value:table,rest:string):unknown?
 function Invoke:registerKeyword(key,func)
     return self:register(key,func)
 end
@@ -213,17 +213,18 @@ end
 ---     is the start.rest split done with arguments? 
 ---currently calls the key with value={}
 ---@param word string|table
+---@param tbl unknown?
 ---@return unknown?
-function Invoke:materializeBranch(word,plr,tbl)
+function Invoke:materializeBranch(word,tbl)
     if not word then return end
     if type(word) == "table" then
-        return self:runTable_(word,plr or self.plr)
+        return self:runTable_(word)
     end
     local start,rest = string.match(word,"^(%a*)%.?(.*)$")
     -- local _,_,start,rest = string.find(word,"^([^%.]*)%.?(.*)$")
     if self.functions[start] then
         -- log(start,rest)
-        return self:run(start,tbl,rest,plr or self.plr)
+        return self:run(start,tbl,rest)
     else
         return word
     end
@@ -233,9 +234,9 @@ Invoke.runTable = Invoke.materializeBranch
 
 -- todo: make it so a clipboard next to a head is also read.
 
-function Invoke:execute(data,plr)
+function Invoke:execute(data)
     -- logTable(data)
-    self:materializeBranch(data,plr)
+    self:materializeBranch(data)
 end
 
 local globalPageTag = "global"
@@ -325,7 +326,7 @@ function Invoke:runPage(index)
     for word in self.content:pageIter(index) do
         local dt = self:parse_line(self:substitute(word,index))
         if dt then
-            self:execute(dt,self.plr)
+            self:execute(dt)
         end
         if self.canceledEarly then
             return

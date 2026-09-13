@@ -34,10 +34,20 @@ Invoke:register("logJson",function  (self, value, rest)
     -- return toJson(value)
 end)
 
+Invoke:register("format",function  (self, value, rest)
+    local w = self:materializeBranch(value)
+    return string.gsub(rest,"$(%S*)",function (q,...)
+        return w[parseJson(q)]
+    end)
+
+    -- return string.format(rest,table.unpack(value))
+end)
+
+
 
 Invoke:register("log",function  (self, value, rest)
     local w = self:materializeBranch(value)
-    if self.plr == client.getCameraEntity() then
+    if true or self.plr == client.getCameraEntity() then
         local a,q = string.match(rest,"^([^%+]*)%+(%d*)")
         if q then
             if a == "" then
@@ -46,7 +56,11 @@ Invoke:register("log",function  (self, value, rest)
                 logTable({[a] = w},(tonumber(q) or 1) + 1)
             end
         else
-            log(rest,w)
+            if (type(value) == "table") and value[1] then
+                log(rest,table.unpack(value))
+            else
+                log(rest,w)
+            end
         end
     end
     return w

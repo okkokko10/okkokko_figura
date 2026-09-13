@@ -209,3 +209,14 @@ end)
 :addDoc{
     text = "is value equal to rest"
 }
+
+Invoke:register("keyvalue",function (self, value, rest)
+    local tbl = self:materializeBranch(value)
+    if not tbl then return end
+    local out = {}
+    for key, value in pairs(tbl) do
+        out[#out+1] = {key,value}
+    end
+    return out
+    
+end)

@@ -121,7 +121,21 @@ function Invoke:registerCondition(key,func)
         end
     end)
 end
-Invoke:registerCondition("on",function  (self, value, rest)
+
+Invoke:register("cond",function (self, value, rest)
+    local r = self:materializeBranch(rest)
+        if r then
+            if value == nil then
+                return true
+            else
+                return self:materializeBranch(value)
+            end
+        else
+            return false
+        end
+end)
+
+Invoke:register("on",function  (self, value, rest)
     if Invoke.triggers[rest] then
         if Invoke.triggers[rest]:started(self.plr) then
             return true
@@ -134,7 +148,7 @@ Invoke:registerCondition("on",function  (self, value, rest)
     end)
 :setSection("triggers")
 
-Invoke:registerCondition("while",function  (self, value, rest)
+Invoke:register("while",function  (self, value, rest)
     if Invoke.triggers[rest] then 
         if Invoke.triggers[rest]:active(self.plr) then
             return true
@@ -146,7 +160,7 @@ Invoke:registerCondition("while",function  (self, value, rest)
     end
 end)
 :setSection("triggers")
-Invoke:registerCondition("unless",function  (self, value, rest)
+Invoke:register("unless",function  (self, value, rest)
     if Invoke.triggers[rest] then 
         if Invoke.triggers[rest]:inactive(self.plr) then
             return true
@@ -158,7 +172,7 @@ Invoke:registerCondition("unless",function  (self, value, rest)
     end
 end)
 :setSection("triggers")
-Invoke:registerCondition("off",function  (self, value, rest)
+Invoke:register("off",function  (self, value, rest)
     if Invoke.triggers[rest] then 
         if Invoke.triggers[rest]:stopped(self.plr) then
             return true
@@ -171,7 +185,7 @@ Invoke:registerCondition("off",function  (self, value, rest)
 end)
 :setSection("triggers")
 
-Invoke:registerCondition("change",function  (self, value, rest)
+Invoke:register("change",function  (self, value, rest)
     if Invoke.triggers[rest] then 
         if Invoke.triggers[rest]:changed(self.plr) then
             return true

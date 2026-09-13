@@ -1,50 +1,79 @@
 
 
-invoke okkokko {gsub={p="^%s*>>>(.*)",r="invoke okkokko %1"}}
+invoke okkokko {gsub={p="^%s*>>>(.*)",r="invokeX okkokko %1"}}
 ;invoke okkokko {gsub={p="^%s*>>(.*)",r="invoke okkokko {%1}"}}
 ;>> gsub ={ p="<[|:](.*)$", r="={ %1 }",rec=true}
+;>> gsub ={ p="%-%>", r="]["}
+
+
 ;>> gsub = {p='SL%s*=%s*(%b{})',r= ' sub={r=",\n",p=",",s=%1}'};
 
 
 
-invoke okkokko on.sneak = { KineticPath.swap = {pos = PickBlock.pos} } 
+invoke okkokko {cond.on.sneak = { KineticPath.swap = {pos = PickBlock.pos} } }
 
 ;
-invoke okkokko on.sneak = {display = {text = help, on = PickBlock.side}}
-invoke okkokko on.sneak = {display = {text = help, on = PickBlock.side}}
+invoke okkokko {cond.on.sneak = {display = {text = help, on = PickBlock.side}}}
+invoke okkokko {cond.on.sneak = {display = {text = help, on = PickBlock.side}}}
 
->> on.sneak <| display <| on=PickBlock.side, 
+>> cond.on.sneak <| display <| on=PickBlock.side, 
 text <| SL <| J = PickBlock.nbt
 
->> on.sneak <| display <| on=PickBlock.side, 
+>> cond.on.sneak <| display <| on=PickBlock.side, 
 text <| SL={help=""}
 
 >> maketrigger.sprint <| call.isSprinting = User
 
-invoke okkokko on.sprint = {display = {text = help, on = PickBlock.side}}
+invoke okkokko {on.sprint = {display = {text = help, on = PickBlock.side}}}
 
 
->> on.sneak <| logJson <| Entities <| type = "minecraft:player"
+>> cond.on.sneak <| logJson <| Entities <| type = "minecraft:player"
 
->> on.sneak <| log+1 <| Entities <| type = "minecraft:player"
+>> cond.on.sneak <| log+1 <| Entities <| type = "minecraft:player"
 
->> on.sneak <| log+1 <| "chain(eq.'minecraft:player')(call.getType)" = User
->> on.sneak <| log+1 <| "mapchain(+chain(eq.'minecraft:player')(call.getType))" = Entities
+>> cond.on.sneak <| log+1 <| "chain(eq.'minecraft:player')(call.getType)" = User
+>> cond.on.sneak <| log+1 <| "mapchain(+chain(eq.'minecraft:player')(call.getType))" = Entities
 
->> on.sneak <| log+1 <| "chain(count)(mapchain(call.getType))" = Entities
+>> cond.on.sneak <| log+1 <| "chain(count)(mapchain(call.getType))" = Entities
 
->> on.sneak <| log+1 = "chain(count) (mapchain(call.getType)) (Entities)"
+>> cond.on.sneak <| log+1 = "chain(count) (mapchain(call.getType)) (Entities)"
 
->> on.sneak <| log+1 = "(count) (M(call.getType)) (Entities)"
->> on.sneak <| log+1 = "(M(+(eq.'minecraft:sheep')(call.getType))) (Entities)"
+>> cond.on.sneak <| log+1 = "(count) (M(call.getType)) (Entities)"
+>> cond.on.sneak <| log+1 = "(M(+(eq.'minecraft:sheep')(call.getType))) (Entities)"
 
->> on.sneak <| log+1 = "[User][call.getTargetedEntity][?call.getItem]"
+>> cond.on.sneak <| log+1 = "[User][call.getTargetedEntity][?call.getItem]"
 
->> on.sneak = "[User][call.getTargetedEntity][?call.getItem 1][log]"
+>> cond.on.sneak = "[User][call.getTargetedEntity][?call.getItem 1][log]"
 >> "(log)([User][call.getTargetedEntity][?call.getItem 1])(on.sneak)"
 
 
 >>"(log)([User][call.getTargetedEntity][?call.getItem 1])(+on.sneak)" = User
 
->>>"(log)([User][call.getTargetedEntity][?call.getItem 1])(+on.sneak)"
->>>"[+on.sneak][User][call.getTargetedEntity][?call.getItem 1][log]"
+>>>(log)([User][call.getTargetedEntity][?call.getItem 1])(+on.sneak)
+>>>[+on.sneak -> User -> call.getTargetedEntity -> ? call.getItem 1 -> log]
+
+>>>[+on.sneak -> Entities -> M[+[call.getType -> eq.'minecraft:sheep']] -> log+1]
+
+>>>[+on.sneak -> Entities -> M[
+    +[call.getType -> eq.'minecraft:sheep']
+    -> [call.getNbt] -> get.Sheared
+    ] -> log+1]
+
+count the number of nearby sheared and unsheared sheep:
+
+>>>[+on.sneak -> Entities -> M[
+    +[call.getType -> eq.'minecraft:sheep']
+    -> [call.getNbt] -> get.Sheared
+    ] -> count -> log+1]
+
+
+>> on.sneak <| DrawLine.test = PickBlock.side
+
+
+>>>[+on.sneak -> Entities -> M[
+    +[call.getType -> eq.'minecraft:player']
+    ] -> log+1]
+
+>>>[+on.sneak -> Entities -> M[
+    call.getType
+    ] -> count -> log+1]

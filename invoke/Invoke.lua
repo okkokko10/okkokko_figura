@@ -85,7 +85,7 @@ function Invoke:parse_line(text)
         self:logUnexpected("not text",type(text),text)
         return
     end
-    local _, _, minus, name, rest = string.find(text,"^%s*(%-?)invoke%s+(%S*)%s+(.*)$")
+    local _, _, minus,X, name, rest = string.find(text,"^%s*(%-?)invoke(X?)%s+(%S*)%s+(.*)$")
     -- if not rest then
     --     _, _, minus, rest = string.find(text,"(%-?)%>%>%s+(.*)$")
     --     name = Invoke.hostname
@@ -97,6 +97,9 @@ function Invoke:parse_line(text)
     end
     if minus ~= "" then
         -- private. exit if not the client holding this.
+    end
+    if X == "X" then
+        return rest
     end
 
     local succ, dt = pcall(parseJson,rest)
@@ -438,7 +441,7 @@ end
 
 
 
-if Invoke.ENABLE and avatar:getPermissionLevel() == "MAX" and (host:isHost() or Invoke.ENABLE_OTHERS)  then
+if Invoke.ENABLE and (avatar:getPermissionLevel() == "MAX" or Invoke.LOWER_PERMISSION) and (host:isHost() or Invoke.ENABLE_OTHERS)  then
     events.WORLD_TICK:register(Invoke.readPlayers)
 end
 

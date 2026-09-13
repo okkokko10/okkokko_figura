@@ -1,0 +1,25 @@
+invoke okkokko gsub={p="^%s*>>",r="invoke okkokko "}
+;>> gsub ={ p="<[|:](.*)$", r="={ %1 }",rec=true}
+;>> gsub = {p='SL%s*=%s*(%b{})',r= ' sub={r=",\n",p=",",s=%1}'};
+
+
+
+invoke okkokko on.sneak = { KineticPath.swap = {pos = PickBlock.pos} } 
+
+;
+invoke okkokko on.sneak = {display = {text = help, on = PickBlock.side}}
+invoke okkokko on.sneak = {display = {text = help, on = PickBlock.side}}
+
+>> on.sneak <| display <| on=PickBlock.side, 
+text <| SL <| J = PickBlock.nbt
+
+>> on.sneak <| display <| on=PickBlock.side, 
+text <| SL={help=""}
+
+>> maketrigger.sprint <| call.isSprinting = User
+
+invoke okkokko on.sprint = {display = {text = help, on = PickBlock.side}}
+
+
+>> on.sneak <| logJson <| Entities <| type = "minecraft:player"
+

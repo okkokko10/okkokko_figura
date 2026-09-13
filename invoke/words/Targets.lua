@@ -84,16 +84,21 @@ Invoke:register("Entities",function (self, value, rest, plr)
     return out
 end)
 
+Invoke:register("User",function (self, value, rest, plr)
+    return self.plr:isLoaded() and self.plr
+end)
+
+
 
 Invoke:register("call",function (self, value, rest, plr)
-    -- if rest == "getVariable" then
-    --     return
-    -- end
+    if rest == "getVariable" then
+        return
+    end
     if rest == "" then
         return
     end
     local p = self:materializeBranch(value)
-    if p and type(p) ~= "table" and type(p[rest]) =="function" then
+    if p and type(p) ~= "table" and type(p[rest]) =="function" then -- not table, so that actual lists can't be passed onto functions they contain.
         return p[rest](p)
     end
 

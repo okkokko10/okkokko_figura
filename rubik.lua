@@ -371,20 +371,27 @@ function RubiksCubeSides.drawPermutationDebug(part)
         part:newText(index)
             :setPos(tile.extruded*PS + tile.normal)
             :setText(
-                ("%s : %s"):format(tile.index,
+            
                 toJson(
-                Utils.table.flatmap(
-                tile.rotated,
-                function (x,i)
-                    return {{
-                        text = tostring(x),
-                        color = Direction.colors[i]
-                    },"  "}
-                end)
-                
+                    Utils.table.flatmap(
+                        tile.rotated,
+                        function (x,i)
+                            return {{
+                                text = tostring(x),
+                                color = Direction.colors[i]
+                            },"  "}
+                        end,
+                        {
+                            "",
+                            {
+                            text = ("%s : "):format(tile.index),
+                            color = "#FFFFFF"
+                            }
+                        }
+                    )
                 )
             )
-            )
+            
             :setScale(1/8)
             :setRot(Utils.math.directionToEulerAngle(tile.normal))
             :setAlignment("CENTER")
@@ -489,7 +496,7 @@ end
 
 function RubiksCube:rotate(side,flip)
     self.oldPerm = self.perm
-    self.perm = self.perm * (flip and RubiksCubeSides.permute_side_reverse or RubiksCubeSides.permute_side)[side]
+    self.perm = (flip and RubiksCubeSides.permute_side_reverse or RubiksCubeSides.permute_side)[side] * self.perm
     self.timestep = 1
     
 end

@@ -5,60 +5,81 @@ require"invoke.Invoke"
 local playerTrackedMetatable = {
 }
 
+local playerTrackedFunctions = {}
+
+--- the absolute value signifies how long the condition is been the same, with 1 meaning it changed this tick
+--- the sign signifies whether it is on or off
+--- nil means it's uninitialized.
+
+function playerTrackedFunctions.update(old,truth)
+    if not old then
+        old = 0
+    end
+    if truth then
+        if old < 0 then
+            old = 0
+        end
+        return old + 1
+    else
+        
+        if old > 0 then
+            old = 0
+        end
+        return old - 1
+    end 
+end
+function playerTrackedFunctions.active(val)
+    return val and val > 0
+    
+end
+
+function playerTrackedFunctions.inactive(val)
+    return val and val < 0
+end
+
+
+function playerTrackedFunctions.started(val)
+    return val == 1
+end
+
+function playerTrackedFunctions.stopped(val)
+    return val == -1
+end
+function playerTrackedFunctions.changed(val)
+    return (val == -1) or (val == 1)
+end
+
 function playerTrackedMetatable:update(plr,truth)
     
     
     local name = plr:getUUID()
-    if truth then
-        self[name] = (self[name] or 0) + 1
-    else
-        if self[name] == 0 then
-            self[name] = nil
-        elseif self[name] ~= nil then
-            self[name] = 0
-        end
-    end 
+    self[name] = playerTrackedFunctions.update(self[name],truth)
 end
 
 
 function playerTrackedMetatable:active(plr)
-    if not plr:isLoaded() then
-       return
-    end
-    local name = plr:getUUID()
-    return self[name] ~= nil
+    if not plr:isLoaded() then return end
+    return playerTrackedFunctions.active(self[plr:getUUID()])
 end
 
 function playerTrackedMetatable:inactive(plr)
-    if not plr:isLoaded() then
-       return
-    end
-    local name = plr:getUUID()
-    return self[name] == nil
+    if not plr:isLoaded() then return end
+    return playerTrackedFunctions.inactive(self[plr:getUUID()])
 end
 
 
 function playerTrackedMetatable:started(plr)
-    if not plr:isLoaded() then
-       return 
-    end
-    local name = plr:getUUID()
-    return self[name] == 1
+    if not plr:isLoaded() then return end
+    return playerTrackedFunctions.started(self[plr:getUUID()])
 end
 
 function playerTrackedMetatable:stopped(plr)
-    if not plr:isLoaded() then
-       return
-    end
-    local name = plr:getUUID()
-    return self[name] == 0
+    if not plr:isLoaded() then return end
+    return playerTrackedFunctions.stopped(self[plr:getUUID()])
 end
 function playerTrackedMetatable:changed(plr)
-    if not plr:isLoaded() then
-       return
-    end
-    local name = plr:getUUID()
-    return (self[name] == 0) or (self[name] == 1)
+    if not plr:isLoaded() then return end
+    return playerTrackedFunctions.changed(self[plr:getUUID()])
 end
 
 playerTrackedMetatable.__index = playerTrackedMetatable
@@ -92,35 +113,83 @@ function Invoke.registerPlayerTracked(key,func)
     local w =  Invoke.triggers[key]
 end
 
-Invoke:register("on",function  (self, value, rest, plr)
-    if Invoke.triggers[rest] and Invoke.triggers[rest]:started(plr) then
-        return (not value) or self:materializeBranch(value,plr)
+---
+---@param key string
+---@param func fun(self:Invoke,value:table,rest:string):...
+---@return FunctionDoc
+function Invoke:registerCondition(key,func)
+    return self:register(key,function (self, value, rest, plr)
+        local r = func(self,value,rest)
+        if r then
+            if value == nil then
+                return true
+            else
+                return self:materializeBranch(value)
+            end
+        else
+            return false
+        end
+    end)
+end
+Invoke:registerCondition("on",function  (self, value, rest)
+    if Invoke.triggers[rest] then
+        if Invoke.triggers[rest]:started(self.plr) then
+            return true
+        end
+    else
+        if playerTrackedFunctions.started(self:getVariable(rest)) then 
+            return true
+        end
     end
     end)
 :setSection("triggers")
 
-Invoke:register("while",function  (self, value, rest, plr)
-    if Invoke.triggers[rest] and Invoke.triggers[rest]:active(plr) then
-        return (not value) or self:materializeBranch(value,plr)
+Invoke:registerCondition("while",function  (self, value, rest)
+    if Invoke.triggers[rest] then 
+        if Invoke.triggers[rest]:active(self.plr) then
+            return true
+        end
+    else
+        if playerTrackedFunctions.active(self:getVariable(rest)) then 
+            return true
+        end
     end
 end)
 :setSection("triggers")
-Invoke:register("unless",function  (self, value, rest, plr)
-    if Invoke.triggers[rest] and Invoke.triggers[rest]:inactive(plr) then
-        return (not value) or self:materializeBranch(value,plr)
+Invoke:registerCondition("unless",function  (self, value, rest)
+    if Invoke.triggers[rest] then 
+        if Invoke.triggers[rest]:inactive(self.plr) then
+            return true
+        end
+    else
+        if playerTrackedFunctions.inactive(self:getVariable(rest)) then 
+            return true
+        end
     end
 end)
 :setSection("triggers")
-Invoke:register("off",function  (self, value, rest, plr)
-    if Invoke.triggers[rest] and Invoke.triggers[rest]:stopped(plr) then
-        return (not value) or self:materializeBranch(value,plr)
+Invoke:registerCondition("off",function  (self, value, rest)
+    if Invoke.triggers[rest] then 
+        if Invoke.triggers[rest]:stopped(self.plr) then
+            return true
+        end
+    else
+        if playerTrackedFunctions.stopped(self:getVariable(rest)) then 
+            return true
+        end
     end
 end)
 :setSection("triggers")
 
-Invoke:register("change",function  (self, value, rest, plr)
-    if Invoke.triggers[rest] and Invoke.triggers[rest]:changed(plr) then
-        return (not value) or self:materializeBranch(value,plr)
+Invoke:registerCondition("change",function  (self, value, rest)
+    if Invoke.triggers[rest] then 
+        if Invoke.triggers[rest]:changed(self.plr) then
+            return true
+        end
+    else
+        if playerTrackedFunctions.changed(self:getVariable(rest)) then 
+            return true
+        end
     end
 end)
 :setSection("triggers")
@@ -163,6 +232,15 @@ Invoke.registerPlayerTracked("open",function (plr)
     -- log(w, w and w:isOpen())
     return w and w:isOpen()
 end)
+
+
+Invoke:register("maketrigger",function (self, value, rest, plr)
+    self:setVariable(rest,playerTrackedFunctions.update(self:getVariable(rest),self:materializeBranch(value)))
+end):addAlternateNames("updatetrigger"):addDoc{
+    text = "updates a trigger variable, to be used with on/off/while/unless/change",
+    rest = "variable name",
+    value = "on/off"
+}
 
 
 -- Invoke:register("onSneak",function (self, value)

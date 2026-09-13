@@ -69,3 +69,63 @@ Invoke:register("map",function (self, value, rest, plr)
     return out
     
 end)
+
+Invoke:register("filter",function (self, value, rest, plr)
+    local filters = {}
+    local filterInverts = {}
+    -- for modifier, st in string.gmatch(rest,"%(%s*(%-?)%s*(.*)%s*%)") do
+    for br in string.gmatch(rest,"%b()") do
+        local modifier, st = string.match(br,"(%-?)%s*(.*)$")
+        filters[#filters+1] = st
+        if modifier == "-" then
+            filterInverts[#filters] = true
+        end
+    end
+
+    local tbl = self:materializeBranch(value)
+    local key = rest
+    if not tbl then
+        return
+    end
+    local out = {}
+    for k, v in pairs(tbl) do
+        for i = 1, #filters do
+            local t = self:materializeBranch(filters[i],nil,{Literal = v}) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this?
+            if (not t) == (not filterInverts[i]) then
+                goto continue
+            end
+        end
+        ::continue::
+        out[k] = v
+    end
+    return out
+    
+end)
+:addDoc{
+    text = "filter(a.x)(b.y)(-c.z) = <t> results in taking the resulting table of t and filtering it based on whether an element e passes a.x = {Literal = e}, b.y = {Literal = e} and fails c.z = {Literal = e}"
+}
+
+
+Invoke:register("chain",function (self, value, rest, plr)
+    local commands = {}
+    local modifiers = {}
+    -- for modifier, st in string.gmatch(rest,"%(%s*([%-%?]?)%s*(.*)%s*%)") do
+    for br in string.gmatch(rest,"%b()") do
+        local modifier, st = string.match(br,"([%-%?]?)%s*(.*)$")
+        commands[#commands+1] = st
+        modifiers[#commands] = modifier
+    end
+
+    local v = self:materializeBranch(value)
+    for i = #commands, 1, -1 do
+        if modifiers[i] == "?" and v == nil then
+            return
+        end
+        v = self:materializeBranch(commands[i],nil,{Literal = v}) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this? 
+    end
+    return v
+    
+end)
+:addDoc{
+    text = "chain(a.x)(b.y)(c.z) = t is equivalent to a.x = { b.y = { c.z = t } }. if a `?` is at the start of a part, then the chain exits if the value that would be passed into it is nil"
+}

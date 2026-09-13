@@ -171,6 +171,7 @@ end
 ---@param func fun(self:Invoke,value:table,rest:string,plr:Entity):...
 ---@return FunctionDoc
 function Invoke:register(key,func)
+    assert (string.match(key,"^%a*$")) -- the key must be made up of letters
     return self:_registerDoc(key,
         setmetatable({invoke=self,key=key,docs={},alt_keys={},func=func},function_metatable)
     )
@@ -218,7 +219,8 @@ function Invoke:materializeBranch(word,plr,tbl)
     if type(word) == "table" then
         return self:runTable_(word,plr or self.plr)
     end
-    local _,_,start,rest = string.find(word,"^([^%.]*)%.?(.*)$")
+    local start,rest = string.match(word,"^(%a*)%.?(.*)$")
+    -- local _,_,start,rest = string.find(word,"^([^%.]*)%.?(.*)$")
     if self.functions[start] then
         -- log(start,rest)
         return self:run(start,tbl,rest,plr or self.plr)

@@ -100,7 +100,7 @@ function Utils.table.getNest(tbl,path,substitutions)
                 end
             end
             if type(tbl) == "table" then
-                tbl = tbl[w]
+                tbl = tbl[tonumber(w) or w]
             else
                 return nil
             end

@@ -76,4 +76,7 @@ count the number of nearby sheared and unsheared sheep:
 
 >>>[+on.sneak -> Entities -> M[
     call.getType
-    ] -> count -> log+1]
+    ] -> count -> keyvalue -> M[format $1: $2] -> say]
+
+
+[count]

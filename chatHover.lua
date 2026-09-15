@@ -27,11 +27,16 @@ CHAT_TEXT =
 
 
 
-function pings.sendChatMessage(msg)
+local function setMessage(msg)
+    
     MESSAGE_TIME = client.getSystemTime()
     CHAT_MESSAGE = msg
     CHAT_TEXT:setText(msg)
     CHAT_SHOWN = true
+end
+
+function pings.sendChatMessage(msg)
+    setMessage(msg)
 end
 
 function events.tick()
@@ -54,3 +59,9 @@ function events.chat_send_message(msg)
         return msg
     end
 end
+
+require("invoke.Invoke"):register("say", function (self, value, rest)
+    local v = self:materializeBranch(value)
+    setMessage(tostring(v))
+    return v
+end)

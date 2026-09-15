@@ -236,6 +236,14 @@ function Invoke:materializeBranch(word,tbl)
 end
 Invoke.runTable = Invoke.materializeBranch
 
+---
+---@param word any
+---@param matValue any
+---@return unknown?
+function Invoke:call(word,matValue)
+    return self:materializeBranch(word,{Literal = matValue})
+end
+
 
 -- todo: make it so a clipboard next to a head is also read.
 

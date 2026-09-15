@@ -40,7 +40,7 @@ local function appendLogText(text,silent)
 end
 
 local function newLogTable(tbl,maxDepth,silent)
-    return appendLogText(oldLogTable(tbl,maxDepth,silent or LOG_DISABLE),silent)
+    return appendLogText(oldLogTable(tbl,maxDepth,silent or LOG_DISABLE) or "error: logTable returns nil on non-host",silent)
 end
 
 

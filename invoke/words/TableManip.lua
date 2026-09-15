@@ -118,7 +118,7 @@ Invoke:register("filter",function (self, value, rest)
     local out = {}
     for k, v in pairs(tbl) do
         for i = 1, #filters do
-            local t = self:materializeBranch(filters[i],{Literal = v}) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this?
+            local t = self:call(filters[i],v) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this?
             if (not t) == (not filterInverts[i]) then
                 goto continue
             end
@@ -156,7 +156,7 @@ Invoke:register("chain",function (self, value, rest)
             return
         end
         
-        local x = self:materializeBranch(commands[i],{Literal = v}) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this? 
+        local x = self:call(commands[i],v) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this? 
         local mod = string.match( modifiers[i], "[%+%-]")
         if mod == "+" then
             if not x then
@@ -189,7 +189,7 @@ Invoke:register("mapchain",function (self, value, rest)
     local out = {}
 
     for k, v in pairs(tbl) do
-        out[k] = self:materializeBranch("chain"..rest,{Literal = v})
+        out[k] = self:call("chain"..rest,v)
     end
     return out
     
@@ -218,5 +218,29 @@ Invoke:register("keyvalue",function (self, value, rest)
         out[#out+1] = {key,value}
     end
     return out
-    
+end)
+
+Invoke:register("arrayize",function (self, value, rest)
+    local tbl = self:materializeBranch(value)
+    if not tbl then return end
+    local out = {}
+    for key, value in pairs(tbl) do
+        out[#out+1] = value
+    end
+    return out
+end)
+
+
+Invoke:register("concat",function (self, value, rest)
+    local tbl = self:materializeBranch(value)
+    if not tbl then return end
+    return table.concat(tbl,rest)
+end)
+
+Invoke:register("table",function (self, value, rest)
+    local out = {}
+    for k, v in pairs(value) do
+        out[k] = self:materializeBranch(v)
+    end
+    return out
 end)

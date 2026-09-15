@@ -16,6 +16,13 @@ Invoke:register("J",function (self,tbl, rest)
     -- tostring(value)
 end)
 
+Invoke:register("S",function (self,tbl, rest)
+    return tostring(self:materializeBranch(tbl))
+    -- tostring(value)
+end)
+
+
+
 Invoke:register("sub",function  (self, value, rest)
     local s = value[1] or value.s
     local pattern = value[2] or value.pattern or value.p
@@ -34,6 +41,20 @@ Invoke:register("logJson",function  (self, value, rest)
     -- return toJson(value)
 end)
 
+local function recursives() end
+
+
+Invoke:register("formats",function  (self, value, rest)
+    local w = self:materializeBranch(value)
+    local out = {}
+    return string.gsub(string.match(rest,"^(.-)%'?$"),"$(%b{})",function (q,...)
+        
+        return self:call(string.sub(q,2,-2),w)
+    end)
+
+    -- return string.format(rest,table.unpack(value))
+end)
+
 Invoke:register("format",function  (self, value, rest)
     local w = self:materializeBranch(value)
     return string.gsub(rest,"$(%S*)",function (q,...)
@@ -41,6 +62,12 @@ Invoke:register("format",function  (self, value, rest)
     end)
 
     -- return string.format(rest,table.unpack(value))
+end)
+
+Invoke:register("color",function (self, value, rest)
+    local w = self:materializeBranch(value)
+    return {text = w, color = rest}
+    
 end)
 
 

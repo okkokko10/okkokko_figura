@@ -1,7 +1,7 @@
 require"invoke.Invoke"
 
 
-Invoke:register("equals",function  (self, value, rest)
+Invoke:registerByName("lazyequals",function  (self, value, rest)
     local out
     if type(value) == "table" then
         for index, v in ipairs(value) do

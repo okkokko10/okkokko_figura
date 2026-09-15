@@ -60,8 +60,7 @@ function events.chat_send_message(msg)
     end
 end
 
-require("invoke.Invoke"):register("say", function (self, value, rest)
-    local v = self:materializeBranch(value)
-    setMessage(tostring(v))
-    return v
+require("invoke.Invoke"):registerByValueNoRest("say", function (self, input)
+    setMessage(tostring(input))
+    return input
 end)

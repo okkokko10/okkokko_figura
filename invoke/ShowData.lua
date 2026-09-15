@@ -149,9 +149,9 @@ function Utils.table.getKeys(tbl)
 end
 
 
-local w = Invoke:register("display",function  (self, value, rest)
-    local w = self:materializeBranch(value.text)
-    local o = self:materializeBranch(value.on or value.target)
+local w = Invoke:registerWithArgsNoRest("display",{"text","on"},function  (self, input)
+    local w = (input["text"])
+    local o = (input["on"])
     if not o then return end
     o
     :newText("text")
@@ -174,17 +174,14 @@ w:addDoc{
     }
 }
 
-Invoke:register("clear",function  (self, value, rest)
-    local w = self:materializeBranch(value)
-    if type(w) == "table" then
-        for key, value in pairs(w) do
+Invoke:registerByValueNoRest("clear",function  (self, input)
+    if type(input) == "table" then
+        for key, value in pairs(input) do
             self:clearInfo(value)
         end
-        
-        
     end
-    if type(w) == "ModelPart" then
-        self:clearInfo(w)
+    if type(input) == "ModelPart" then
+        self:clearInfo(input)
     end
 
 end)

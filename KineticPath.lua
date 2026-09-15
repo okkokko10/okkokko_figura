@@ -896,7 +896,7 @@ function KineticPath.action.activateAtLook()
 end
 
 require("invoke.Invoke")
-Invoke:register("KineticPath",function (self, value, rest)
+Invoke:registerWithArgs("KineticPath",{"pos","EK"},function (self, rest, input)
     if self:restContains(rest,"clear") then
         KineticPath.action.removeAll(self.plr)
         return
@@ -906,10 +906,10 @@ Invoke:register("KineticPath",function (self, value, rest)
         return
     end
 
-    local pos = self:materializeBranch(value.pos)
+    local pos = input["pos"]
     if not pos then return end
     assert(({Vector3 = true,Vector4 = true})[type(pos)], "invalid input to KineticPath. Vector3|Vector4|nil")
-    local EK = self:materializeBranch(value.EK)
+    local EK = input["EK"]
     if self:restContains(rest,"swap") then
         KineticPath.action.removeLatest(self.plr)
     end

@@ -212,6 +212,82 @@ function Invoke:registerKeyword(key,func)
 end
 
 
+---a function, with the values set.
+---@param key string
+---@param func fun(self:Invoke,rest:string,input:unknown):...?
+---@return FunctionDoc
+function Invoke:registerByValue(key,func)
+    return self:register(key,function (self, value, rest)
+        return func(self,rest,self:materializeBranch(value))
+    end)
+end
+
+---a function, with the values set.
+---@param key string
+---@param func fun(self:Invoke,input:unknown):...?
+---@return FunctionDoc
+function Invoke:registerByValueNoRest(key,func)
+    return self:register(key,function (self, value, rest)
+        return func(self,self:materializeBranch(value))
+    end)
+end
+
+---@generic T: string
+---@param key string
+---@param args {[integer]: T}
+---@param func fun(self:Invoke,rest:string,input:{[T]:unknown}):...?
+---@return FunctionDoc
+function Invoke:registerWithArgs(key,args,func)
+    return self:register(key,function (self, value, rest)
+        local l = {}
+        for i, v in ipairs(args) do
+            l[v] = self:materializeBranch(value[v])
+        end
+        return func(self,rest,l)
+    end)
+end
+
+---@generic T: string
+---@param key string
+---@param args {[integer]: T}
+---@param func fun(self:Invoke,input:{[T]:unknown}):...?
+---@return FunctionDoc
+function Invoke:registerWithArgsNoRest(key,args,func)
+    return self:register(key,function (self, value, rest)
+        local l = {}
+        for i, v in ipairs(args) do
+            l[v] = self:materializeBranch(value[v])
+        end
+        return func(self,l)
+    end)
+end
+
+---a function, with the values set.
+---@param key string
+---@param func fun(self:Invoke,rest:string):...?
+---@return FunctionDoc
+function Invoke:registerOnlyRest(key,func)
+    return self:register(key,function (self, value, rest)
+        return func(self,rest)
+    end)
+end
+
+---for now just Invoke:register. 
+---@param key string
+---@param func fun(self:Invoke,value:table,rest:string):...
+---@return FunctionDoc
+function Invoke:registerByName(key,func)
+    return self:register(key,func)
+end
+
+---for now just Invoke:register. 
+---@param key string
+---@param func fun(self:Invoke,value:table,rest:string):...
+---@return FunctionDoc
+function Invoke:registerOld(key,func)
+    return self:register(key,func)
+end
+
 --- todo: add tags that set the result to a variable, and... 
 ---     could this be implemented by wrapping tbl in {Literal=<tbl>}
 ---     is the start.rest split done with arguments? 

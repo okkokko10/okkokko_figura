@@ -80,13 +80,13 @@ Invoke:registerKeyword("PickBlock",function (self, tbl, rest)
 
 end)
 
-Invoke:register("Entities",function (self, value, rest)
+Invoke:registerOld("Entities",function (self, value, rest)
     local entities = world.getEntities(-10000,-10000,-10000,10000,10000,10000)
     -- if value.type then
     --     log("type:",value)
     -- end
     -- log(value)
-    if not value then
+    if type(value) ~= "table" then
         return entities
     end
     local out = {}
@@ -98,13 +98,13 @@ Invoke:register("Entities",function (self, value, rest)
     return out
 end)
 
-Invoke:register("User",function (self, value, rest)
+Invoke:registerKeyword("User",function (self)
     return self.plr:isLoaded() and self.plr
 end)
 
 
 
-Invoke:register("call",function (self, value, rest)
+Invoke:registerByValue("call",function (self, rest, input)
     local start,sep, vars = string.match(rest,"^(%a*)(%s*)(.*)$")
     -- log(start,vars)
     if not start then
@@ -118,7 +118,7 @@ Invoke:register("call",function (self, value, rest)
         return
     end
 
-    local p = self:materializeBranch(value)
+    local p = input
     if p and type(p) ~= "table" and type(p[start]) =="function" then -- not table, so that actual lists can't be passed onto functions they contain.
     
         

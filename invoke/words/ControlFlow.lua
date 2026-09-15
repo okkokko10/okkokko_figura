@@ -2,7 +2,7 @@ require"invoke.Invoke"
 
 
 
-Invoke:register("and",function  (self, value, rest)
+Invoke:registerByName("and",function  (self, value, rest)
     local out
     logTable(value,3)
     if type(value) == "table" then

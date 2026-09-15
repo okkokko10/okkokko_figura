@@ -1,7 +1,7 @@
 require"invoke.Invoke"
 
 
-Invoke:register("gsub",function (self, value, rest)
+Invoke:registerOld("gsub",function (self, value, rest)
     if rest == "freeze" then
         self:freezegsub()
     elseif rest == "unfreeze" then
@@ -42,7 +42,7 @@ end)
 
 
 
-Invoke:registerKeyword("cancel",function  (self, value, rest)
+Invoke:registerOnlyRest("cancel",function  (self, rest)
     if rest == "page" then
         self:cancelPage()
     else
@@ -64,7 +64,7 @@ function Invoke:listWords()
 end
 
 
-Invoke:registerKeyword("help",function  (self, value, rest)
+Invoke:registerOld("help",function  (self, value, rest)
     if type(value) == "string" then
         rest = value
     end
@@ -90,7 +90,6 @@ end)
     value = "<word>"
 }
 
-Invoke:register("error",function (self, value, rest)
-    local w = self:materializeBranch(value)
-    error("manual error: "..rest ..": "..toJson(w))
+Invoke:registerByValue("error",function (self, rest,input)
+    error("manual error: "..rest ..": "..toJson(input))
 end)

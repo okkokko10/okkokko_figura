@@ -108,7 +108,7 @@ end
 ---@param func fun(self:Invoke,value:table,rest:string):...
 ---@return FunctionDoc
 function Invoke:registerCondition(key,func)
-    return self:register(key,function (self, value, rest)
+    return self:registerOld(key,function (self, value, rest)
         local r = func(self,value,rest)
         if r then
             if value == nil then
@@ -122,7 +122,8 @@ function Invoke:registerCondition(key,func)
     end)
 end
 
-Invoke:register("cond",function (self, value, rest)
+
+Invoke:registerByName("cond",function (self, value, rest)
     local r = self:materializeBranch(rest)
         if r then
             if value == nil then
@@ -135,7 +136,7 @@ Invoke:register("cond",function (self, value, rest)
         end
 end)
 
-Invoke:register("on",function  (self, value, rest)
+Invoke:registerOnlyRest("on",function  (self, rest)
     if Invoke.triggers[rest] then
         if Invoke.triggers[rest]:started(self.plr) then
             return true
@@ -148,7 +149,7 @@ Invoke:register("on",function  (self, value, rest)
     end)
 :setSection("triggers")
 
-Invoke:register("while",function  (self, value, rest)
+Invoke:registerOnlyRest("while",function  (self, rest)
     if Invoke.triggers[rest] then 
         if Invoke.triggers[rest]:active(self.plr) then
             return true
@@ -160,7 +161,7 @@ Invoke:register("while",function  (self, value, rest)
     end
 end)
 :setSection("triggers")
-Invoke:register("unless",function  (self, value, rest)
+Invoke:registerOnlyRest("unless",function  (self, rest)
     if Invoke.triggers[rest] then 
         if Invoke.triggers[rest]:inactive(self.plr) then
             return true
@@ -172,7 +173,7 @@ Invoke:register("unless",function  (self, value, rest)
     end
 end)
 :setSection("triggers")
-Invoke:register("off",function  (self, value, rest)
+Invoke:registerOnlyRest("off",function  (self, rest)
     if Invoke.triggers[rest] then 
         if Invoke.triggers[rest]:stopped(self.plr) then
             return true
@@ -185,7 +186,7 @@ Invoke:register("off",function  (self, value, rest)
 end)
 :setSection("triggers")
 
-Invoke:register("change",function  (self, value, rest)
+Invoke:registerOnlyRest("change",function  (self, rest)
     if Invoke.triggers[rest] then 
         if Invoke.triggers[rest]:changed(self.plr) then
             return true
@@ -231,20 +232,13 @@ Invoke.registerPlayerTracked("open",function (plr)
 end)
 
 
-Invoke:register("maketrigger",function (self, value, rest)
-    self:setVariable(rest,playerTrackedFunctions.update(self:getVariable(rest),self:materializeBranch(value)))
+Invoke:registerByValue("maketrigger",function (self, rest, input)
+    self:setVariable(rest,playerTrackedFunctions.update(self:getVariable(rest),input))
 end):addAlternateNames("updatetrigger"):addDoc{
     text = "updates a trigger variable, to be used with on/off/while/unless/change",
     rest = "variable name",
     value = "on/off"
 }
-
-
--- Invoke:register("onSneak",function (self, value)
---     if Invoke.startedSneaking(self.plr) then
---         self:runTable(value,self.plr)
---     end
--- end)
 
 
 --[[

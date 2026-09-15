@@ -1,7 +1,7 @@
 require"invoke.Invoke"
 
-Invoke:register("Keys",function (self, value, rest)
-    return Utils.table.getKeys(self:materializeBranch(value))
+Invoke:registerByValueNoRest("Keys",function (self, input)
+    return Utils.table.getKeys(input)
     -- tostring(value)
 end)
 :addAlternateNames("K")
@@ -12,7 +12,7 @@ end)
 }
 
 
-Invoke:register("Literal",function (self, value, rest)
+Invoke:registerOld("Literal",function (self, value, rest)
     return value
 end)
 :addAlternateNames("Lit")
@@ -22,16 +22,10 @@ end)
 }
 
 
-Invoke:register("get",function (self, value, rest)
-    if rest == "" then
-        rest = self:materializeBranch(value.key)
-        value = value.from
+Invoke:registerByValue("get",function (self, rest,input)
+    if type(input) == "table" then
+        return Utils.table.getNest(input,rest)
     end
-    local b = self:materializeBranch(value)
-    if type(b) == "table" then
-        return Utils.table.getNest(b,rest)
-    end
-    -- tostring(value)
 end
 ):addDoc{
     text = "gets table[ key[1] ][ key[2] ][ key[3] ]...,\n"..
@@ -42,17 +36,23 @@ end
 :addDoc{
     rest = "<key>",
     value = "<table>",
-}:addDoc{
+}
+Invoke:registerWithArgs("getkv",{"key","from"},function (self, rest,input)
+    local b = input.from
+    if type(b) == "table" then
+        return Utils.table.getNest(b,input.key)
+    end
+end
+):addDoc{
     value = "{from = <table>, key = <key>}"
 }
 
-Invoke:register("count",function (self, value, rest)
-    local tbl = self:materializeBranch(value)
-    if type(tbl) ~= "table" then
-        error("expected table, got " .. type(tbl) .. " " .. toJson(tbl) .. " from " .. toJson(value))
+Invoke:registerByValue("count",function (self, rest, input)
+    if type(input) ~= "table" then
+        error("expected table, got " .. type(input) .. " " .. toJson(input) .. " from " .. toJson(value))
     end
     local out = {}
-    for key, value in pairs(tbl) do
+    for key, value in pairs(input) do
         out[value] = (out[value] or 0) + 1
     end
     if rest ~= "" then
@@ -62,12 +62,11 @@ Invoke:register("count",function (self, value, rest)
     -- tostring(value)
 end)
 
-Invoke:register("any",function (self, value, rest)
-    local tbl = self:materializeBranch(value)
-    if type(tbl) ~= "table" then
-        error("expected table, got " .. type(tbl) .. " " .. toJson(tbl) .. " from " .. toJson(value))
+Invoke:registerByValue("any",function (self, rest, input)
+    if type(input) ~= "table" then
+        error("expected table, got " .. type(input) .. " " .. toJson(input)) -- todo: error that gives where the input originated from
     end
-    for k, v in pairs(tbl) do
+    for k, v in pairs(input) do
         return v
     end
 end)
@@ -75,7 +74,7 @@ end)
 
 
 
-Invoke:register("map",function (self, value, rest)
+Invoke:registerByName("map",function (self, value, rest)
     local tbl = self:materializeBranch(value.table)
     local key = rest
     if not tbl then
@@ -99,7 +98,7 @@ Invoke:register("map",function (self, value, rest)
 end)
 
 --- deprecated
-Invoke:register("filter",function (self, value, rest)
+Invoke:registerOld("filter",function (self, value, rest)
     local filters = {}
     local filterInverts = {}
     -- for modifier, st in string.gmatch(rest,"%(%s*(%-?)%s*(.*)%s*%)") do
@@ -134,7 +133,7 @@ end)
 }
 
 
-Invoke:register("chain",function (self, value, rest)
+Invoke:registerByValue("chain",function (self, rest, input)
     local commands = {}
     local modifiers = {}
     -- for modifier, st in string.gmatch(rest,"%(%s*([%-%?]?)%s*(.*)%s*%)") do
@@ -150,7 +149,7 @@ Invoke:register("chain",function (self, value, rest)
         modifiers[#commands] = modifier
     end
 
-    local v = self:materializeBranch(value)
+    local v = input
     for i = reverse and 1 or #commands, reverse and #commands or 1, reverse and 1 or -1 do
         if string.match( modifiers[i], "%?") and not v then
             return
@@ -179,17 +178,14 @@ end)
         "if a + or - is at the start, passes its input onto the next link in the chain, and instead exits if its own result is falsey or truthy respectively"
 }:addAlternateNames("") -- can be just ()()
 
-Invoke:register("mapchain",function (self, value, rest)
-    
-
-    local tbl = self:materializeBranch(value)
-    if not tbl then
+Invoke:registerByValue("mapchain",function (self, rest, input)
+    if not input then
         return
     end
     local out = {}
 
-    for k, v in pairs(tbl) do
-        out[k] = self:call("chain"..rest,v)
+    for k, v in pairs(input) do
+        out[k] = self:call(rest,v)
     end
     return out
     
@@ -199,8 +195,8 @@ end):addAlternateNames("M")
     text = "chain but for each value of a table."
 }
 
-Invoke:register("eq",function (self, value, rest)
-    local tbl = self:materializeBranch(value)
+Invoke:registerByValue("eq",function (self, rest, input)
+    local tbl = input
     -- log(rest)
     return tbl == parseJson(rest)
     
@@ -210,8 +206,8 @@ end)
     text = "is value equal to rest"
 }
 
-Invoke:register("keyvalue",function (self, value, rest)
-    local tbl = self:materializeBranch(value)
+Invoke:registerByValue("keyvalue",function (self, rest, input)
+    local tbl = input
     if not tbl then return end
     local out = {}
     for key, value in pairs(tbl) do
@@ -220,8 +216,8 @@ Invoke:register("keyvalue",function (self, value, rest)
     return out
 end)
 
-Invoke:register("arrayize",function (self, value, rest)
-    local tbl = self:materializeBranch(value)
+Invoke:registerByValue("arrayize",function (self, rest, input)
+    local tbl = input
     if not tbl then return end
     local out = {}
     for key, value in pairs(tbl) do
@@ -231,13 +227,13 @@ Invoke:register("arrayize",function (self, value, rest)
 end)
 
 
-Invoke:register("concat",function (self, value, rest)
-    local tbl = self:materializeBranch(value)
+Invoke:registerByValue("concat",function (self, rest, input)
+    local tbl = input
     if not tbl then return end
     return table.concat(tbl,rest)
 end)
 
-Invoke:register("table",function (self, value, rest)
+Invoke:registerOld("table",function (self, value, rest)
     local out = {}
     for k, v in pairs(value) do
         out[k] = self:materializeBranch(v)

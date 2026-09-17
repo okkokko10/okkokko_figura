@@ -57,24 +57,19 @@ end
 -- end)
 
 
-Invoke:register("set", function (self, value, rest)
-    if rest == "" then
-        rest = self:materializeBranch(value.key)
-        if value.onReplace then
-            local old = self:getVariable(rest)
-            if old then
-                self:materializeBranch(value.onReplace)
-            end
-        end
-        value = value.value
-    end
-    local out = self:materializeBranch(value)
-    self:setVariable(rest,out)
-    return out
+Invoke:registerByValue("set", function (self, rest, input)
+    self:setVariable(rest,input)
+    return input
+end)
+
+Invoke:registerWithArgs("setkv",{"key","value"}, function (self, rest, inputs)
+    self:setVariable(inputs.key,inputs.value)
+    return inputs.value
 end)
 
 
-Invoke:register("init", function (self, value, rest)
+---deprecated
+Invoke:registerOld("init", function (self, value, rest)
     if rest == "" then
         rest = self:materializeBranch(value.key)
         value = value.value
@@ -93,33 +88,23 @@ end)
 
 --- return the value. 
 
-Invoke:register("var", function (self, value, rest)
-    if rest == "" then
-        rest = self:materializeBranch(value)
-    end
+Invoke:registerOnlyRest("var", function (self, rest)
     return self:getVariable(rest)
+end)
+
+Invoke:registerByValueNoRest("varkv", function (self, input)
+    return self:getVariable(input)
     -- local out = self:materializeBranch(value)
     -- self:setVariable(rest,out)
     -- return out
 end)
 
 
-Invoke:register("evaluate", function (self, value, rest)
-    return self:materializeBranch(self:materializeBranch(value))
-    -- local out = self:materializeBranch(value)
-    -- self:setVariable(rest,out)
-    -- return out
+Invoke:registerByValueNoRest("evaluate", function (self, input)
+    return self:materializeBranch(input)
 end)
 
 
-Invoke:register("UtilsID", function (self, value, rest)
-    
-    return Utils.ID.from(self:materializeBranch(value))
-    -- local out = self:materializeBranch(value)
-    -- self:setVariable(rest,out)
-    -- return out
+Invoke:registerByValueNoRest("UtilsID", function (self, input)
+    return Utils.ID.from(input)
 end)
-
-
-
---- todo: get Utils.ID

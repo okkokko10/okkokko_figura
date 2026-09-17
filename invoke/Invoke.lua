@@ -235,13 +235,17 @@ end
 ---@generic T: string
 ---@param key string
 ---@param args {[integer]: T}
----@param func fun(self:Invoke,rest:string,input:{[T]:unknown}):...?
+---@param func fun(self:Invoke,rest:string,input:{[T|string]:unknown}):...?
 ---@return FunctionDoc
 function Invoke:registerWithArgs(key,args,func)
     return self:register(key,function (self, value, rest)
         local l = {}
         for i, v in ipairs(args) do
-            l[v] = self:materializeBranch(value[v])
+            if value[v] then
+                l[v] = self:materializeBranch(value[v])
+            else
+                l[v] = self:getVariable(v)
+            end
         end
         return func(self,rest,l)
     end)
@@ -253,12 +257,8 @@ end
 ---@param func fun(self:Invoke,input:{[T]:unknown}):...?
 ---@return FunctionDoc
 function Invoke:registerWithArgsNoRest(key,args,func)
-    return self:register(key,function (self, value, rest)
-        local l = {}
-        for i, v in ipairs(args) do
-            l[v] = self:materializeBranch(value[v])
-        end
-        return func(self,l)
+    return self:registerWithArgs(key,args,function (self, rest, input)
+        return func(self,input)
     end)
 end
 

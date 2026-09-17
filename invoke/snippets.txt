@@ -99,3 +99,77 @@ list vendors
 >>>[+on.sneak -> [-while.offhand -> Array -> set.blocks] -> User -> method.getPos -> area 16 -> Scan{[ +[method.getID -> eq.'numismatics:vendor'] -> 
 formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} ${[get.Prices -> J]}]}
 ' -> assign.blocks -> -]}{[var.blocks -> Keys -> J -> say]}]
+
+list vendors
+>>>[+on.sneak -> [-while.offhand -> Array -> set.blocks] -> User -> method.getPos -> area 16 -> Scan{[ +[method.getID -> eq.'numismatics:vendor'] -> 
+formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} ${[get.Prices -> price -> stacks]}]}
+' -> assign.blocks -> -]}{[var.blocks -> Keys -> J -> say]}]
+
+
+list vendors
+>>>[+on.sneak -> [-var.vendors -> Array -> set.vendors] -> User -> method.getPos -> area 16 -> Scan{[ +[method.getID -> eq.'numismatics:vendor'] -> 
+formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} ${[get.Prices -> ? pricestring]}]} ${[method.getPos -> S]}
+' -> assign.vendors -> -]}{[var.vendors -> Keys -> J -> say]}]
+
+
+list vendors function
+>>>[[text[[
+    [-var.vendors -> Array -> set.vendors] 
+-> User -> method.getPos -> area 16 -> Scan{
+    [ +[method.getID -> eq.'numismatics:vendor'] -> 
+    formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} ${[get.Prices -> ? pricestring]}]} ${[method.getPos -> S]}
+    ' -> assign.vendors -> -]}
+    {[var.vendors -> Keys -> J -> say]}
+]]] -> set.scanvendors]
+
+>>>[+on.sneak ->var.scanvendors -> say]
+>>>[+on.offhand ->var.blocks -> Keys -> J -> log]
+
+
+
+
+>>>[[[[+on.sneak ->
+[-var.vendors -> Array -> set.vendors] 
+-> User -> method.getPos -> area 16 -> Scan{
+    [ +[method.getID -> eq.'numismatics:vendor'] -> formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} ${[get.Prices -> ? pricestring]}]} ${[method.getPos -> S]}
+' -> assign.vendors -> nil]}
+{[var.vendors -> Keys -> J -> say]}
+]]]]
+
+
+global;>>>[text[[-var.vendors -> Array -> set.vendors] -> User -> method.getPos -> area 16 -> Scan{[ +[method.getID -> eq.'numismatics:vendor'] -> 
+formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} ${[get.Prices -> ? pricestring]}]} ${[method.getPos -> S]}
+' -> assign.vendors -> -]}{[var.vendors -> Keys -> J -> say]}] -> set.scanvendors]
+
+>>>[text[match.expe] -> set.matching]
+>>>[var.vendors -> Keys -> M[+run.matching] -> J -> say]
+
+>>>[+on.sneak -> var.vendors -> Keys -> log -> M[+?match.cop] -> log -> arrayize -> J -> say]
+
+
+global;
+;>>>[-var.vendors -> Array -> set.vendors];
+;>>> fun.displayvendors:[var.vendors -> Keys -> J -> say];
+;>>> fun.processvendor:[ +[method.getID -> eq.'numismatics:vendor'] -> 
+formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} ${[get.Prices -> ? pricestring]}]} ${[method.getPos -> S]}
+' -> assign.vendors -> -]
+;>>> fun.userarea: [User -> method.getPos -> area 16]
+;>>> fun.scanvendors:[ run.userarea -> Scan{run.processvendor}{run.displayvendors}]
+
+
+
+>>>fun.matching:[?match.sal]
+
+>>>[+on.sneak -> run.scanvendors]
+
+;>>>[+on.sneak -> var.vendors -> Keys -> M[+run.matching] -> arrayize -> J -> say]
+
+global;
+>>>[-var.vendors -> Array -> set.vendors];
+>>> fun.displayvendors:[var.vendors -> Keys -> sort -> J -> say];
+>>> fun.processvendor:[ +[method.getID -> eq.'numismatics:vendor'] -> 
+formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} (${[get.Selling.count -> S]}) ${[get.Prices -> ? pricestring]}]} ${[method.getPos -> S]}
+' -> #assign.vendors];
+global;>>> fun.userarea: [User -> method.getPos -> area 40]
+;>>> fun.scanvendors:[ run.userarea -> Scan{[run.processvendor -> nil]}{}]
+>>>[+on.sneak -> User -> PickBlock -> run.processvendor -> + -> say]

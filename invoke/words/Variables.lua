@@ -108,3 +108,9 @@ end)
 Invoke:registerByValueNoRest("UtilsID", function (self, input)
     return Utils.ID.from(input)
 end)
+
+Invoke:registerByValue("fun", function (self, rest, input)
+    local name, func = string.match(rest,"^(%w*):(.*)$")
+    
+    self:setVariable(name,func)
+end)

@@ -300,6 +300,10 @@ function Invoke:materializeBranch(word,tbl)
     if type(word) == "table" then
         return self:runTable_(word)
     end
+    if type(word) ~= "string" then
+        log(word)
+        error("not table or string")
+    end
     local start,rest = string.match(word,"^(%a*)%.?(.*)$")
     -- local _,_,start,rest = string.find(word,"^([^%.]*)%.?(.*)$")
     if self.functions[start] then

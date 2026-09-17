@@ -40,7 +40,7 @@ function pings.sendChatMessage(msg)
 end
 
 function events.tick()
-    if CHAT_SHOWN and client.getSystemTime() - MESSAGE_TIME > 1000*10 then
+    if CHAT_SHOWN and client.getSystemTime() - MESSAGE_TIME > 1000*60 then
         CHAT_TEXT:setText("")
         CHAT_SHOWN = false
     end

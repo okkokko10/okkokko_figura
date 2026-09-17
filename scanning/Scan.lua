@@ -44,12 +44,16 @@ end
 Scan.visual = models:newPart("ScanVisual")
 Scan.visual_item = Scan.visual:newBlock("red_stained_glass"):setBlock("red_stained_glass"):setLight(15,15)
 
+Scan.gui = models:newPart("ScanGui","GUI"):setPos(-client.getScaledWindowSize().xy_*vec(0.1,0.5,1))
+Scan.gui_text = Scan.gui:newText("te"):setText("")
+
 ---comment
 ---@param sc ScanQueueElement
 function Scan.setVisual(sc)
     Utils.Sublevel.SublevelPositionPart(sc.pos1,nil,Scan.visual)
     local s = (sc.pos2-sc.pos1 + 1)
     Scan.visual:setScale(s):setVisible(true)
+    Scan.gui_text:setText(string.format("scan left: %s",Scan.queued_scans_top-Scan.queued_scans_index_current+1))
 
     -- Rect.fromEndpoints(vec(0,0,0),s)
 
@@ -57,6 +61,7 @@ function Scan.setVisual(sc)
 end
 function Scan.resetVisual(sc)
     Scan.visual:setVisible(false)
+    Scan.gui_text:setText("")
 end
 
 
@@ -189,6 +194,7 @@ function Scan.foreach(rect,func,onFinish)
             end
         end
     end
+    return group
 end
 
 return Scan

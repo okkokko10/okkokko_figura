@@ -137,7 +137,7 @@ Invoke:registerByValue("chain",function (self, rest, input)
     local commands = {}
     local modifiers = {}
     -- for modifier, st in string.gmatch(rest,"%(%s*([%-%?]?)%s*(.*)%s*%)") do
-    local brackets = "%b[]"
+    local brackets = "%b()"
     local reverse = false
     if string.match(rest,"^%s*%[") then
         brackets = "%b[]"
@@ -145,15 +145,19 @@ Invoke:registerByValue("chain",function (self, rest, input)
     end
     for br in string.gmatch(rest,brackets) do
         local modifier, st = string.match(br,"^.%s*([%-%+%?1%#]*)%s*(.-)%s*.$")
-        commands[#commands+1] = st
-        modifiers[#commands] = modifier
+        if modifier then
+            modifiers[#commands+1] = modifier
+            commands[#commands+1] = st
+            
+        end
     end
 
     local v = input
     local size = #commands
-    local i = 0
-    while i < size do
-        i=i+1
+    local j = 0
+    while j < size do
+        j=j+1
+        local i = j -- reverse and j or (size - j + 1)
         if string.match( modifiers[i], "%?") and not v then
             return
         end
@@ -164,7 +168,7 @@ Invoke:registerByValue("chain",function (self, rest, input)
         if mod == "+" then
             if not x then
                 if skip then
-                    i = i + 1
+                    j = j + 1
                 else
                     return
                 end
@@ -172,12 +176,13 @@ Invoke:registerByValue("chain",function (self, rest, input)
         elseif mod == "-" then
             if x then
                 if skip then
-                    i = i + 1
+                    j = j + 1
                 else
                     return
                 end
             end
-        elseif not string.match(modifiers[i],"#") then
+        else
+            -- string.match(modifiers[i],"%#") 
             v = x
         end
     end
@@ -277,5 +282,14 @@ Invoke:registerByValue("assign", function (self, rest, input)
     if type(tbl) == "table" then
         tbl[input] = true
     end
+    return input
+end)
+
+Invoke:registerByValue("nil", function (self, rest, input)
+    return
+end)
+
+Invoke:registerByValue("sort",function (self, rest, input)
+    table.sort(input)
     return input
 end)

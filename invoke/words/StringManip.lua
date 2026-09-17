@@ -43,13 +43,10 @@ local function recursives() end
 
 
 Invoke:registerByValue("formats",function  (self, rest,input)
-    local out = {}
     return string.gsub(string.match(rest,"^(.-)%'?$"),"$(%b{})",function (q,...)
         
         return self:call(string.sub(q,2,-2),input)
     end)
-
-    -- return string.format(rest,table.unpack(value))
 end)
 
 Invoke:registerByValue("format",function  (self, rest, input)
@@ -57,14 +54,98 @@ Invoke:registerByValue("format",function  (self, rest, input)
     return string.gsub(rest,"$(%S*)",function (q,...)
         return input[parseJson(q)]
     end)
-
-    -- return string.format(rest,table.unpack(value))
 end)
+
+
+Invoke:registerByValue("formate",function  (self, rest,input)
+
+    return string.gsub(string.match(rest,"^(.-)%'?$"),"$(%b[])",function (q,...)
+        return self:call(q,input)
+    end)
+end)
+
+
+Invoke:registerByValue("formatq",function  (self, rest,input)
+    local out = {}
+    string.gsub(rest,"$(%w*)=(%b[])",function (key,q,...)
+        out[key] = self:call(q,input)
+    end)
+    return out
+end)
+
+
 
 Invoke:registerByValue("color",function (self, rest, input)
     return {text = input, color = rest}
 end)
 
+Invoke:registerByValue("match",function  (self, rest, input)
+    if type(input) ~= "string" then
+        error("wrong type:"..type(input))
+    end
+    return string.match(input,rest)
+end)
+
+local prices = {
+    spur = 1,
+    bevel = 8,
+    sprocket = 16,
+    cog = 64,
+    crown = 512,
+    sun = 4096
+}
+local currency =
+    {"spur",
+    "bevel",
+    "sprocket",
+    "cog",
+    "crown",
+    "sun"}
+local currencysymbols = {
+    spur = "",
+    bevel = "",
+    sprocket = "",
+    cog = "",
+    crown = "",
+    sun = ""
+}
+
+
+ 
+    
+    
+
+Invoke:registerByValue("pricestring",function  (self, rest, input)
+    local out = ""
+    for key, value in ipairs(currency) do
+        if input[value] and input[value]~= 0 then
+            out = out .. tostring(input[value]) .. currencysymbols[value]
+        end
+    end
+    return out
+end)
+Invoke:registerByValue("price",function  (self, rest, input)
+    local out = 0
+    for key, value in pairs(input) do
+        if prices[key] then
+            out = out + value * prices[key]
+        end
+    end
+    return out
+end)
+
+Invoke:registerByValue("stacks",function  (self, rest, input)
+    if rest == "" then
+        rest = "%s:%s"
+    end
+    local d = math.floor(input/64)
+    local r = math.fmod(input,64)
+    if d == 0 then
+        return tostring(r)
+    end
+
+    return string.format(rest,d,r)
+end)
 
 
 Invoke:registerOld("log",function  (self, value, rest)
@@ -88,3 +169,11 @@ Invoke:registerOld("log",function  (self, value, rest)
     return w
     -- return toJson(value)
 end)
+
+
+Invoke:registerByValue("clipboard",function  (self, rest, input)
+    if self.plr == player then
+        host:setClipboard(tostring(input))
+    end
+end)
+

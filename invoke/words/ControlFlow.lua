@@ -31,7 +31,7 @@ end):addDoc{
 
 
 Invoke:registerByValue("run", function (self, rest, input)
-    return self:materializeBranch(self:getVariable(rest),input)
+    return self:call(self:getVariable(rest),input)
 end)
 
 -- Invoke:registerOnlyRest("fun",function (self, rest)
@@ -66,10 +66,13 @@ Invoke:registerByValue("Scan", function (self, rest, input)
         rest = string.match(a,"%{(.*)%}")
     end
 
-    require("scanning.Scan").foreach(input,function (block, num, out_of)
-        if self:is_stopped() then return true end
+    require("scanning.Scan").foreach(input,
+    function (block, num, out_of)
+        -- if self:is_stopped() then return true end
+        if block:isAir() then return end
         local out = self:call(rest,block)
+        -- log("out:", out)
         return out
-    end, final)
+    end, final).onError = log
 
 end)

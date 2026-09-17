@@ -80,3 +80,22 @@ count the number of nearby sheared and unsheared sheep:
 
 
 [count]
+
+>>>[-[+get.f -> -on.sneak] -> fun() -> set.f]
+
+
+>>>[+on.sneak -> [Array -> set.blocks] -> User -> method.getPos -> area 5 -> Scan{[ method.getID -> append.blocks -> -]}{[var.blocks -> J -> say]}]
+>>>[+on.sneak -> [Array -> set.blocks] -> User -> method.getPos -> area 5 -> Scan{[ method.getID -> append.blocks -> formats.  ' -> append.blocks -> -]}{[var.blocks -> J -> say]}]
+
+>>>[+on.sneak -> [Array -> set.blocks] -> User -> method.getPos -> area 5 -> Scan{[ method.getID -> formats. ${[]}
+' -> append.blocks -> -]}{[var.blocks -> J -> say]}]
+
+
+list blocks:
+>>>[+on.sneak -> [-while.offhand -> Array -> set.blocks] -> User -> method.getPos -> area 16 -> Scan{[ method.getID -> formats. ${[]}
+' -> assign.blocks -> -]}{[var.blocks -> Keys -> J -> say]}]
+
+list vendors
+>>>[+on.sneak -> [-while.offhand -> Array -> set.blocks] -> User -> method.getPos -> area 16 -> Scan{[ +[method.getID -> eq.'numismatics:vendor'] -> 
+formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} ${[get.Prices -> J]}]}
+' -> assign.blocks -> -]}{[var.blocks -> Keys -> J -> say]}]

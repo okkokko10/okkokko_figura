@@ -135,7 +135,7 @@ Invoke:registerByValue("call",function (self, rest, input)
 
 end):addDoc{
     text = "calls <value>:<rest>()"
-}
+}:addAlternateNames("method")
 
 --- wait, I could just use call.getTargetedEntity
 Invoke:registerKeyword("PickEntity",function (self, tbl, rest)

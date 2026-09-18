@@ -1,5 +1,50 @@
 require"invoke.Invoke"
 
+--- tracks arrays and other tables that are created as outputs in Invoke.
+--- plan to use this knowledge to let invoke code only edit these arrays.
+Invoke._mutables = setmetatable({},{__mode="k"}) -- __mode="k" makes it so the array will not stop the key from being garbage collected.
+
+--- despite the name, does not need to have contiguous positive integers as inputs.
+---@alias Array table
+
+
+---@return Array
+function Invoke:newmutable()
+    local out = {}
+    self._mutables[out] = true
+    return out
+end
+
+--- only call to tables you know the origin of
+---@param arr table
+function Invoke:addToMutables(arr)
+    self._mutables[arr] = true
+end
+
+
+---@param arr table|Array|unknown?
+---@return boolean
+function Invoke:isMutable(arr)
+    return not not self._mutables[arr]
+end
+
+---@param arr table|Array|unknown?
+---@return boolean
+function Invoke:isMutableAssertion(arr)
+    return assert(self:isMutable(arr),"a variable needs to be a mutable created by an invoke script to be modified")
+end
+
+Invoke:registerByValueNoRest("isMutable",function (self, input)
+    return self:isMutable(input)
+end)
+:addAlternateNames("K")
+:addDoc{
+    text = "gets the keys of `tbl`",
+    value = "<tbl>",
+    ret = "any[]"
+}
+
+
 Invoke:registerByValueNoRest("Keys",function (self, input)
     return Utils.table.getKeys(input)
     -- tostring(value)
@@ -51,7 +96,7 @@ Invoke:registerByValue("count",function (self, rest, input)
     if type(input) ~= "table" then
         error("expected table, got " .. type(input) .. " " .. toJson(input) .. " from " .. toJson(value))
     end
-    local out = {}
+    local out = self:newmutable()
     for key, value in pairs(input) do
         out[value] = (out[value] or 0) + 1
     end
@@ -80,7 +125,7 @@ Invoke:registerByName("map",function (self, value, rest)
     if not tbl then
         return
     end
-    local out = {}
+    local out = self:newmutable()
     local old = self:getVariable(key)
     for k, v in pairs(tbl) do
         self:setVariable(key,v)
@@ -114,7 +159,7 @@ Invoke:registerOld("filter",function (self, value, rest)
     if not tbl then
         return
     end
-    local out = {}
+    local out = self:newmutable()
     for k, v in pairs(tbl) do
         for i = 1, #filters do
             local t = self:call(filters[i],v) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this?
@@ -137,12 +182,12 @@ Invoke:registerByValue("chain",function (self, rest, input)
     local commands = {}
     local modifiers = {}
     -- for modifier, st in string.gmatch(rest,"%(%s*([%-%?]?)%s*(.*)%s*%)") do
-    local brackets = "%b()"
-    local reverse = false
-    if string.match(rest,"^%s*%[") then
-        brackets = "%b[]"
-        reverse = true
-    end
+    local brackets = "%b[]"
+    local reverse = true
+    -- if string.match(rest,"^%s*%(") then
+    --     brackets = "%b()"
+    --     reverse = false
+    -- end
     for br in string.gmatch(rest,brackets) do
         local modifier, st = string.match(br,"^.%s*([%-%+%?1%#]*)%s*(.-)%s*.$")
         if modifier then
@@ -191,17 +236,18 @@ Invoke:registerByValue("chain",function (self, rest, input)
 end)
 :addDoc{
     text = "chain(a.x)(b.y)(c.z) = t is equivalent to a.x = { b.y = { c.z = t } }.\n"..
+        "chain[c.z][b.y][a.x] will pass the input to c.z, then pass its result to b.y, then to a.x, and return that \n"..
         "if a `?` is at the start of a part, then the chain exits if the value that would be passed into it is nil\n"..
         "if a + or - is at the start, passes its input onto the next link in the chain, and instead exits if its own result is falsey or truthy respectively\n" .. 
         "if there is a 1 at the start, + or - instead just skips the next instruction not everything\n" ..
-        "if there is a # at the start, returns what it was passed"
+        "if there is a # at the start, returns what it was passed just like + or - does" -- todo: remove "return input" from normal functions?
 }:addAlternateNames("") -- can be just ()()
 
 Invoke:registerByValue("mapchain",function (self, rest, input)
     if not input then
         return
     end
-    local out = {}
+    local out = self:newmutable()
 
     for k, v in pairs(input) do
         out[k] = self:call(rest,v)
@@ -228,7 +274,7 @@ end)
 Invoke:registerByValue("keyvalue",function (self, rest, input)
     local tbl = input
     if not tbl then return end
-    local out = {}
+    local out = self:newmutable()
     for key, value in pairs(tbl) do
         out[#out+1] = {key,value}
     end
@@ -238,7 +284,7 @@ end)
 Invoke:registerByValue("arrayize",function (self, rest, input)
     local tbl = input
     if not tbl then return end
-    local out = {}
+    local out = self:newmutable()
     for key, value in pairs(tbl) do
         out[#out+1] = value
     end
@@ -253,7 +299,7 @@ Invoke:registerByValue("concat",function (self, rest, input)
 end)
 
 Invoke:registerOld("table",function (self, value, rest)
-    local out = {}
+    local out = self:newmutable()
     for k, v in pairs(value) do
         out[k] = self:materializeBranch(v)
     end
@@ -264,24 +310,22 @@ end)
 
 Invoke:registerByValue("append", function (self, rest, input)
     local tbl = self:getVariable(rest)
-    if type(tbl) == "table" then
-        tbl[#tbl+1] = input
-    end
-    return input
+    self:isMutableAssertion(tbl)
+    tbl[#tbl+1] = input
+    return input -- todo: should functions return input by default?
 end)
 
 
 
 Invoke:registerByValue("Array", function (self, rest, input)
-    return {}
+    return self:newmutable()
 end)
 
 
 Invoke:registerByValue("assign", function (self, rest, input)
     local tbl = self:getVariable(rest)
-    if type(tbl) == "table" then
-        tbl[input] = true
-    end
+    self:isMutableAssertion(tbl)
+    tbl[input] = true
     return input
 end)
 
@@ -289,7 +333,24 @@ Invoke:registerByValue("nil", function (self, rest, input)
     return
 end)
 
+Invoke:registerByValue("copy", function (self, rest, input)
+    local out
+    if rest == "" then
+        out = self:newmutable()
+    else
+        out = self:getVariable(rest)
+        self:isMutableAssertion(out)
+    end
+    for key, value in pairs(input) do
+        out[key] = value
+    end
+    return out
+end):addDoc{
+    text = "copies the contents of the input array into a new array or the array variable <rest>, then returns that array"
+}
+
 Invoke:registerByValue("sort",function (self, rest, input)
+    self:isMutableAssertion(input)
     table.sort(input)
     return input
 end)

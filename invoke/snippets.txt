@@ -168,8 +168,12 @@ global;
 >>>[-var.vendors -> Array -> set.vendors];
 >>> fun.displayvendors:[var.vendors -> Keys -> sort -> J -> say];
 >>> fun.processvendor:[ +[method.getID -> eq.'numismatics:vendor'] -> 
-formats ${[method.getEntityData -> formats ${[get.Selling.id -> S]} (${[get.Selling.count -> S]}) ${[get.Prices -> ? pricestring]}]} ${[method.getPos -> S]}
-' -> #assign.vendors];
+formats ${[method.getEntityData -> formats ${[get.Selling.id -> set.idtest__ -> S]} (${[get.Selling.count -> S]}) ${[get.Prices -> ? pricestring]}]} ${[method.getPos -> S]}
+' -> +var.idtest__ -> #assign.vendors];
 global;>>> fun.userarea: [User -> method.getPos -> area 40]
 ;>>> fun.scanvendors:[ run.userarea -> Scan{[run.processvendor -> nil]}{}]
 >>>[+on.sneak -> User -> PickBlock -> run.processvendor -> + -> say]
+
+
+
+todo: direct the freecam avatar directly with shift-left-click on an empty hand

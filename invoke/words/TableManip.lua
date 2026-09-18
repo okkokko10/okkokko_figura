@@ -37,12 +37,6 @@ end
 Invoke:registerByValueNoRest("isMutable",function (self, input)
     return self:isMutable(input)
 end)
-:addAlternateNames("K")
-:addDoc{
-    text = "gets the keys of `tbl`",
-    value = "<tbl>",
-    ret = "any[]"
-}
 
 
 Invoke:registerByValueNoRest("Keys",function (self, input)

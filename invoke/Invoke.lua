@@ -241,7 +241,7 @@ function Invoke:registerWithArgs(key,args,func)
     return self:register(key,function (self, value, rest)
         local l = {}
         for i, v in ipairs(args) do
-            if value[v] then
+            if value[v] ~= nil then
                 l[v] = self:materializeBranch(value[v])
             else
                 l[v] = self:getVariable(v)

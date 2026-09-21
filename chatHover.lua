@@ -48,6 +48,7 @@ end
 
 
 function events.chat_send_message(msg)
+    if not msg then return nil end
     msg = string.gsub(msg,"\\n","\n") -- makes \n work
     if string.sub(msg,1,2) == "¤" then
         pings.sendChatMessage(string.sub(msg,3))

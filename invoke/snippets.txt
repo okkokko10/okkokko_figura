@@ -177,3 +177,18 @@ global;>>> fun.userarea: [User -> method.getPos -> area 40]
 
 
 todo: direct the freecam avatar directly with shift-left-click on an empty hand
+
+
+
+display entities
+>>>[+on.sneak -> Entities -> M[
+    formats.${call.getType} : ${call.getName}
+    ] -> count -> keyvalue -> M[formats.${[get.1 -> S]} : ${get.2}
+'->] -> sort -> J -> say]
+
+
+>>>fun.mtc:[?match.Gha]
+>>>[[+1 while.offhand -> -set.part:text.TestObject -> set.part:text.SpareLineStart] ->set.parent:text.World]
+>>>[+on.sneak -while.offhand -> Entities -> M[+[call.getName -> +run.mtc]] -> any -> #[ #[- -> set.parent:text.Disabled] -> #[+ -> set.parent:text.World] -> set.target] -> #[?say] -> set.part:text.SpareLineStart -> affix]
+
+>>>[+on.sneak +while.offhand -> set.part: ]

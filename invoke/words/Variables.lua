@@ -58,7 +58,13 @@ end
 
 
 Invoke:registerByValue("set", function (self, rest, input)
-    self:setVariable(rest,input)
+    local name, func = string.match(rest,"^(%w*):(.*)$")
+    if name then
+        input = self:call(func,input)
+        self:setVariable(name,input)
+    else
+        self:setVariable(rest,input)
+    end
     return input
 end)
 
@@ -111,6 +117,6 @@ end)
 
 Invoke:registerByValue("fun", function (self, rest, input)
     local name, func = string.match(rest,"^(%w*):(.*)$")
-    
+
     self:setVariable(name,func)
 end)

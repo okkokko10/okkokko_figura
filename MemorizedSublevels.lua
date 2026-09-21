@@ -121,7 +121,8 @@ function MemorizedSublevels.updateFollower(pos,worldPos,label)
     local ind = MemorizedSublevels.posIndex(pos)
     if not MemorizedSublevels.root[ind] then
         local q = MemorizedSublevels.root:newPart(ind)
-        Utils.ID.set(q,"ms:"..(label or ind))
+        MemorizedSublevels.followers[label or ind] = q
+        Utils.ID.set(q,"!S:"..(label or ind))
     end
     MemorizedSublevels.root[ind]:setPos(PS*worldPos)
 end
@@ -141,4 +142,14 @@ function MemorizedSublevels.trackPick(label)
     end
 end
 
+
+Utils.registerIDConstructor("S",function (arg)
+    return Positioning.parts.Disabled
+end)
+
+
+
 return MemorizedSublevels
+
+
+--- /figura run require("MemorizedSublevels").trackPick("LightElevator")

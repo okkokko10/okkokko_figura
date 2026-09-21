@@ -175,3 +175,5 @@ page:newAction()
     end)
 
 -- /figura run pings.part_alter("TestObject",nil,matrices.mat4():translate(8,8,8))
+
+return Actions

@@ -209,7 +209,11 @@ Invoke:registerByValue("chain",function (self, rest, input)
                 if skip then
                     j = j + 1
                 else
-                    return
+                    if string.match(modifiers[i],"%#") then 
+                        return v
+                    else
+                        return x
+                    end
                 end
             end
         elseif mod == "-" then
@@ -217,12 +221,17 @@ Invoke:registerByValue("chain",function (self, rest, input)
                 if skip then
                     j = j + 1
                 else
-                    return
+                    if string.match(modifiers[i],"%#") then 
+                        return v
+                    else
+                        return x
+                    end
                 end
             end
         else
-            -- string.match(modifiers[i],"%#") 
-            v = x
+            if not string.match(modifiers[i],"%#") then
+                v = x
+            end
         end
     end
     return v
@@ -312,7 +321,17 @@ end)
 
 
 Invoke:registerByValue("Array", function (self, rest, input)
-    return self:newmutable()
+    
+    local out =  self:newmutable()
+    local rs = rest:match("^%s*{(.*)}%s*$")
+    if rs then
+        for k,w in rs:gmatch("(%w+)%s*%=%s*(%b[])") do
+            out[k] = self:call(w,input)
+        end
+    end
+
+
+    return out
 end)
 
 

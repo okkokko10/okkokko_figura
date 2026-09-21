@@ -12,6 +12,7 @@ DrawLine = {}
 ---@field opacity number?
 ---@field seeThrough boolean?
 ---@field width number?
+---@field name string?
 
 
     --- goes rightmost in the matrix multiplication. 
@@ -218,14 +219,14 @@ function Positioning.make.lineTo(parent,target,name)
             :setPreRender(Positioning.functions.lineTo(target))
 end
 
----returns a new child that draws a line to target
+---returns a new child that draws a line to target. safe to move to another parent. Should be safe to duplicate.
 ---@param part ModelPart
 ---@param target ModelPart
 ---@param config DrawLineConfig?
 function DrawLine.lineBetween(part,target,config)
 
-    local p = Positioning.make.lineTo(part,target)
-    DrawLine.line(p,vec3(),vec(1,0,0),config)
+    local p = Positioning.make.lineTo(part,target,config and config.name)
+    DrawLine.line(p,vec3(),vec(1,0.01,-0.02),config)
     return p
 end
 
@@ -236,6 +237,26 @@ Invoke:registerByValue("DrawLine",function (self, rest, input)
     end
 end)
 
+function Utils.ID.inits.Freecam(f)
+function Utils.ID.inits.Disabled(d)
+    ---@type ModelPart
+    Utils.ID.field.SpareLineEnd = Utils.ID.field.Freecam:newPart("SpareLineEnd")
+    ---@type ModelPart
+    Utils.ID.field.SpareLineStart = Utils.ID.field.Disabled:newPart("SpareLineStart")
+    ---@type ModelPart
+    Utils.ID.field.SpareLine = DrawLine.lineBetween(Utils.ID.field.SpareLineStart,Utils.ID.field.SpareLineEnd,
+        {
+            seeThrough=true,
+            color="#"..vectors.rgbToHex(0.1,1,0.5),
+        })
+        
+    Grabbing.addSelectableGenerate("SpareLineStart")
+    Grabbing.addSelectableGenerate("SpareLineEnd")
+end
+end
+
+
+
 
 
 ---todo: draws a colored cube in the same fashion
@@ -244,6 +265,8 @@ end)
 function DrawLine.Cube(part,config)
     
 end
+
+
 
 
 

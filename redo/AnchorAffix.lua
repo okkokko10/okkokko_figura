@@ -69,7 +69,7 @@ AnchorAffix.complex = {}
 function AnchorAffix.complex.affixInPlace(partID, parentID, target, noPing)
     local mat
     if parentID then
-        mat = Conversion.toMatrix(parentID):invert() * Conversion.toMatrix(target or partID)
+        mat = assert(Conversion.toMatrix(parentID),tostring(parentID)):invert() * assert(Conversion.toMatrix(target or partID),tostring(target))
     else
         local part = Utils.ID.from(partID) or error("no part: ".. (partID or "nil"))
         mat = Conversion.toMatrix(part:getParent()):invert() * Conversion.toMatrix(target or part)
@@ -101,4 +101,15 @@ function AnchorAffix.info.getParentID(partID)
     local p = Utils.ID.from(partID)
     return Utils.ID.get(p and p:getParent())
 end
+
+
+--- todo: swaps the positions of two parts.
+---@param partID ID<ModelPart>
+---@param partID2 ID<ModelPart>
+function AnchorAffix.complex.affixSwap(partID, partID2, noPing)
+    
+end
+
+
+
 return AnchorAffix

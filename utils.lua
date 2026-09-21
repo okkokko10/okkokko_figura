@@ -167,7 +167,7 @@ Utils.ID.field = setmetatable({},{
   ---@param k ID<S>
   ---@return S
   __index = function (t, k)
-    return Utils.ID.from(k)
+    return assert(Utils.ID.from(k),k)
   end,
   ---@generic S
   ---@param t any
@@ -175,6 +175,19 @@ Utils.ID.field = setmetatable({},{
   ---@param v S
   __newindex = function (t, k, v)
     Utils.ID.set(v,k)
+  end
+})
+
+---adds a callback to once the variable of that id is set.
+---@generic S
+---@type {[ID<S>|string]:fun(s:S)}
+Utils.ID.inits = setmetatable({},{
+  ---@generic S
+  ---@param t any
+  ---@param k ID<S>
+  ---@param v fun()
+  __newindex = function (t, k, v)
+    Utils.ID.init(k,v)
   end
 })
 
@@ -197,6 +210,7 @@ function Utils.ID.set(self,id)
    end
    Utils._ids[self] = id
    Utils._idInv[id] = self
+   Utils.ID._launch_inits(id,self)
    return self
 end
 
@@ -249,6 +263,35 @@ end
 ---@return { [ID<S>] : S }
 function Utils.ID.listIDd()
   return Utils._idInv
+end
+
+
+---@package
+Utils._id_inits = {}
+---
+---@generic S
+---@param id ID<S>
+---@param func fun(s:S)
+function Utils.ID.init(id,func)
+  local fr = Utils.ID.from(id)
+  if fr then
+    func(fr)
+  else
+    if not Utils._id_inits[id] then
+      Utils._id_inits[id] = {}
+    end
+    Utils._id_inits[id][#Utils._id_inits[id]+1] = func
+  end
+end
+
+---@package
+function Utils.ID._launch_inits(id,v)
+  if not Utils._id_inits[id] then return end
+
+  for index, value in ipairs(Utils._id_inits[id]) do
+    value(v)
+  end
+  Utils._id_inits[id] = nil
 end
 
 ---@generic S

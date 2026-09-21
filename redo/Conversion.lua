@@ -64,6 +64,12 @@ Conversion._toMatrix = {
         if other.matrix then
             return Conversion.toMatrix(other.matrix,...)
         end
+        local r,s = pcall(function ()
+            return other:isLoaded() and other:getPos()
+        end)
+        if r and s then
+            return matrices.scale4(1/PS,1/PS,1/PS):translate(s)
+        end
         return Conversion.toMatrix(...) end,
     boolean = function (b,...) if b then return matrices.mat4() else return nil end end,
     ComposedMatrix = function (value) return Conversion.toMatrix(value[1],true) * Conversion.toMatrix(value[2],true) end,

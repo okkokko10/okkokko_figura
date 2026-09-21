@@ -17,8 +17,8 @@ local Rect_call = {}
 ---@param pos1 Vector
 ---@param pos2 Vector
 ---@return Rect
-function Rect_call:__call(t, pos1,pos2)
-    return Rect.fromEndpoints(pos1,pos2)
+function Rect_call:__call(pos1,pos2)
+    return Rect.fromEndpoints(pos1 or 0,pos2 or 0)
 end
 
 
@@ -29,6 +29,9 @@ end
 ---@field [1] Vector
 ---@field [2] Vector
 ---@field name? string
+---@operator call:Rect
+---@operator add:Rect
+---@operator mul:Rect
 Rect = setmetatable({__type = "Rect"},Rect_call)
 
 ---@type {[string] : fun(self:Rect):Vector}
@@ -80,33 +83,38 @@ function Rect:__index(ind)
     end
 end
 
-
-
--- - a limited variant of Rect that is exclusively used for this: Rect(0,1) * {1,2} * {2,3}
-local Rect1D = {__type = "Rect1D"}
-
-local function make_Rect1D(pos1,pos2)
-    return setmetatable({pos1,pos2},Rect1D)
+function Rect:__tostring()
+    return ("Rect(%s,%s)"):format(tostring(self[1]),tostring(self[2]))
 end
 
----[a,b] x [c,d]
----@param other [number,number]
----@return Rect
-function Rect1D:__mul(other)
-    return Rect.fromEndpoints(vec(self[1],other[1]),vec(self[2],other[2]))
-end
-
----[a,b] x [c,d]
----@param other [number,number]|Rect
----@return Rect
-function Rect:__mul(other)
-    if type(self[1]) == "number" then
----@diagnostic disable-next-line: param-type-mismatch
-        return Rect.fromEndpoints(vec(self[1],other[1]),vec(self[2],other[2]))
+function Rect:__add(other)
+    if type(other) == "Rect" then
+        -- maybe instead make this the maximum
+        return Rect(self[1]+other[1],self[2]+other[2])
     end
----@diagnostic disable-next-line: param-type-mismatch
-    return Rect.fromEndpoints(self[1]:augmented(other[1]),self[2]:augmented(other[2]))
+    return Rect(self[1] + other, self[2] + other)
 end
+
+
+function Rect:__mul(other)
+    if type(other) == "Rect" then
+        error("unimplemented")
+        -- todo: 
+        -- return Rect(self[1]+vector[1],self[2]+vector[2])
+    end
+    return Rect(self[1] * other, self[2] * other)
+end
+
+
+function Rect:union(other)
+    return Rect.fromEndpoints(Utils.math.vectorMin(self[1],other[1]),Utils.math.vectorMax(self[2],other[2]))
+end
+
+--- not tested. if the intersection is empty, will probably return a nonsense result. Needs the inputs to be correctly oriented.
+function Rect:intersection(other)
+    return Rect.fromEndpoints(Utils.math.vectorMax(self[1],other[1]),Utils.math.vectorMin(self[2],other[2]))
+end
+
 
 
 ---@param pos Vector

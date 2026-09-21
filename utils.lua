@@ -88,7 +88,14 @@ end
 
 
 PS = 16
-
+---quickly make a Vector3
+---@param num number?
+---@return Vector
+---@diagnostic disable-next-line: lowercase-global
+function vec3(num)
+  num = num or 0
+  return vec(num,num,num)
+end
 
 ---the position matrix of the coordinate in world space.
 ---the materialized coordinate is in the origin.

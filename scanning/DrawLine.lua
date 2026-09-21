@@ -43,33 +43,69 @@ end
 ---@return Matrix<4>
 local function pointingMatrix(v,o)
     local toCamera = vec(0,1,0)
-    local orthogonalToCam = v:crossed(toCamera):normalize()
+    local orthogonalToCam = v:crossed(toCamera)
     if orthogonalToCam:length() == 0 then
         toCamera = vec(1,0,0)
-        orthogonalToCam = v:crossed(toCamera):normalize()
+        orthogonalToCam = v:crossed(toCamera)
     end
 
     return matrices.mat4(
         v:augmented(0),
-        orthogonalToCam:augmented(0),
-        (toCamera):augmented(0),
+        orthogonalToCam:normalize():augmented(0),
+        toCamera:augmented(0),
         o:augmented(1)
         )
 end
 
----changes part into a line. in pixel scale, draw a line between two points with the width config.width
+
+function DrawLine.line_texts(part,config)
+    
+    local text = toJson{text = config.char or ".", color = config.color}
+    local nm = "line" .. math.random()
+    local function wf(id)
+        return part:newText(nm..id):setSeeThrough(config.seeThrough)
+            :setText(text)
+            :setAlignment("LEFT")
+            :setOpacity(config.opacity or 1)
+    end
+    return {wf("a"),wf("b"),wf("c"),wf("d")}
+end
+
+function DrawLine.line_matrices(config)
+    
+    local startY = 6 or config.charStartY
+    local height = 1 or config.charHeight
+    local widthChar = 1 or config.charWidth
+    local width = (config.width or 1)
+
+    --- goes rightmost in the matrix multiplication. 
+    local characterToLine1 = characterToLineMatrix(widthChar,height,startY,width,1)
+    local characterToLine2 = characterToLineMatrix(widthChar,height,startY,width,-1)
+    local rotMatrix = matrices.rotation4(90,0,0)
+    local characterToLine3 = rotMatrix*characterToLine1
+    local characterToLine4 = rotMatrix*characterToLine2
+    return {characterToLine1,characterToLine2,characterToLine3,characterToLine4}
+end
+
+function DrawLine.line_apply_matrices(texts,matrices,mat)
+    for i = 1, 4 do
+        texts[i]:setMatrix(mat*matrices[i])
+    end
+end
+
+
+---adds a line to part. in pixel scale, draw a line between two points with the width config.width
 ---@param part ModelPart
 ---@param from Vector
 ---@param to Vector
 ---@param config DrawLineConfig?
 ---@return ModelPart
+---@return table
+---@return Matrix[]
 function DrawLine.line(part,from,to,config)
     config = config or {}
     
-    
-    local difference = to - from
-
-    local mat = pointingMatrix(-difference,from)
+    local mat = pointingMatrix(from-to,from)
     -- part:setMatrix(mat)
     
 
@@ -82,14 +118,12 @@ function DrawLine.line(part,from,to,config)
     --- todo: can you swizzle matrices? 
     ---     add thickness to lines with cross. 
     
-    --- goes rightmost in the matrix multiplication. 
-    local characterToLine1 = characterToLineMatrix(widthChar,height,startY,width,1)
-    local characterToLine2 = characterToLineMatrix(widthChar,height,startY,width,-1)
     
     local text = toJson{text = config.char or ".", color = config.color}
+    local nm = tostring(from)..tostring(to) .. math.random()
 
-    local function wf(textTask)
-        return textTask:setSeeThrough(config.seeThrough)
+    local function wf(id)
+        return part:newText(nm..id):setSeeThrough(config.seeThrough)
             :setText(text)
             :setAlignment("LEFT")
             :setOpacity(config.opacity or 1)
@@ -97,19 +131,23 @@ function DrawLine.line(part,from,to,config)
     end
 
     --- a text task always has 1 pixel of space between symbols.
-    local nm = tostring(from)..tostring(to) .. math.random()
 
+    --- goes rightmost in the matrix multiplication. 
+    local characterToLine1 = characterToLineMatrix(widthChar,height,startY,width,1)
+    local characterToLine2 = characterToLineMatrix(widthChar,height,startY,width,-1)
     local rotMatrix = matrices.rotation4(90,0,0)
+    local characterToLine3 = rotMatrix*characterToLine1
+    local characterToLine4 = rotMatrix*characterToLine2
 
-    wf(part:newText(nm.."a")):setMatrix(mat*characterToLine1)
-    wf(part:newText(nm.."b")):setMatrix(mat*characterToLine2)
-    wf(part:newText(nm.."c")):setMatrix(mat*rotMatrix*characterToLine1)
-    wf(part:newText(nm.."d")):setMatrix(mat*rotMatrix*characterToLine2)
     if config.debugbase then
-        wf(part:newText(nm.."debug")):setMatrix(characterToLine1) -- debugging
-        
+        wf("debug"):setMatrix(characterToLine1) -- debugging
     end
-    return part
+
+    
+    return part, {wf("a"):setMatrix(mat*characterToLine1),
+        wf("b"):setMatrix(mat*characterToLine2),
+        wf("c"):setMatrix(mat*characterToLine3),
+        wf("d"):setMatrix(mat*characterToLine4)}, {characterToLine1,characterToLine2,characterToLine3,characterToLine4}
     
 end
 
@@ -162,6 +200,35 @@ function DrawLine.test(part)
 
     
 end
+
+function Positioning.functions.lineTo(target)
+    return function(delta, ctx, part)
+        local p = part:getParent():partToWorldMatrix():invert():apply(target:partToWorldMatrix():apply())
+        part:setMatrix(pointingMatrix(p,vec3()))
+    end
+end
+
+---returns a new ModelPart where (0,0,0) is the parent's origin and (1,0,0) is the target's origin.
+---@param parent ModelPart
+---@param target ModelPart
+---@param name string?
+---@return ModelPart
+function Positioning.make.lineTo(parent,target,name)
+    return parent:newPart(name or ("lineTo"..tostring(math.random())))
+            :setPreRender(Positioning.functions.lineTo(target))
+end
+
+---returns a new child that draws a line to target
+---@param part ModelPart
+---@param target ModelPart
+---@param config DrawLineConfig?
+function DrawLine.lineBetween(part,target,config)
+
+    local p = Positioning.make.lineTo(part,target)
+    DrawLine.line(p,vec3(),vec(1,0,0),config)
+    return p
+end
+
 
 Invoke:registerByValue("DrawLine",function (self, rest, input)
     if self:restContains(rest,"test") then

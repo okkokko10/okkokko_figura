@@ -21,7 +21,9 @@
         "avatar",
         "renderer",
         "parseJson",
-        "figuraMetatables"
+        "figuraMetatables",
+        "config",
+        "json"
     ],
     "Lua.diagnostics.disable": [
         "duplicate-set-field"

@@ -100,6 +100,11 @@ end
 ---@class Vector
 ---@field xyz Vector
 ---@field w number
+---@field x_z Vector
+---@operator unm: Vector
+---@operator add: Vector
+---@operator mul: Vector
+---@operator sub: Vector
 
 ---@class KineticPathCommonData
 ---@field start_pos VectorWithLayer

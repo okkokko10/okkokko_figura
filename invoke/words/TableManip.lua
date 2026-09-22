@@ -201,8 +201,14 @@ Invoke:registerByValue("chain",function (self, rest, input)
             return
         end
         
+        
         local x = self:call(commands[i],v) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this? 
+        
+        
+        
         local mod = string.match( modifiers[i], "[%+%-]")
+        
+        
         local skip = string.match(modifiers[i],"1")
         if mod == "+" then
             if not x then
@@ -362,8 +368,84 @@ end):addDoc{
     text = "copies the contents of the input array into a new array or the array variable <rest>, then returns that array"
 }
 
-Invoke:registerByValue("sort",function (self, rest, input)
+
+
+
+
+Invoke.regist = setmetatable({},{
+    __newindex =function (t, k, v)
+        Invoke:registerByValue(k,v)
+    end,
+    __index =function (t, k)
+        return Invoke.function_docs[k]
+    end
+})
+
+
+
+function Invoke.regist.sort(self, rest, input)
     self:isMutableAssertion(input)
-    table.sort(input)
+    if rest ~= "" then 
+        local cache = {}
+        for key, value in pairs(input) do
+            cache[value] = self:call(rest,value)
+        end
+        table.sort(input,function (a, b)
+            return cache[a] < cache[b]
+        end)
+    else
+        table.sort(input)
+    end
     return input
+end
+
+
+
+Invoke:registerByValue("size", function (self, rest, input)
+    local out = 0
+
+    if rest ~= "" then
+        for key, value in pairs(input) do
+            if self:call(rest,value) then
+                out = out + 1                
+            end
+        end
+        return out
+    end
+    for key, value in pairs(input) do
+        out = out + 1
+    end
+    return out
+end)
+
+
+Invoke:registerByValue("partition", function (self, rest, input)
+    local out = self:newmutable()
+
+    
+    for key, value in pairs(input) do
+        local q = self:call(rest,value)
+        if q ~= nil then
+            if not out[value] then
+                out[value] = self:newmutable()
+            end
+            out[value][key] = q
+            
+        end
+    end
+    return out
+end)
+
+--- group choose: returns triples of a partition key and the first element from that partition and its original key
+Invoke:registerByValue("grch", function (self, rest, input)
+    local out = self:newmutable()
+    local found = {}
+    for key, value in pairs(input) do
+        local q = self:call(rest,value)
+        if q ~= nil and not found[q] then
+            found[q] = true
+            out[#out+1] = {q,value,key}
+        end
+    end
+    return out
 end)

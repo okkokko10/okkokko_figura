@@ -79,6 +79,12 @@ Invoke:registerByValue("color",function (self, rest, input)
     return {text = input, color = rest}
 end)
 
+
+Invoke:registerByValue("Nl",function (self, rest, input)
+    return "\n"
+end)
+
+
 Invoke:registerByValue("match",function  (self, rest, input)
     if type(input) ~= "string" then
         error("wrong type:"..type(input))

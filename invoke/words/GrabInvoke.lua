@@ -8,7 +8,17 @@ Invoke:registerKeyword("False",function (self)
 end)
 
 Invoke:registerWithArgs("affix",{"part","parent","target"}, function (self, rest, input)
-    AnchorAffix.complex.affixInPlace(input.part,input.parent,input.target,true)
+
+    local parent = input.parent
+    if input.parent and input.parent.isLoaded then
+        if not input.parent:isLoaded() then
+            error("entity not loaded")
+            return
+        end
+        parent = "!pl:".. input.parent:getUUID()
+    end
+    if not input.part then return end
+    AnchorAffix.complex.affixInPlace(input.part,parent,input.target,true)
 end)
 
 

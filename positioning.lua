@@ -54,7 +54,7 @@ Positioning.functions = {}
 
 local function materializeEntity(entity)
     if type(entity) == "string" then
-        local ent =  (world.getPlayers())[entity]
+        local ent = world.getEntity(entity) or (world.getPlayers())[entity]
         if ent then
             return ent, ent:isLoaded()
         else

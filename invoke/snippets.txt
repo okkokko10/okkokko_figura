@@ -192,3 +192,19 @@ display entities
 >>>[+on.sneak -while.offhand -> Entities -> M[+[call.getName -> +run.mtc]] -> any -> #[ #[- -> set.parent:text.Disabled] -> #[+ -> set.parent:text.World] -> set.target] -> #[?say] -> set.part:text.SpareLineStart -> affix]
 
 >>>[+on.sneak +while.offhand -> set.part: ]
+
+>>>[+on.sneak -> Entities -> M[formats.${call.getType} : ${call.getName}] 
+-> count -> keyvalue -> M[formats.${[get.1 -> S]} : ${get.2}${Nl} -> color#00FF00] -> sort[get.text] -> J -> say]
+
+
+>>>[+on.sneak -> Entities -> M[formats.${call.getType} : ${call.getName}] 
+-> count -> keyvalue -> M[Array{text=[formats.${[get.1 -> S]} : ${get.2}${Nl}] color=[text#00FF00]}] -> sort[get.text] -> J -> say]
+
+>>>[+on.sneak -> Entities -> grch[formats.${call.getType} : ${call.getName}] 
+-> sort[get.1] -> #set.ent -> M[formats.${get.1} ${[get.2 -> S]} ${Nl} -> color#00FF00] -> J -> say]
+
+>>>[+on.sneak -> Entities -> grch[formats.${call.getType} : ${call.getName}] 
+-> sort[get.1] -> #set.ent -> M[Array{text=[formats.${get.1} ${[get.2 -> S]} ${Nl}] color=[[get.2 -> entitycolor]]}] -> J -> say]
+
+
+todo: "say" 

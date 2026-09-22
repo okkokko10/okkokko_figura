@@ -208,3 +208,33 @@ display entities
 
 
 todo: "say" 
+
+
+
+
+
+>>>[+on.sneak -> PickBlock -> ? call.getPos -> set.ps]
+>>>[var.ps -> ? block -> ? call.get]
+
+>>>[+on.sneak -> Scan[-call.isAir ->]]
+
+
+patterns
+fun.(x,y) => ...
+fun.a {[var.a -> pattern(x,y) -> ...]}
+
+
+[fun x => ...][set.f]
+
+>>> [+on.sneak -> Scan.x { } ]
+
+make a unified notation for variable names
+Scan&x
+fun&x
+var&x
+set&x
+
+set&x
+[Table -> set&arr]
+[get&arr -> assign( | )]
+

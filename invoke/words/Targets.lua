@@ -152,3 +152,12 @@ Invoke:registerKeyword("PickEntity",function (self, tbl, rest)
     end
     return ent
 end)
+
+
+Invoke:registerByValue("block",function (self, rest, input)
+    return world.getBlockState(input)
+end)
+
+Invoke:registerByValue("KineticNetwork",function (self, rest, input)
+    return require("KineticPath"):getData(input)
+end)

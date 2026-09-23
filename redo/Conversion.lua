@@ -65,7 +65,7 @@ Conversion._toMatrix = {
             return Conversion.toMatrix(other.matrix,...)
         end
         local r,s = pcall(function ()
-            return other:isLoaded() and other:getPos()
+            return other:isLoaded() and Utils.Sublevel.sableSublevelToWorld(other:getPos())
         end)
         if r and s then
             return matrices.scale4(1/PS,1/PS,1/PS):translate(s)

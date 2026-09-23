@@ -9,7 +9,7 @@ local dit = dbox:newItem("a"):setItem("red_stained_glass")
 
 Utils.ID.field.dbox = dbox
 
-
+local DEBUG = false
 
 ---comment
 ---@param modelPart ModelPart
@@ -24,8 +24,14 @@ local function text_raycast(modelPart,text,origin,direction,height)
     ---@type string?
     local tx = text:getText()
     if not tx then return end
-    height = height or 10
-    local rect = Rect(vec(-1000,-1000*height,0),vec(1000,0,1))
+
+    local hx,hy = client.getTextDimensions(tx):unpack()
+    
+    local rect = Rect(vec(0,-hy,0),vec(hx,0,1))
+    if true then
+        rect = rect + vec(-hx/2,0,0)
+    end
+
     local hi = Hitbox:create(cm,rect)
 
     local q = Conversion.toMatrix(cm)
@@ -39,9 +45,12 @@ local function text_raycast(modelPart,text,origin,direction,height)
     local ou = (hi:raycastOriented(origin,epos,1))
     if ou then
         -- log(ou)
-        debugpart:setPos(PS*ou.globalPos)
-        -- local selectedText = strings[math.ceil(ou.localPos.y/(-10))]
-        dtext:setText(tostring(math.ceil(ou.localPos.y/(-10))).." "..tostring(ou.localPos/vec(1,-10,1)))
+        if DEBUG then
+            debugpart:setPos(PS*ou.globalPos)
+            -- local selectedText = strings[math.ceil(ou.localPos.y/(-10))]
+            dtext:setText(tostring(math.ceil(ou.localPos.y/(-10))).." "..tostring(ou.localPos/vec(1,-10,1)))
+            
+        end
         Invoke:setVariable("!SelectedRow",math.ceil(ou.localPos.y/(-10)))
     else
         Invoke:setVariable("!SelectedRow",nil)

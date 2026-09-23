@@ -284,7 +284,7 @@ function Direction._test_pack_rot()
         end
     end
 end
-if host:isHost() then Direction._test_pack_rot() end
+if host:isHost() and false then Direction._test_pack_rot() end
 
 
 

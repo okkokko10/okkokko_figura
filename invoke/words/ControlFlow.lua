@@ -76,3 +76,29 @@ Invoke:registerByValue("Scan", function (self, rest, input)
     end, final).onError = log
 
 end)
+
+
+Invoke._argss = setmetatable({},{__mode="k"}) -- __mode="k" makes it so the array will not stop the key from being garbage collected.
+
+---@return table
+function Invoke:newArgs(out)
+    out = out or {}
+    self._argss[out] = true
+    return out
+end
+
+
+---@param arr table|unknown?
+---@return boolean
+function Invoke:isArgs(arr)
+    return not not self._argss[arr]
+end
+
+
+Invoke:registerByValue("args",function (self, rest, input)
+    if rest ~= "" then
+        input = self:call("Array" .. rest, input)
+    end
+    return self:newArgs(input)
+
+end)

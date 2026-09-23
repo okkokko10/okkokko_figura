@@ -185,7 +185,7 @@ function Invoke:run(key,tbl,rest)
         if succ then
             return val
         else
-            self:log(val)
+            self:log("error in invoke: ", key, rest, tbl, val)
         end
     end
     return self.functions[key](self,tbl,rest or "")
@@ -242,6 +242,14 @@ end
 ---@return FunctionDoc
 function Invoke:registerWithArgs(key,args,func)
     return self:register(key,function (self, value, rest)
+        -- log(key,args, value,value.Literal)
+        if self:isArgs(value and value.Literal) then
+            local rg = {}
+            for index, v in pairs(value.Literal) do
+                rg[args[index] or index] = v
+            end -- copies value.Literal as well as changes numbers to names.
+            return func(self,rest,rg)
+        end
         local l = {}
         for i, v in ipairs(args) do
             if value[v] ~= nil then
@@ -307,7 +315,7 @@ function Invoke:materializeBranch(word,tbl)
         log(word)
         error("not table or string")
     end
-    local start,rest = string.match(word,"^(%a*)%.?(.*)$")
+    local start,rest = string.match(word,"^%s*(%a*)%.?(.*)$")
     -- local _,_,start,rest = string.find(word,"^([^%.]*)%.?(.*)$")
     if self.functions[start] then
         -- log(start,rest)

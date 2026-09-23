@@ -76,7 +76,7 @@ end
     rest = "<key>",
     value = "<table>",
 }
-Invoke:registerWithArgs("getkv",{"key","from"},function (self, rest,input)
+Invoke:registerWithArgs("getkv",{"from","key"},function (self, rest,input)
     local b = input.from
     if type(b) == "table" then
         return Utils.table.getNest(b,input.key)
@@ -258,15 +258,18 @@ Invoke:registerByValue("mapchain",function (self, rest, input)
     end
     local out = self:newmutable()
 
+    local oldkey = self:getVariable("!key")
     for k, v in pairs(input) do
+        self:setVariable("!key",k)
         out[k] = self:call(rest,v)
     end
+    self:setVariable("!key",oldkey)
     return out
     
 end):addAlternateNames("M")
 
 :addDoc{
-    text = "chain but for each value of a table."
+    text = "applies the rest to each element of the table. you can get the key with var!key"
 }
 
 Invoke:registerByValue("eq",function (self, rest, input)
@@ -286,6 +289,16 @@ Invoke:registerByValue("keyvalue",function (self, rest, input)
     local out = self:newmutable()
     for key, value in pairs(tbl) do
         out[#out+1] = {key,value}
+    end
+    return out
+end)
+--- out[x] = {k=x, v=input[x]}
+Invoke:registerByValue("kv",function (self, rest, input)
+    local tbl = input
+    if not tbl then return end
+    local out = self:newmutable()
+    for key, value in pairs(tbl) do
+        out[key] = {k=key,v=value}
     end
     return out
 end)
@@ -334,6 +347,13 @@ Invoke:registerByValue("Array", function (self, rest, input)
         for k,w in rs:gmatch("(%w+)%s*%=%s*(%b[])") do
             out[k] = self:call(w,input)
         end
+    else
+        local i = 1
+        for w in rest:gmatch("(%b[])") do
+            out[i] = self:call(w,input)
+            i = i + 1
+        end
+
     end
 
 
@@ -400,6 +420,18 @@ function Invoke.regist.sort(self, rest, input)
 end
 
 
+Invoke:registerByValue("min", function (self, rest, input)
+    local a
+    local out
+    for key, value in pairs(input) do
+        local b = self:call(rest,value)
+        if (not a) or b < a then
+            a = b
+            out = value
+        end
+    end
+    return out
+end)
 
 Invoke:registerByValue("size", function (self, rest, input)
     local out = 0
@@ -442,10 +474,17 @@ Invoke:registerByValue("grch", function (self, rest, input)
     local found = {}
     for key, value in pairs(input) do
         local p = self:call(rest,value)
-        if p ~= nil and not found[p] then
-            found[p] = true
-            local i = #out+1
-            out[i] = self:newmutable{p=p,v=value,k=key,i=i}
+        if p ~= nil then 
+            if found[p] then
+                local c = found[p].c + 1
+                found[p].c = c
+                found[p].l[c] = value
+            else
+                local i = #out+1
+                local r = self:newmutable{p=p,v=value,k=key,i=i,c=1,l={value}}
+                out[i] = r
+                found[p] = r
+            end
         end
     end
     return out

@@ -7,6 +7,18 @@ Invoke:registerKeyword("False",function (self)
     return false
 end)
 
+Invoke:registerByValue("Loaded", function (self, rest, input)
+
+    if not input then return end
+    -- if not input.isLoaded then 
+    --     error("does not have loaded: "..tostring(input))
+    -- end
+    if input:isLoaded() then
+        return true
+    end
+    return false
+end):addAlternateNames("Lo")
+
 Invoke:registerWithArgs("affix",{"part","parent","target"}, function (self, rest, input)
 
     local parent = input.parent

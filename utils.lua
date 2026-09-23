@@ -10,6 +10,9 @@ local _sabelSubLevelOffset = vec(0, 10000, 0)
 ---@param pos Vector3
 ---@return Vector3
 function Utils.Sublevel.sableSublevelToWorld(pos)
+  if not Utils.Sublevel.isInSublevel(pos) then
+    return pos
+  end
   -- return pos
   local pos1 = pos + _sabelSubLevelOffset
   local pos2 = pos - _sabelSubLevelOffset
@@ -132,6 +135,7 @@ function Utils.registerIDConstructor(keyword,func)
   Utils._idConstructors[keyword] = func
 end
 
+Utils.ID.LOG_CONSTRUCTING = false
 
 ---@package
 ---creates a new object if it doesn't exist yet.
@@ -145,7 +149,7 @@ function Utils.constructFromID(id,checkType)
   if keyword then
     local f =Utils._idConstructors[keyword]
     if f then
-      log("constructing: ",keyword,name,f)
+      if Utils.ID.LOG_CONSTRUCTING then log("constructing: ",keyword,name,f) end
       local out = f(name)
       if not out then
       log("failure: ",keyword,name,f)

@@ -301,8 +301,74 @@ oelim{f}{g}{d}
     -- from Option.elim
     local temp = f(_)
     return if temp then g(temp) else d(_)
+effect{e}
 #e
     local temp = _
     e(_)
     return temp
+
 M{f}
+
+
+log(pcall(function() pcall(function () error("X") end) end))
+
+
+
+>>>[+on.sneak -> Entities -> grch[formats.${method.getType} : ${method.getName}] 
+-> sort[get.p] -> #set.ent]
+>>>[var.ent -> M[Array{text=[formats.${get.p} ${[get.v -> S]} ${Nl}] color=[[get.v -> entitycolor]]}] -> J -> say]
+
+
+>>>IT(on.sneak) [Entities -> grch[formats.${method.getType} : ${method.getName}] 
+-> sort[get.p] -> E set.ent]
+
+>>>O(var.ent)[M[Array{text=[formats.${get.p} ${[get.v -> S]} ${Nl}] color=[[get.v -> entitycolor]]}] -> J -> say]
+
+
+>>>[IT(on.sneak)[Entities -> grch[formats.${method.getType} : ${method.getName}] 
+-> sort[get.p] -> E set.ent]]
+
+
+>>>OM(var.ent)[M[Array{text=[formats.${get.p} ${[get.v -> S]} ${Nl}] color=[
+[ite([Array{left=[var.!SelectedRow] right=[get.i]} -> equal]){text.#000000} [get.v -> entitycolor] ]
+]}] -> J -> say]
+
+>>>OM(var.ent)[M[Array{text=[formats.${get.p} ${[get.v -> S]}${Nl}] color=[
+[ite([args{left=[var!SelectedRow] right=[var!key]} -> equal]){text.#000000} [get.v -> entitycolor] ]
+]}] -> J -> say]
+
+
+>>>O(var.ent)[M[Array{text=[formats.${get.p} ${[get.v -> S]}${Nl}] color=[
+[ite([args(var!SelectedRow)(var!key) -> equal]){text.#000000} [get.v -> entitycolor] ]
+]}] -> J -> say]
+
+
+>>>I(unless.offhand) 
+
+>>>O(var.ent)[M[Array{text=[formats.${get.p} ${[get.v -> S]}${Nl}] color=[
+[ite([args[var!SelectedRow][var!key] -> equal]){text.#000000} [get.v -> entitycolor] ]
+]}] -> J -> say]
+
+>>>I(on.offhand) O(var.ent) [args[][var!SelectedRow] -> getkv -> IT(O()any) log]
+
+
+>>>IT(on.sneak) set.ent:[Entities -> grch[formats.${method.getType} : ${method.getName}] 
+-> sort[get.p]]
+
+
+on offhand, display the list of the selected entity
+>>>I(on.offhand) O(var.ent) [args[][var!SelectedRow] -> getkv -> O()[get.l][set.ent:grch[method.getPos -> S]]]
+
+affix the fc avatar on myself
+>>>I(on.sneak)[args[text.TestObject][text.PlayerFollower][False] -> affix]
+
+
+>>>I(on.sneak)[args[text.SpareLineStart][var.target][var.target] -> affix]
+
+
+when the variable var.linetarget is set, moves SpareLineStart there
+>>>O(var.linetarget)[E[set.linetarget:False] -> args[text.SpareLineStart][][] -> affix]
+
+
+set the tracking to the representative selected entity, and on.offhand, focuses on the group.
+>>>O(var.ent) [args[][var!SelectedRow] -> getkv -> O()[E set.linetarget:[get.v][I(Lo)]] [I(on.offhand) [get.l][set.ent:grch[method.getPos -> S]]]]

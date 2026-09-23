@@ -238,3 +238,71 @@ set&x
 [Table -> set&arr]
 [get&arr -> assign( | )]
 
+todo: assert as part of chain.
+hm, chain is kind of stack-based.
+
+>>>[+on.sneak -> Entities -> grch[formats.${method.getType} : ${method.getName}] 
+-> sort[get.p] -> #set.ent]
+>>>[var.ent -> M[Array{text=[formats.${get.p} ${[get.v -> S]} ${Nl}] color=[[get.v -> entitycolor]]}] -> J -> say]
+
+
+
+todo: a chain link mode for ternary? or actually just a ternary expression
+
+ite{cond}{then}{else}
+
+
+
+
+m := m m | + | - | # | ?
+e := [m e][m e]...[m e]  |  ite{e}{e}{e} | a.b | a.b e
+    -- oh a.b is just a.b e where e is empty, this could simplify things
+    -- maybe relegate `rest` to be mandatorily in parentheses? ()
+    -- what if there was a goto? nah
+    -- could {} be kwargs
+
+-- what about formats? that's a special form.
+
+
+[+on.sneak -> Entities -> grch[method.getType] -> sort[get.p] -> #set.ent]
+[M[get.v -> method.getName] -> J -> say]
+
+
+visually graph (with a tree) the connections.
+[
+    
+        ->on.sneak
+            + leads to the end
+    ->Entities
+    -> grch[
+        method.getType
+    ]
+    ->
+    sort[
+        get.p
+    ]
+
+]
+
+
+
+chain[e1][e2]...[en]
+    _ := e1(_)
+    _ := e2(_)
+    ...
+    _ := en(_)
+    return _
+
+it{a}{b}
+    return if a(_) then b(_) else nil
+ite{a}{b}{c}
+    return if a(_) then b(_) else c(_)
+oelim{f}{g}{d}
+    -- from Option.elim
+    local temp = f(_)
+    return if temp then g(temp) else d(_)
+#e
+    local temp = _
+    e(_)
+    return temp
+M{f}

@@ -195,6 +195,9 @@ end
 ---@param tbl table
 ---@param plr Entity
 function Invoke:runTable_(tbl)
+    if tbl.Literal then -- just for optimization. band-aid
+        return tbl.Literal
+    end
     local out
     for key, value in pairs(tbl) do
         out = self:materializeBranch(key,value)

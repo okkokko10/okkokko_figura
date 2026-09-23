@@ -9,8 +9,8 @@ Invoke._mutables = setmetatable({},{__mode="k"}) -- __mode="k" makes it so the a
 
 
 ---@return Array
-function Invoke:newmutable()
-    local out = {}
+function Invoke:newmutable(out)
+    out = out or {}
     self._mutables[out] = true
     return out
 end
@@ -441,10 +441,11 @@ Invoke:registerByValue("grch", function (self, rest, input)
     local out = self:newmutable()
     local found = {}
     for key, value in pairs(input) do
-        local q = self:call(rest,value)
-        if q ~= nil and not found[q] then
-            found[q] = true
-            out[#out+1] = {q,value,key}
+        local p = self:call(rest,value)
+        if p ~= nil and not found[p] then
+            found[p] = true
+            local i = #out+1
+            out[i] = self:newmutable{p=p,v=value,k=key,i=i}
         end
     end
     return out

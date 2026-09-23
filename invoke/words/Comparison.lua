@@ -20,3 +20,7 @@ end):addDoc{
     text = "returns true if all values are equal. has short-circuiting.",
     value = "[<value1>,<value2>,...<valueN>]"
 }
+
+Invoke:registerWithArgs("equal",{"left","right"},function  (self, rest,input)
+    return input.left == input.right
+end)

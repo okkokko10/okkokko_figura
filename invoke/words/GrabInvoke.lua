@@ -10,9 +10,10 @@ end)
 Invoke:registerByValue("Loaded", function (self, rest, input)
 
     if not input then return end
-    -- if not input.isLoaded then 
-    --     error("does not have loaded: "..tostring(input))
-    -- end
+    if not input.isLoaded then 
+        log("erroring:",input)
+        error("does not have loaded: "..tostring(input) .. " of type " .. type(input))
+    end
     if input:isLoaded() then
         return true
     end

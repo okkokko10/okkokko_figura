@@ -371,4 +371,20 @@ when the variable var.linetarget is set, moves SpareLineStart there
 
 
 set the tracking to the representative selected entity, and on.offhand, focuses on the group.
->>>O(var.ent) [args[][var!SelectedRow] -> getkv -> O()[E set.linetarget:[get.v][I(Lo)]] [I(on.offhand) [get.l][set.ent:grch[method.getPos -> S]]]]
+
+>>>O(var.ent) [args[][var!SelectedRow] -> getkv O() set.slg]
+
+>>>O(var.ent) [args[][var!SelectedRow] -> getkv -> O()[E set.slg:set.linetarget:[get.v][I(Lo)]] [I(on.offhand) [get.l][set.ent:grch[method.getPos -> S]]]]
+
+>>>fun.lentc: ite([args[var!SelectedRow][var!key] -> equal]){text.#000000} [get.v -> entitycolor]
+;>>>fun.lentt: formats.${get.p} ${[get.v -> S]}${Nl}
+
+>>>O(var.ent)[M[Array{text=[run.lentt] color=[run.lentc]}] -> J -> say]
+
+
+>>>fun.lentt: formats.${get.p} (${get.c}) ${[get.v -> S]}${Nl}
+
+>>>fun.gitems:Array[method.getItem 1][method.getItem 2][method.getItem 3][method.getItem 4][method.getItem 5]
+
+>>>fun.entin I(Lo) formats.${method.getName}${Nl} ${[call.gitems][M S][concat.  ']}
+

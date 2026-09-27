@@ -238,6 +238,12 @@ end):addAlternateNames("M")
 :addDoc{
     text = "applies the rest to each element of the table. you can get the key with var!key"
 }
+:compilation(function (self, rest)
+
+    local s = "do local out = call(\"newmutable\");local oldkey = call(\"var!key\"); for k,input in pairs(input) do \ncall(\"set!key\",k);\n%s;\nout[k]=input end call(\"set!key\",oldkey); input = out end"
+    return s:format(Invoke:compileCall(rest))
+end)
+
 
 Invoke:registerByValue("eq",function (self, rest, input)
     local tbl = input
@@ -312,18 +318,16 @@ Invoke:registerByValue("Array", function (self, rest, input)
     local rs = rest:match("^%s*{(.*)}%s*$")
     if rs then
         for k,w in rs:gmatch("(%w+)%s*%=%s*(%b[])") do
-            out[k] = self:call(w,input)
+            out[k] = self:callCompile(w,input)
         end
     else
         local i = 1
         for w in rest:gmatch("(%b[])") do
-            out[i] = self:call(w,input)
+            out[i] = self:callCompile(w,input)
             i = i + 1
         end
 
     end
-
-
     return out
 end)
 
@@ -373,9 +377,10 @@ Invoke.regist = setmetatable({},{
 function Invoke.regist.sort(self, rest, input)
     self:isMutableAssertion(input)
     if rest ~= "" then 
+        local f = self:callCompileFunc(rest)
         local cache = {}
         for key, value in pairs(input) do
-            cache[value] = self:call(rest,value)
+            cache[value] = self:callCompileRun(f,value)
         end
         table.sort(input,function (a, b)
             return cache[a] < cache[b]
@@ -390,8 +395,9 @@ end
 Invoke:registerByValue("min", function (self, rest, input)
     local a
     local out
+    local f = self:callCompileFunc(rest)
     for key, value in pairs(input) do
-        local b = self:call(rest,value)
+        local b = self:callCompileRun(f,value)
         if (not a) or b < a then
             a = b
             out = value
@@ -404,8 +410,9 @@ Invoke:registerByValue("size", function (self, rest, input)
     local out = 0
 
     if rest ~= "" then
+        local f = self:callCompileFunc(rest)
         for key, value in pairs(input) do
-            if self:call(rest,value) then
+            if self:callCompileRun(f,value) then
                 out = out + 1                
             end
         end
@@ -417,6 +424,10 @@ Invoke:registerByValue("size", function (self, rest, input)
     return out
 end)
 
+
+Invoke:registerByValueNoRest("newmutable",function (self, input)
+    return self:newmutable()
+end)
 
 Invoke:registerByValue("partition", function (self, rest, input)
     local out = self:newmutable()
@@ -435,6 +446,15 @@ Invoke:registerByValue("partition", function (self, rest, input)
     return out
 end)
 
+:compilation(function (self,rest)
+
+    local s = "do local out = call(\"newmutable\");\nfor key, value in pairs(input) do "..
+        "\ninput = value;%s; if (input ~= nil) then if not out[value] then out[value] = call(\"newmutable\") end\nout[value][key] = input end end input = out end"
+    return s:format(Invoke:compileCall(rest))
+end)
+
+
+
 --- group choose: returns triples of a partition key and the first element from that partition and its original key
 Invoke:registerByValue("grch", function (self, rest, input)
     local out = self:newmutable()
@@ -448,11 +468,19 @@ Invoke:registerByValue("grch", function (self, rest, input)
                 found[p].l[c] = value
             else
                 local i = #out+1
-                local r = self:newmutable{p=p,v=value,k=key,i=i,c=1,l={value}}
+                local r = self:newmutable{p=p,v=value,k=key,i=i,c=1,l=self:newmutable{value}}
                 out[i] = r
                 found[p] = r
             end
         end
     end
     return out
+end)
+
+:compilation(function (self,rest)
+
+    local s = "do local out = call(\"newmutable\"); local found = {};\nfor key, value in pairs(input) do "..
+        "\ninput = value;%s; if (input ~= nil) then if found[input] then local c = found[input].c + 1; found[input].c = c;found[input].l[c] = value\n"..
+        "else local i = #out+1; local r = call(\"newmutable\"); r.p = input; r.v = value; r.k = key; r.c = 1; r.l = call(\"newmutable\"); r.l[1] = value;\nout[i]=r;found[input]=r end end end input = out end"
+    return s:format(Invoke:compileCall(rest))
 end)

@@ -78,7 +78,6 @@ end
 function Invoke:callCompileRun(f,input)
     
     local function call(...)
-        -- log("call",...)
         return self:call(...)
     end
 

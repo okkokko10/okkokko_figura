@@ -55,20 +55,21 @@ Invoke:registerByValue("Scan", function (self, rest, input)
     local final
     if a then
         local e = string.match(b,"%{(.*)%}")
+        local ff = Invoke:callCompileFunc(e)
         final = function (block,ret)
             if self:is_stopped() then return end
-            self:call(e,ret)
+            self:callCompileRun(ff,ret)
         end
         rest = string.match(a,"%{(.*)%}")
     end
 
+    local f = Invoke:callCompileFunc(rest)
+    
     require("scanning.Scan").foreach(input,
     function (block, num, out_of)
         -- if self:is_stopped() then return true end
         if block:isAir() then return end
-        local out = self:call(rest,block)
-        -- log("out:", out)
-        return out
+        return self:callCompileRun(f,block)
     end, final).onError = log
 
 end)

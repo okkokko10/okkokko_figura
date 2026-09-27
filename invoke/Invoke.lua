@@ -579,7 +579,7 @@ Invoke.function_compiles = {}
 --- note that the default behaviour is to return `string.format('input = call(%q,input);',word)`
 ---@param func fun(self:Invoke,rest:string):string
 ---@return FunctionDoc
-function Invoke.function_metatable:compilation(func)
+function function_metatable:compilation(func)
     for index, value in ipairs(self.alt_keys) do
         Invoke.function_compiles[value] = func
     end

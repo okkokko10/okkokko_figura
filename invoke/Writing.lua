@@ -166,6 +166,54 @@ function Book:isOpen()
 end
 
 
+---@class VirtualWriting: Writing
+local Virtual = setmetatable({},Writing)
+Virtual.__index = Virtual
+
+--- just make a writing out of a list of list of strings.
+---@param pages? string[][]
+function Writing.makeVirtual(pages)
+    return setmetatable({content=pages or {{}}}, Virtual)
+end
+
+function Virtual:getPage(index)
+    return self.content[index]
+end
+
+--- overrideable
+---@param page unknown
+---@param i integer
+---@return string|nil text exists if the line exists
+---@return boolean not_skipped whether this should not be skipped. is true if the line does not exist (to exit the loop)
+function Virtual:getPageLine(page,i)
+    local line = page[i]
+    return line, true
+end
+
+--- overrideable
+function Virtual:pageCount()
+    return #self.content
+end
+
+--- overrideable
+function Virtual:selectedPageIndex()
+    return 1
+    
+end
+--- overrideable
+function Virtual:isOpen()
+    return false
+end
+
+---adds a line to the end of the first or specified page
+---@param line string
+---@param pagei integer?
+function Virtual:newLine(line,pagei)
+    local pg = self.content[pagei or 1]
+    pg[#pg+1] = line
+    -- table.insert(self.content[pagei or 1],line)
+end
+
 
 --#endregion Book
 

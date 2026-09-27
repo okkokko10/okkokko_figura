@@ -112,7 +112,7 @@ Invoke:registerByValue("O",function (self, rest, input)
     end
 end):addAlternateNames("OM")
 
-
+--- basically adds the current value to a stack and returns to that once the inner call is over.
 Invoke:registerByValue("side",function (self, rest, input)
     local rs = string.match(rest,"^%s*(.*)$")
     if rs then
@@ -153,3 +153,30 @@ function Invoke:callNew(word, input)
     end
     
 end
+
+
+--- idea: compiling. parse chain as [a]b, where b can itself be [c]d, for [a][c]d. 
+--- if the last part is empty, parse it as nop. perform compiling so that this doesn't add a layer of recursion each time.
+--- Array[][][][] 
+
+-- c[AB] BC
+Invoke:registerByValue("chained",function (self, rest, input)
+    local cond,the = string.match(rest,"^%s*(%b[])%s*(.*)$")
+    if not cond then
+        if string.match(rest,"^%s*$") then
+            return input
+        end
+        error("cannot parse chained: " .. rest)
+    end
+    local a = self:call(string.sub(cond,2,-2),input)
+    if the == "" then
+        return a
+    end
+    -- log("chained",rest,input,a)
+    return self:call(the,a)
+end)
+:addDoc{
+    text = "[a]b passes the input to a, then passes its output to b"
+}:addAlternateNames("")
+
+

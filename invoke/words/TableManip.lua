@@ -136,40 +136,6 @@ Invoke:registerByName("map",function (self, value, rest)
     
 end)
 
---- deprecated
-Invoke:registerOld("filter",function (self, value, rest)
-    local filters = {}
-    local filterInverts = {}
-    -- for modifier, st in string.gmatch(rest,"%(%s*(%-?)%s*(.*)%s*%)") do
-    for br in string.gmatch(rest,"%b()") do
-        local modifier, st = string.match(br,"(%-?)%s*(.*)$")
-        filters[#filters+1] = st
-        if modifier == "-" then
-            filterInverts[#filters] = true
-        end
-    end
-
-    local tbl = self:materializeBranch(value)
-    if not tbl then
-        return
-    end
-    local out = self:newmutable()
-    for k, v in pairs(tbl) do
-        for i = 1, #filters do
-            local t = self:call(filters[i],v) -- todo: remove the plr argument from materializeBranch. also, is {Literal = x} really the way to do this?
-            if (not t) == (not filterInverts[i]) then
-                goto continue
-            end
-        end
-        ::continue::
-        out[k] = v
-    end
-    return out
-    
-end)
-:addDoc{
-    text = "deprecated in favor of mapchain. filter(a.x)(b.y)(-c.z) = <t> results in taking the resulting table of t and filtering it based on whether an element e passes a.x = {Literal = e}, b.y = {Literal = e} and fails c.z = {Literal = e}"
-}
 
 
 Invoke:registerByValue("chain",function (self, rest, input)
@@ -250,7 +216,8 @@ end)
         "if a + or - is at the start, passes its input onto the next link in the chain, and instead exits if its own result is falsey or truthy respectively\n" .. 
         "if there is a 1 at the start, + or - instead just skips the next instruction not everything\n" ..
         "if there is a # at the start, returns what it was passed just like + or - does" -- todo: remove "return input" from normal functions?
-}:addAlternateNames("") -- can be just ()()
+}:addAlternateNames("c") -- can be just ()()
+
 
 Invoke:registerByValue("mapchain",function (self, rest, input)
     if not input then

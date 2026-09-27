@@ -58,7 +58,7 @@ end
 
 
 Invoke:registerByValue("set", function (self, rest, input)
-    local name, func = string.match(rest,"^(%w*):(.*)$")
+    local name, func = string.match(rest,"^([_%w]*):(.*)$")
     if name then
         input = self:call(func,input)
         self:setVariable(name,input)
@@ -116,7 +116,24 @@ Invoke:registerByValueNoRest("UtilsID", function (self, input)
 end)
 
 Invoke:registerByValue("fun", function (self, rest, input)
-    local name, func = string.match(rest,"^(%w*):(.*)$")
+    local name, func = string.match(rest,"^([_%w]*):(.*)$")
+    if not name then
+        error("fun not parsed: " .. rest)
+    end
 
     self:setVariable(name,func)
+end)
+
+Invoke:registerByValue("run", function (self, rest, input)
+    local name,colon, args = string.match(rest,"^([_%w]*)(:?)(.*)$")
+    local func = self:getVariable(name)
+    if not func then
+        error("no function by the name of "..name .. " at " .. rest)
+    end
+
+    if colon ~= "" then
+        input = self:call(args,input)
+    end
+
+    return self:call(func,input)
 end)

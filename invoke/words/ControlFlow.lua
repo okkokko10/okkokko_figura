@@ -30,10 +30,6 @@ end):addDoc{
 --- todo: filter = {f = }
 
 
-Invoke:registerByValue("run", function (self, rest, input)
-    return self:call(self:getVariable(rest),input)
-end)
-
 -- Invoke:registerOnlyRest("fun",function (self, rest)
 --     local name, vars, body = string.match(rest,"^%s*(%w*)%s*(%b())%s*(%b{})%s*")
 -- end)

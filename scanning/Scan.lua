@@ -167,6 +167,7 @@ function Scan.foreachOld(rect,func)
 end
 
 Scan.stepSize = vec(9,9,9)
+-- Scan.stepSize = vec(4,4,4)
 
 ---enqueues scans
 ---@generic X

@@ -80,7 +80,7 @@ function Positioning.functions.followEntity(entity,followRot)
         if ent then entity = ent end
         if not t then return Positioning.setActive(part,false) end
         -- root:setPreRender(function (delta,ctx,part) part:setPos(16*(player:getPos(delta))) end)
-        local b = entity:getPos(delta)
+        local b = Utils.Sublevel.sableSublevelToWorld(entity:getPos(delta))
         if b then
             part:setPos(PS*b)
         end

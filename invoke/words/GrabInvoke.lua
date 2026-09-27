@@ -34,6 +34,21 @@ Invoke:registerWithArgs("affix",{"part","parent","target"}, function (self, rest
     AnchorAffix.complex.affixInPlace(input.part,parent,input.target,true)
 end)
 
+Invoke:registerWithArgs("affixM",{"part","parents"}, function (self, rest, input)
+
+    if not input.part then return end
+    
+    local parents = Utils.table.map(input.parents,function (b, index)
+        if not b:isLoaded() then
+            error("entity not loaded")
+            
+        end
+        return  "!pl:".. b:getUUID()
+    end)
+
+    AnchorAffix.direct.part_setParents(input.part,true,parents)
+end)
+
 
 --- >>>[set.target:text.S:Umbrella]
 --- >>>[+on.sneak-> text.SpareLineStart -> set.part -> var.target -> set.parent -> affix]

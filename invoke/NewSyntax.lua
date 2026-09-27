@@ -152,7 +152,7 @@ end):addAlternateNames("I")
 end)
 
 
---- Od(a){b}c
+--- Od(a){b}{c}
 --- stands for Option default
 Invoke:registerByValue("oelim",function (self, rest, input)
     

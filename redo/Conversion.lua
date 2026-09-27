@@ -12,6 +12,7 @@ Conversion = {}
 ---@class ComposedMatrix
 Conversion._ComposedMatrix = {__type = "ComposedMatrix"}
 Conversion._InvertedMatrix = {__type = "InvertedMatrix"}
+Conversion._LocalMatrix = {__type = "LocalMatrix"}
 
 ---lazily composes matrices
 ---@param left ConvertsToMatrix
@@ -26,6 +27,12 @@ end
 ---@return ComposedMatrix
 function Conversion.InvertedMatrix(matrix)
     return setmetatable({matrix},Conversion._InvertedMatrix)
+end
+---lazily inverts matrix
+---@param matrix ConvertsToMatrix
+---@return ComposedMatrix
+function Conversion.LocalMatrix(matrix)
+    return setmetatable({matrix},Conversion._LocalMatrix)
 end
 
 
@@ -74,6 +81,7 @@ Conversion._toMatrix = {
     boolean = function (b,...) if b then return matrices.mat4() else return nil end end,
     ComposedMatrix = function (value) return Conversion.toMatrix(value[1],true) * Conversion.toMatrix(value[2],true) end,
     InvertedMatrix = function (value) return Conversion.toMatrix(value[1],true):inverted() end,
+    LocalMatrix = function (value) return Conversion.toMatrix(value[1],true) end,
     -- PlayerAPI = function (entity) return Conversion.toMatrix(value[1],true):inverted() end
     number = function (value) return (Conversion._toMatrix_number[value] or matrices.mat4()):copy() end,
 }

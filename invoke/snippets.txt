@@ -388,3 +388,16 @@ set the tracking to the representative selected entity, and on.offhand, focuses 
 
 >>>fun.entin I(Lo) formats.${method.getName}${Nl} ${[call.gitems][M S][concat.  ']}
 
+
+
+--- numismatics vendors list
+
+global;
+>>>[ite(var.vendors){} [Array] set.vendors];
+>>> fun.displayvendors:[var.vendors -> Keys -> sort -> J -> say];
+>>> fun.processvendor: IT([method.getID -> eq.'numismatics:vendor']) [
+formats ${[method.getEntityData -> formats ${[get.Selling.id -> E set.idtest__ -> S]} (${[get.Selling.count -> S]}) ${O(get.Prices) pricestring}]} ${[method.getPos -> S]}${Nl}->
+IT(var.idtest__) E assign.vendors];
+global;>>> fun.userarea: [User -> method.getPos -> area 40]
+;>>> fun.scanvendors:[ run.userarea -> Scan{[run.processvendor -> nil]}{}]
+>>>fun.scan_this_vendor:IT(on.sneak) [ User -> PickBlock -> run.processvendor -> O() say]

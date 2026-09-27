@@ -46,6 +46,35 @@ function AnchorAffix.direct.part_alter(partID,parentID,matrix,pos,rot)
     end
 end
 
+function AnchorAffix.direct.part_setParents(partID,matrix,parentIDs)
+    
+    local part = Utils.ID.from(partID)
+    if not part then
+        return host:isHost() and log("no such part: " .. partID)
+    end
+    matrix = Conversion.toMatrix(matrix)
+    if matrix then
+        part:setMatrix(matrix)
+    end
+    part:remove()
+    for index, parentID in ipairs(parentIDs) do
+        
+        local parent = parentID and Utils.ID.from(parentID)
+        if parent then
+            if parent:isChildOf(part) or parent == part then
+                if host:isHost() then
+                    log("error, setting as own ancestor")
+                end
+            else
+                parent:addChild(part)
+                -- part:moveTo(parent)
+            end
+        end
+    end
+     
+     
+end
+
 
 ---comment
 ---@param partID ID<ModelPart>
@@ -59,6 +88,7 @@ end
 
 
 
+
 AnchorAffix.complex = {}
 
 --- if target is given, instead sets world matrix to that while setting parent.
@@ -68,11 +98,16 @@ AnchorAffix.complex = {}
 ---@param target? ConvertsToMatrix -- new world matrix
 function AnchorAffix.complex.affixInPlace(partID, parentID, target, noPing)
     local mat
-    if parentID then
-        mat = assert(Conversion.toMatrix(parentID),tostring(parentID)):invert() * assert(Conversion.toMatrix(target or partID),tostring(target))
+    if type(target) == "LocalMatrix" then
+            mat = Conversion.toMatrix(target)
     else
-        local part = Utils.ID.from(partID) or error("no part: ".. (partID or "nil"))
-        mat = Conversion.toMatrix(part:getParent()):invert() * Conversion.toMatrix(target or part)
+        if parentID then
+            mat = assert(Conversion.toMatrix(parentID),tostring(parentID)):invert() * assert(Conversion.toMatrix(target or partID),tostring(target))
+        else
+            local part = Utils.ID.from(partID) or error("no part: ".. (partID or "nil"))
+            mat = Conversion.toMatrix(part:getParent()):invert() * Conversion.toMatrix(target or part)
+            
+        end
     end
     if noPing then
         AnchorAffix.direct.part_alter(partID,parentID,mat)

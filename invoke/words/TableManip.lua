@@ -40,7 +40,7 @@ end)
 
 
 Invoke:registerByValueNoRest("Keys",function (self, input)
-    return Utils.table.getKeys(input)
+    return self:newmutable(Utils.table.getKeys(input))
     -- tostring(value)
 end)
 :addAlternateNames("K")

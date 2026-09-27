@@ -26,7 +26,7 @@ local function text_raycast(modelPart,text,origin,direction,height)
     if not tx then return end
 
     local hx,hy = client.getTextDimensions(tx):unpack()
-    
+
     local rect = Rect(vec(0,-hy,0),vec(hx,0,1))
     if true then
         rect = rect + vec(-hx/2,0,0)
@@ -61,7 +61,7 @@ local function text_raycast(modelPart,text,origin,direction,height)
 end
 
 
-if host:isHost() then
+-- if host:isHost() then
     
 events.TICK:register(function (dir)
     local part = Utils.ID.field.ChatText.billboard
@@ -74,4 +74,4 @@ events.TICK:register(function (dir)
 
 end)
 
-end
+-- end

@@ -540,7 +540,7 @@ end
 require("utils")
 local RubikBase = Positioning.parts.Disabled:newPart("RubikBase"):setPos(PS*1,PS*1,PS*-3)
 
-if avatar:getPermissionLevel() == "MAX" then RubiksCubeSides.drawPermutationDebug(RubikBase) end
+if false and avatar:getPermissionLevel() == "MAX" then RubiksCubeSides.drawPermutationDebug(RubikBase) end
 
 
 Utils.ID.field.RubikBase = RubikBase

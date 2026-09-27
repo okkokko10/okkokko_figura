@@ -99,3 +99,11 @@ Invoke:registerByValue("args",function (self, rest, input)
     return self:newArgs(input)
 
 end)
+
+
+Invoke:registerByValueNoRest("not",function (self, input)
+    return (not input)
+end)
+Invoke:registerByValueNoRest("notn",function (self, input)
+    return (not input) or nil
+end)

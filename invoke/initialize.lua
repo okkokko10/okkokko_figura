@@ -28,15 +28,34 @@ Text:newLine'>>>fun.gitems:Array[method.getItem 1][method.getItem 2][method.getI
 Text:newLine'>>>fun.entin: I(Lo) formats.${method.getName}${Nl} ${[call.gitems][M S][concat.  \']}'
 
 Text:newLine'>>>fun.targetline:[ args[text.SpareLineStart][][] ] affix'
+Text:newLine'>>>fun.targetlines:[ args[text.SpareLineStart][] ] affixM'
 
 Text:newLine'>>>fun.init_ent:set.ent:[Entities -> grch[formats.${method.getType} : ${method.getName}] -> sort[get.p]]'
-Text:newLine'>>>fun.U_update_ent_selection:O(var.ent) [args[][var!SelectedRow] -> getkv -> O()[E run.targetline:set.slg:[get.v][I(Lo)]] [I(on.offhand) [get.l][set.ent:grch[method.getPos -> S]]]]'
+Text:newLine'>>>fun.U_update_ent_selection:O(var.ent) [args[][var!SelectedRow] -> getkv -> O()[E run.targetline:set.slg:[get.v]I(Lo)] [I(on.offhand) [get.l][set.ent:grch[method.getPos -> S]]]]'
+-- Text:newLine'>>>fun.U_update_ent_selection:O(var.ent) [args[][var!SelectedRow] -> getkv -> O()[E set.slg:[get.v]I(Lo)][E run.targetlines:[get.l]M I(Lo)] [I(on.offhand) [get.l][set.ent:grch[method.getPos -> S]]]]'
 Text:newLine'>>>fun.U_update_ent: [E IT(on.sneak) run.init_ent] [E run.U_update_ent_selection]'
 -- Text:newLine'>>>fun.show_ent:O(var.ent)[M Array{text=[run.lentt] color=[run.lentc]} -> J -> say]'
-Text:newLine'>>>[text.initialization ended] log'
+Text:newLine'>>>[text.initialization ended 1] log'
 Text:newLine''
 Text:newLine''
-Text:newLine''
+
+-- Text:newLine'>>>[IT([var.vendors] notn) [newmutable] [E set.vendors] log];'
+
+
+
+-- Text:newLine'>>> fun.displayvendors:[var.vendors -> Keys -> sort -> J -> say];'
+-- Text:newLine('>>> fun.processvendor: IT(O() [method.getID -> eq.\'numismatics:vendor\']) ['..
+--     'formats ${[method.getEntityData -> formats ${[get.Selling.id -> E set.idtest__ -> S]} (${[get.Selling.count -> S]}) ${O(get.Prices) pricestring}]} ${[method.getPos -> S]}${Nl}->'..
+--     'IT(var.idtest__) E assign.vendors]')
+-- Text:newLine'>>> fun.userarea: [User -> method.getPos -> area 20]'
+-- Text:newLine'>>>fun.scanvendors:[ run.userarea -> Scan{[run.processvendor] nil}{}]'
+-- Text:newLine'>>>fun.scan_this_vendor:IT(on.sneak)  O([User] PickBlock) [run.processvendor -> O() say]'
+-- Text:newLine''
+-- Text:newLine''
+-- Text:newLine'>>>[text.initialization ended 2] log'
+
+
+
 
 
 

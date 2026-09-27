@@ -130,6 +130,9 @@ local function_metatable = {
 }
 function_metatable.__index = function_metatable
 
+---@class FunctionDoc
+Invoke.function_metatable = function_metatable
+
 ---@param tbl {text: string?, rest:string?, value:any?, example:string?}
 function function_metatable:addDoc(tbl)
     self.docs[#self.docs+1] = tbl
@@ -299,6 +302,10 @@ function Invoke:registerOld(key,func)
     return self:register(key,func)
 end
 
+function Invoke:splitWordRest(word)
+    return string.match(word,"^%s*(%a*)%.?(.*)$")
+end
+
 --- todo: add tags that set the result to a variable, and... 
 ---     could this be implemented by wrapping tbl in {Literal=<tbl>}
 ---     is the start.rest split done with arguments? 
@@ -315,7 +322,7 @@ function Invoke:materializeBranch(word,tbl)
         log(word)
         error("not table or string")
     end
-    local start,rest = string.match(word,"^%s*(%a*)%.?(.*)$")
+    local start,rest = self:splitWordRest(word)
     -- local _,_,start,rest = string.find(word,"^([^%.]*)%.?(.*)$")
     if self.functions[start] then
         -- log(start,rest)
@@ -563,6 +570,23 @@ function Invoke:restContains(rest,pat)
     if not pat then return end
     return string.match("."..(rest or "") .. ".","%."..pat.."%.")
 end
+
+
+---@type {[string]: fun(self:Invoke,rest:string):string}
+Invoke.function_compiles = {}
+--- incomplete.
+--- return a sequence of lines to insert into load(), where there exist variables input and call
+--- note that the default behaviour is to return `string.format('input = call(%q,input);',word)`
+---@param func fun(self:Invoke,rest:string):string
+---@return FunctionDoc
+function Invoke.function_metatable:compilation(func)
+    for index, value in ipairs(self.alt_keys) do
+        Invoke.function_compiles[value] = func
+    end
+    return self
+end
+
+
 
 
 return Invoke

@@ -61,12 +61,29 @@ Invoke:registerByValue("set", function (self, rest, input)
     local name, func = string.match(rest,"^([_%w]*):(.*)$")
     if name then
         input = self:call(func,input)
-        self:setVariable(name,input)
-    else
-        self:setVariable(rest,input)
+        rest = name
     end
+    self:setVariable(rest,input)
     return input
 end)
+:compilation(function (self, rest)
+
+    local name, func = string.match(rest,"^([_%w]*):(.*)$")
+    if name then
+        return ("%s; call(%q,input)"):format(self:compileCall(func),"setplain."..name)
+    else
+        return ("call(%q,input)"):format("setplain."..name)
+    end
+
+    
+end)
+
+--- to not be compiled
+Invoke:registerByValue("setplain", function (self, rest, input)
+    self:setVariable(rest,input)
+    return input
+end)
+
 
 Invoke:registerWithArgs("setkv",{"key","value"}, function (self, rest, inputs)
     self:setVariable(inputs.key,inputs.value)
@@ -115,25 +132,36 @@ Invoke:registerByValueNoRest("UtilsID", function (self, input)
     return Utils.ID.from(input)
 end)
 
+---@type {[any] :function}
+Invoke.compiledfuncs = {}
+
 Invoke:registerByValue("fun", function (self, rest, input)
     local name, func = string.match(rest,"^([_%w]*):(.*)$")
     if not name then
         error("fun not parsed: " .. rest)
     end
 
+    self.compiledfuncs[name] = self:callCompileFunc(func)
     self:setVariable(name,func)
 end)
 
 Invoke:registerByValue("run", function (self, rest, input)
     local name,colon, args = string.match(rest,"^([_%w]*)(:?)(.*)$")
+
+
+    if colon ~= "" then
+        input = self:call(args,input) -- todo: compile this part
+    end
+
+    if self.compiledfuncs[name] then
+        return self:callCompileRun(self.compiledfuncs[name],input)
+    end
+
     local func = self:getVariable(name)
     if not func then
         error("no function by the name of "..name .. " at " .. rest)
     end
 
-    if colon ~= "" then
-        input = self:call(args,input)
-    end
-
-    return self:call(func,input)
+    return self:callCompile(func,input)
 end)
+

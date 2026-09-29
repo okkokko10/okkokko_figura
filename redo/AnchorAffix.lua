@@ -46,6 +46,8 @@ function AnchorAffix.direct.part_alter(partID,parentID,matrix,pos,rot)
     end
 end
 
+AnchorAffix.parentlists = setmetatable({},{__mode="k"})
+
 function AnchorAffix.direct.part_setParents(partID,matrix,parentIDs)
     
     local part = Utils.ID.from(partID)
@@ -57,6 +59,13 @@ function AnchorAffix.direct.part_setParents(partID,matrix,parentIDs)
         part:setMatrix(matrix)
     end
     part:remove()
+    if AnchorAffix.parentlists[part] then
+        for key, value in pairs(AnchorAffix.parentlists[part]) do
+            value:removeChild(part)
+        end
+
+    end
+    AnchorAffix.parentlists[part] = setmetatable({},{__mode="v"})
     for index, parentID in ipairs(parentIDs) do
         
         local parent = parentID and Utils.ID.from(parentID)
@@ -66,6 +75,7 @@ function AnchorAffix.direct.part_setParents(partID,matrix,parentIDs)
                     log("error, setting as own ancestor")
                 end
             else
+                AnchorAffix.parentlists[part][#AnchorAffix.parentlists[part]+1] = parent
                 parent:addChild(part)
                 -- part:moveTo(parent)
             end

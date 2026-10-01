@@ -37,5 +37,9 @@ page:newAction()
     :onLeftClick(function()
         Freecam.disable()
     end)
+    :onScroll(function (dir)
+        Ccom.playerSwap()
+        Freecam.disable()
+    end)
 
 return page

@@ -152,7 +152,7 @@ end):addAlternateNames("I")
 end)
 
 
---- Od(a){b}{c}
+--- Od(opt){map}{default}
 --- stands for Option default
 Invoke:registerByValue("oelim",function (self, rest, input)
     
@@ -168,7 +168,7 @@ Invoke:registerByValue("oelim",function (self, rest, input)
     elseif els then
         return self:call(els,input)
     end
-end):addAlternateNames("Od")
+end):addAlternateNames("Odel")
 
 
 :compilation(function (self,rest)
@@ -181,6 +181,54 @@ end):addAlternateNames("Od")
     local st = "do local temp = input; %s; if (input ~= nil) then %s else input = temp;%s end end"
 
     return st:format(self:compileCall(string.sub(cond,2,-2)),self:compileCall(string.sub(the,2,-2)),els and self:compileCall(els) or "input = nil")
+end)
+
+--- Od(opt){map}{default}
+--- stands for Option default
+Invoke:registerByValue("oelimd",function (self, rest, input)
+    return self:callCompile("oelimd"..rest,input)
+    -- local cond,the, e = string.match(rest,"^(%b())%s*(.*)$")
+    -- if not cond then
+    --     error("cannot parse oelim: " .. rest)
+    -- end
+    -- local els = string.match(e,"^%s*{(.*)}%s*$")
+    
+    -- local a = self:call(string.sub(cond,2,-2),input)
+    -- if a then
+    --     return self:call(string.sub(the,2,-2),a)
+    -- elseif els then
+    --     return self:call(els,input)
+    -- end
+end):addAlternateNames("Od")
+
+
+:compilation(function (self,rest)
+    local opt,fallback =    string.match(rest,"^(%b())%s*(.*)$")
+    if not opt then
+        error("cannot parse Od: " .. rest)
+    end
+    
+    local st = "do local temp = input; %s; if (input == nil) then input = temp;%s end end"
+
+    return st:format(self:compileCall(string.sub(opt,2,-2)),self:compileCall(fallback) or "")
+end)
+
+Invoke:registerByValue("ofallback",function (self, rest, input)
+    if input == nil then return end
+    local rs = string.match(rest,"^%s*(.*)$")
+    return self:call(rs,input)
+    
+end):addAlternateNames("D")
+
+
+:compilation(function (self,rest)
+
+    local rs = string.match(rest,"^%s*(.*)$")
+    -- local st = "do local temp = input; %s; input = temp end"
+    local st = "if (input == nil) then %s end"
+
+
+    return st:format(self:compileCall(rs))
 end)
 
 

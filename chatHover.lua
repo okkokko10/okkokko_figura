@@ -43,6 +43,7 @@ function events.tick()
     if CHAT_SHOWN and client.getSystemTime() - MESSAGE_TIME > 1000*60 then
         CHAT_TEXT:setText("")
         CHAT_SHOWN = false
+        CHAT_TEXT:setAlignment("CENTER")
     end
 end
 
@@ -63,7 +64,13 @@ function events.chat_send_message(msg)
     end
 end
 
-require("invoke.Invoke"):registerByValueNoRest("say", function (self, input)
+require("invoke.Invoke"):registerByValue("say", function (self,rest, input)
+    
     setMessage(tostring(input))
+    if rest == "left" then
+        CHAT_TEXT:setAlignment("LEFT")
+    else
+        CHAT_TEXT:setAlignment("CENTER")
+    end
     return input
 end)

@@ -5,6 +5,12 @@ Ccom = {}
 Ccom.helper = {}
 
 
+function Ccom.helper.vectorPrecise(vector)
+    if type(vector) =="number" then
+        vector = vec(1,1,1) * vector
+    end
+    return ("%f %f %f"):format(vector:unpack()):gsub(",",".") -- turns , into .
+end
 
 function Ccom.helper.vector(vector)
     if type(vector) =="number" then
@@ -12,6 +18,7 @@ function Ccom.helper.vector(vector)
     end
     return ("%d %d %d"):format(vector:unpack())
 end
+--- note: rounds the coordinates
 function Ccom.helper.WEvector(vector)
     if type(vector) =="number" then
         vector = vec(1,1,1) * vector
@@ -200,4 +207,36 @@ function Ccom.stackPyramids(count, size, expansion,space,noassembly)
     end
 
     -- Ccom.fill(Rect(startpos,top),"packed_ice") 
+end
+
+
+function Ccom.teleport(vector)
+    Ccom.sendChatCommand(("tp %s"):format(Ccom.helper.vectorPrecise(vector)))
+end
+
+function Ccom.teleportEyes(vector)
+    Ccom.sendChatCommand(("tp %s"):format(Ccom.helper.vectorPrecise(vector - vec(0,player:getEyeHeight(),0))))
+end
+
+function Ccom.playerSwap(partID)
+    partID = partID or Freecam.ParentID()
+    if AnchorAffix.info.isChildOf(partID,  "Disabled") then
+        log("trying to teleport to disabled")
+        return
+    end
+    local m = assert(Conversion.toMatrix(partID))
+    local p = m:apply()
+    local pp = Utils.entity.entityEyePos(player,client.getFrameTime())
+    -- local pp = player:getPos(client.getFrameTime())
+
+    -- log(p)
+    Ccom.teleportEyes(p)
+
+    --- pp -> world to part = pp in partID's coordinates
+    local dp = m:inverted():apply(pp)
+    local nm = m * matrices.translate4(dp)
+    --- m * matrices.translate4(m:invert():apply(pp))
+    AnchorAffix.complex.affixInPlace(partID,nil,nm)
+
+
 end

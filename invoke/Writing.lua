@@ -173,7 +173,7 @@ Virtual.__index = Virtual
 --- just make a writing out of a list of list of strings.
 ---@param pages? string[][]
 function Writing.makeVirtual(pages)
-    return setmetatable({content=pages or {{}}}, Virtual)
+    return setmetatable({content=pages or {{}},open = false}, Virtual)
 end
 
 function Virtual:getPage(index)
@@ -202,7 +202,10 @@ function Virtual:selectedPageIndex()
 end
 --- overrideable
 function Virtual:isOpen()
-    return false
+    return self.open
+end
+function Virtual:setOpen(t)
+    self.open = t
 end
 
 ---adds a line to the end of the first or specified page

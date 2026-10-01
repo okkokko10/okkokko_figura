@@ -105,7 +105,7 @@ end)
 
 
 Invoke:registerByValue("call",function (self, rest, input)
-    local start,sep, vars = string.match(rest,"^(%a*)(%s*)(.*)$")
+    local maybe,start,sep, vars = string.match(rest,"^(%??)(%a*)(%s*)(.*)$")
     -- log(start,vars)
     if not start then
         error("call: not parsed: " .. rest)
@@ -129,7 +129,7 @@ Invoke:registerByValue("call",function (self, rest, input)
         else
             return p[start](p)
         end    
-    else
+    elseif maybe == "" then
         error(("no method %s found on type %s"):format(start,type(p)))
     end
 

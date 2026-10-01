@@ -136,7 +136,7 @@ end)
 Invoke.compiledfuncs = {}
 
 Invoke:registerByValue("fun", function (self, rest, input)
-    local name, func = string.match(rest,"^([_%w]*):(.*)$")
+    local name, func = string.match(rest,"^([_%w%!]*):(.*)$")
     if not name then
         error("fun not parsed: " .. rest)
     end
@@ -146,7 +146,7 @@ Invoke:registerByValue("fun", function (self, rest, input)
 end)
 
 Invoke:registerByValue("run", function (self, rest, input)
-    local name,colon, args = string.match(rest,"^([_%w]*)(:?)(.*)$")
+    local name,colon, args = string.match(rest,"^([_%w%!]*)(:?)(.*)$")
 
 
     if colon ~= "" then

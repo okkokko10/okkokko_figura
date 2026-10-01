@@ -31,7 +31,7 @@ end
 ---@param arr table|Array|unknown?
 ---@return boolean
 function Invoke:isMutableAssertion(arr)
-    return assert(self:isMutable(arr),"a variable needs to be a mutable created by an invoke script to be modified")
+    return assert(self:isMutable(arr),"a variable needs to be a mutable created by an invoke script to be modified: " .. tostring(arr))
 end
 
 Invoke:registerByValueNoRest("isMutable",function (self, input)
@@ -261,7 +261,7 @@ Invoke:registerByValue("keyvalue",function (self, rest, input)
     if not tbl then return end
     local out = self:newmutable()
     for key, value in pairs(tbl) do
-        out[#out+1] = {key,value}
+        out[#out+1] = {key,value,k=key,v=value}
     end
     return out
 end)

@@ -91,10 +91,19 @@ function Invoke:isArgs(arr)
     return not not self._argss[arr]
 end
 
-
+--- args[a][b][c] -> f
+--- or args(f)[a][b][c]
+--- [a][b][c] is any valid rest to Array
 Invoke:registerByValue("args",function (self, rest, input)
     if rest ~= "" then
+        local parenth,rst = string.match(rest,"^%s*(%b())(.*)$")
+        if parenth then
+            rest = rst
+        end
         input = self:call("Array" .. rest, input)
+        if parenth then
+            return self:call(string.sub(parenth,2,-2),self:newArgs(input))
+        end
     end
     return self:newArgs(input)
 

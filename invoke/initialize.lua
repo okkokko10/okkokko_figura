@@ -40,10 +40,40 @@ Text:newLine'>>>fun.targetlines:[ args[text.SpareLineStart][] ] affixM'
 
 Text:newLine'>>>fun.init_ent:set.ent:[Entities -> grch[formats.${method.getType} : ${method.getName}] -> sort[get.p]]'
 -- Text:newLine'>>>fun.U_update_ent_selection:O(var.ent) [args[][var!SelectedRow] -> getkv -> O()[E run.targetline:set.slg:[get.v]I(Lo)] [I(on.offhand) [get.l][set.ent:grch[method.getPos -> S]]]]'
-Text:newLine'>>>fun.U_update_ent_selection:O(var.ent) [args[][var!SelectedRow] -> getkv -> O()[E set.slg:[get.v]I(Lo)][E run.targetlines:[get.l]M I(Lo)] [I(on.offhand) [get.l][set.ent:grch[method.getPos -> S]]]]'
+Text:newLine'>>>fun.selection_slg:[E set.slg:[get.v]I(Lo)]'
+Text:newLine'>>>fun.selection_lines:[E run.targetlines:[get.l]M I(Lo)]'
+Text:newLine'>>>fun.selection_specify:[get.l][set.ent:grch[method.getPos -> S]]'
+Text:newLine'>>>fun.U_update_ent_selection:O(var.ent) [args(getkv)[][var!SelectedRow] ] O() [E run.selection_slg] [E run.selection_lines] [I(on.offhand) run.selection_specify]'
 Text:newLine'>>>fun.U_update_ent: [E I(on.sneak) run.init_ent] [E run.U_update_ent_selection]'
+Text:newLine'>>>fun.U_update_ent_constantly: [E run.init_ent] [E run.U_update_ent_selection]'
 -- Text:newLine'>>>fun.show_ent:O(var.ent)[M Array{text=[run.lentt] color=[run.lentc]} -> J -> say]'
+
+-- Text:newLine'fun.blockDataBlacklist: O(method.getEntityData)  '
+
+Text:newLine(
+    '>>>fun.blockDataDisplay: O(method.getEntityData) O(get.BlockEntityTag)'..
+    
+    ' [keyvalue] [  M Array[get.k][text : ] [ [get.v] J ][Nl]  ] J')
+
+Text:newLine(
+    '>>>fun.checkedBlockDisplay: O(method.getEntityData) O(get.BlockEntityTag) [E set.checkedBlockTags] [E M [var!key] assign.checkedBlockKeys]'..
+    '[var.checkedBlockKeys] [M Od( args(getkv)[var.checkedBlockTags][var!key] ) False ]'..
+    ' [keyvalue] [  M Array[get.k][text : ] [ [get.v] ite(){J} text ][Nl]  ] J')
+Text:newLine'>>>fun.checkBlock: [I(on.sneak) [set.checkedBlock:[User]PickBlock]] [D [text] say] set.checkedBlockKeys:Array{}'
+Text:newLine'>>>fun.checkBlockVisF:O(var.checkedBlock) [run.checkedBlockDisplay] say.left'
+
+Text:newLine'>>>fun.checkBlockVis:fun!AlwaysActive:run.checkBlockVisF'
+
+Text:newLine''
+Text:newLine''
+
+
+
+
 Text:newLine'>>>[text.initialization ended 1] log'
+Text:newLine''
+Text:newLine''
+Text:newLine''
 Text:newLine''
 Text:newLine''
 
@@ -81,7 +111,8 @@ end
 if Invoke.ENABLE and (avatar:getPermissionLevel() == "MAX" or Invoke.LOWER_PERMISSION) and (host:isHost() or Invoke.ENABLE_OTHERS)  then
     
     events.ENTITY_INIT:register(function ()
-        Invoke.contents(Invoke.newInstance(Text,initializer_player))
+        Invoke.ambient = Invoke.newInstance(Text,initializer_player)
+        Invoke.ambient:contents()
         -- log("initialized invoke")
         -- events.ENTITY_INIT:remove("InvokeInitialize")
     end,"InvokeInitialize")

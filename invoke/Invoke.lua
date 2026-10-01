@@ -473,6 +473,7 @@ end
 ---comment
 function Invoke:contents()
     if not self.content then return end
+    Invoke.alwaysActive.content:setOpen(self.content:isOpen())
     if self.content:isOpen() then
         self:resume_for_player()
         return
@@ -525,6 +526,10 @@ function Invoke.readPlayers()
             pcall(Invoke.contents,Invoke.newInstance(content,plr))
             -- Invoke:contents(content,plr)
         end
+    end
+    local o,s = pcall(Invoke.DoAlwaysActive)
+    if not o then
+        log(s)
     end
 end
 

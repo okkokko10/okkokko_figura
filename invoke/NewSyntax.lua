@@ -183,22 +183,12 @@ end):addAlternateNames("Odel")
     return st:format(self:compileCall(string.sub(cond,2,-2)),self:compileCall(string.sub(the,2,-2)),els and self:compileCall(els) or "input = nil")
 end)
 
---- Od(opt){map}{default}
+--- Od(opt) default
+--- if if opt returns nil, return default.
+--- essentially `opt(input) or default(input)`
 --- stands for Option default
 Invoke:registerByValue("oelimd",function (self, rest, input)
     return self:callCompile("oelimd"..rest,input)
-    -- local cond,the, e = string.match(rest,"^(%b())%s*(.*)$")
-    -- if not cond then
-    --     error("cannot parse oelim: " .. rest)
-    -- end
-    -- local els = string.match(e,"^%s*{(.*)}%s*$")
-    
-    -- local a = self:call(string.sub(cond,2,-2),input)
-    -- if a then
-    --     return self:call(string.sub(the,2,-2),a)
-    -- elseif els then
-    --     return self:call(els,input)
-    -- end
 end):addAlternateNames("Od")
 
 
@@ -213,6 +203,7 @@ end):addAlternateNames("Od")
     return st:format(self:compileCall(string.sub(opt,2,-2)),self:compileCall(fallback) or "")
 end)
 
+--- [x] D y
 Invoke:registerByValue("ofallback",function (self, rest, input)
     if input == nil then return end
     local rs = string.match(rest,"^%s*(.*)$")

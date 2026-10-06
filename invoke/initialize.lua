@@ -8,8 +8,8 @@ local Text = Writing.makeVirtual()
 
 Text:newLine'global'
 Text:newLine'invoke okkokko {gsub={p="^%s*>>>(.*)",r="invokeX okkokko %1"}}'
-Text:newLine';invoke okkokko {gsub={p="^%s*>>(.*)",r="invoke okkokko {%1}"}}'
-Text:newLine';>> gsub ={ p="<[|:](.*)$", r="={ %1 }",rec=true}'
+-- Text:newLine';invoke okkokko {gsub={p="^%s*>>(.*)",r="invoke okkokko {%1}"}}'
+-- Text:newLine';>> gsub ={ p="<[|:](.*)$", r="={ %1 }",rec=true}'
 Text:newLine';>> gsub ={ p="%-%>", r="]["}'
 
 Text:newLine'>>>[text.initialization started] log'
@@ -23,6 +23,8 @@ Text:newLine'>>>fun.lentt: formats.${get.p} (${get.c})${Nl}'
 Text:newLine'>>>fun.display_entity_list_f: [M[Array{text=[run.lentt] color=[run.lentc]}] ]J'
 Text:newLine'>>>fun.display_entity_list:O(var.ent)[run.display_entity_list_f][say]'
 
+Text:newLine'>>>fun.arrayDisp: [keyvalue] [  M Array[get.k][text : ] [ [get.v] J ][Nl]  ]'
+
 
 
 Text:newLine'>>>fun.gitems:Array[method.getItem 1][method.getItem 2][method.getItem 3][method.getItem 4][method.getItem 5]'
@@ -30,8 +32,7 @@ Text:newLine'>>>fun.entin: I(Lo) formats.${method.getName}\n${[run.gitems][M [me
 Text:newLine'>>>fun.second_disp:O(var.slg)[run.entin] S'
 
 
-Text:newLine'>>>fun.display_entity_list_two:[formats[${O(var.ent)[run.display_entity_list_f]},"${Nl}","${run.second_disp}"] ] say'
-
+Text:newLine'>>>fun.display_entity_list_two:[formats[${O(var.ent)[run.display_entity_list_f]},"${Nl}","${run.second_disp}","\n${[I(Lo) O(method.getNbt) run.arrayDisp]}"] ] say'
 
 
 
@@ -50,10 +51,8 @@ Text:newLine'>>>fun.U_update_ent_constantly: [E run.init_ent] [E run.U_update_en
 
 -- Text:newLine'fun.blockDataBlacklist: O(method.getEntityData)  '
 
-Text:newLine(
-    '>>>fun.blockDataDisplay: O(method.getEntityData) O(get.BlockEntityTag)'..
-    
-    ' [keyvalue] [  M Array[get.k][text : ] [ [get.v] J ][Nl]  ] J')
+
+Text:newLine'>>>fun.blockDataDisplay: O(method.getEntityData) O(get.BlockEntityTag) [run.arrayDisp] J'
 
 Text:newLine(
     '>>>fun.checkedBlockDisplay: O(method.getEntityData) O(get.BlockEntityTag) [E set.checkedBlockTags] [E M [var!key] assign.checkedBlockKeys]'..

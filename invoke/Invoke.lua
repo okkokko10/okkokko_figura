@@ -85,7 +85,7 @@ function Invoke:parse_line(text)
         self:logUnexpected("not text",type(text),text)
         return
     end
-    local _, _, minus,X, name, rest = string.find(text,"^%s*(%-?)invoke(X?)%s+(%S*)%s+(.*)$")
+    local _, _, minus,X, name, rest = string.find(string.gsub(text,"^%s*%>%>%>","invokeX okkokko ",1),"^%s*(%-?)invoke(X?)%s+(%S*)%s+(.*)$")
     -- if not rest then
     --     _, _, minus, rest = string.find(text,"(%-?)%>%>%s+(.*)$")
     --     name = Invoke.hostname
@@ -238,6 +238,7 @@ function Invoke:registerByValueNoRest(key,func)
     end)
 end
 
+---todo: make arguments possibly nil or asserted
 ---@generic T: string
 ---@param key string
 ---@param args {[integer]: T}

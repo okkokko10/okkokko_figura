@@ -148,6 +148,16 @@ Utils.registerIDConstructor("S",function (arg)
 end)
 
 
+require"invoke.Invoke"
+
+Invoke:registerByValue("MemorizedSublevels",function (self, rest, input)
+    if rest == "" then
+        return MemorizedSublevels.followers
+    else
+        return MemorizedSublevels.followers[rest]
+    end
+end)
+
 
 return MemorizedSublevels
 

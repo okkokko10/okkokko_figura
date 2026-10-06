@@ -92,7 +92,7 @@ end)
 
 
 ---deprecated
-Invoke:registerOld("init", function (self, value, rest)
+Invoke:registerOld("initold", function (self, value, rest)
     if rest == "" then
         rest = self:materializeBranch(value.key)
         value = value.value
@@ -104,10 +104,21 @@ Invoke:registerOld("init", function (self, value, rest)
     self:setVariable(rest,out)
     return out
 end)
-:addDoc{
+
+
+Invoke:registerByValue("init", function (self, rest, input)
+    error("todo: this is compiled only")
+end)
+:compilation(function (self, rest)
+    --- todo: this is written in invoke code. add explicit support for that.
+    local name, func = string.match(rest,"^([_%w]*):(.*)$")
+    local r = name or rest
+    return self:compileCall(("Od(var.%s) [set.%s] var.%s"):format(r,rest,r))
+
+    
+end):addDoc{
     text = "like `set`, but only runs if the variable didn't exist beforehand."
 }
-
 
 --- return the value. 
 
@@ -165,3 +176,9 @@ Invoke:registerByValue("run", function (self, rest, input)
     return self:callCompile(func,input)
 end)
 
+
+--- todo: adds a key to a special set and AlwaysActive runs all functions with names in that set.
+-- Invoke:registerByValue("addAlwAct", function (self, rest, input)
+
+--     return self:callCompile("args(assign)[init.%s][rest]")
+-- end)

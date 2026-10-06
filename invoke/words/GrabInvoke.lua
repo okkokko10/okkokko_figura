@@ -39,6 +39,9 @@ Invoke:registerWithArgs("affixM",{"part","parents"}, function (self, rest, input
     if not input.part then return end
     
     local parents = Utils.table.map(input.parents,function (b, index)
+        if type(b) == "ModelPart" then
+            return b
+        end
         if not b:isLoaded() then
             error("entity not loaded")
             

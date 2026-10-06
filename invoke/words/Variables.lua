@@ -143,6 +143,12 @@ Invoke:registerByValueNoRest("UtilsID", function (self, input)
     return Utils.ID.from(input)
 end)
 
+
+Invoke:registerByValueNoRest("getID", function (self, input)
+    return Utils.ID.get(input)
+end)
+
+
 ---@type {[any] :function}
 Invoke.compiledfuncs = {}
 

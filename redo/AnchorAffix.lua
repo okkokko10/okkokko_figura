@@ -24,7 +24,12 @@ function AnchorAffix.direct.part_alter(partID,parentID,matrix,pos,rot)
     if not part then
         return host:isHost() and log("no such part: " .. partID)
     end
-    local parent = parentID and Utils.ID.from(parentID)
+    local parent
+    if type(parentID) == "ModelPart" then
+        parent = parentID
+    else
+        parent = parentID and Utils.ID.from(parentID)
+    end
     if parent then
         if parent:isChildOf(part) or parent == part then
             if host:isHost() then
@@ -67,8 +72,13 @@ function AnchorAffix.direct.part_setParents(partID,matrix,parentIDs)
     end
     AnchorAffix.parentlists[part] = setmetatable({},{__mode="v"})
     for index, parentID in ipairs(parentIDs) do
+        local parent
+        if type(parentID) == "ModelPart" then
+           parent = parentID
+        else
+            parent = parentID and Utils.ID.from(parentID)
+        end
         
-        local parent = parentID and Utils.ID.from(parentID)
         if parent then
             if parent:isChildOf(part) or parent == part then
                 if host:isHost() then

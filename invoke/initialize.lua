@@ -14,7 +14,23 @@ Text:newLine';invoke okkokko {gsub ={ p="%-%>", r="]["}}'
 
 Text:newLine'>>>[text.initialization started] log'
 
-Text:newLine'>>>fun.entity_status_small: formats.${[call?getHealth] S}/${[call?getMaxHealth] S}HP'
+--- maps 0..1 to red..green
+Text:newLine'>>>fun.safecolor:[args(lerp)[fromHex.RED][fromHex.GREEN][]] rgb'
+
+Text:newLine'>>>fun.safecolorOf:[args(div)[get.1][get.2]] run.safecolor'
+Text:newLine'>>>fun.safecolorOfComp:[args(div)[get.1][get.2]][complement] run.safecolor'
+
+Text:newLine'>>>fun.item_status_small: [method.getNbt]'
+'I(get.Age) I(get.Lifespan)'
+'[Array{text=[formats.${[get.Age] S}/${[get.Lifespan] S} age] color=[args(run.safecolorOfComp)[get.Age][get.Lifespan]]}] J '
+
+Text:newLine'>>>fun.item_age: [method.getNbt]'
+'I(get.Age) I(get.Lifespan)'
+'formats.${[args(fdiv)[args(minus)[get.Lifespan][get.Age]][const 20]] S}s'
+
+Text:newLine'>>>fun.entity_status_hp: formats.${[call?getHealth] S}/${[call?getMaxHealth] S}HP'
+
+Text:newLine'>>>fun.entity_status_small:ite(args(equal)[call?getType][text.minecraft:item]){run.item_age} run.entity_status_hp'
 
 
 Text:newLine'>>>fun.lentc: ite([args[var!SelectedRow][var!key] -> equal]){text.#000000} O(get.v) entitycolor'

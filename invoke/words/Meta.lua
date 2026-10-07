@@ -129,3 +129,8 @@ Invoke:registerByValue("type",function (self, rest, input)
     end
     return Utils.table.deepType(input)
 end)
+
+
+Invoke:registerByValue("private",function (self, rest, input)
+    return self.plr == client.getCameraEntity()
+end)

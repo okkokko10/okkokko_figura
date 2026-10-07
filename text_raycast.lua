@@ -28,9 +28,15 @@ local function text_raycast(modelPart,text,origin,direction,height)
     local hx,hy = client.getTextDimensions(tx):unpack()
 
     local rect = Rect(vec(0,-hy,0),vec(hx,0,1))
-    if true then
-        rect = rect + vec(-hx/2,0,0)
-    end
+
+    local offset = ({CENTER=vec(-hx/2,0,0),RIGHT=vec(0,0,0),LEFT=vec(-hx,0,0)})[text:getAlignment()]
+
+    -- if text:getAlignment() ~= "LEFT" then
+    --     rect = rect + vec(-hx/2,0,0)
+    -- end
+    rect = rect + offset
+
+
 
     local hi = Hitbox:create(cm,rect)
 

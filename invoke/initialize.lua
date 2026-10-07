@@ -38,14 +38,16 @@ Text:newLine
 '>>>fun.display_entity_list_two:'
 '['
     'formats['
+    '"",'
     '${O(var.ent)[run.display_entity_list_f]}'
     ',"${Nl}",'
     '"${run.second_disp}",'
-    '"\ndebug: type: ${O(var.slg) type}",'
-    '"\n${O(var.slg) [I(Lo) O(method.getNbt) run.arrayDisp] }"'
+    '"\n",'
+    '${[O(var.slg) I(Lo) O(method.getNbt) [run.arrayDisp] J ] D text""}'
     '] '
 ']'
-'say'
+'say.left'
+-- todo: a string formatter that automatically does this.
 
 
 
@@ -83,10 +85,20 @@ Text:newLine''
 -- Text:newLine'>>>fun.trackMatching'
 
 Text:newLine
-'>>>fun.EntityDisplayData:'
-'run.entity_status'
+'>>>fun.EntityDisplayData:' 
+--'log'
+-- 'run.entity_status'
+'f["",${I(Lo) O(method.getNbt) [run.arrayDisp] J}]'
 
-Text:newLine'>>>fun.DisplayDataEntities:'
+Text:newLine'>>>fun.DisplayDataEntities:[Entities] M '
+'['
+    'args(display)'
+        '['
+            '[Track.eyes] child.BILLBOARD '
+        ']'
+        '[run.EntityDisplayData]'
+']' 
+'method.setPos -16, 0, 0'
 
 
 

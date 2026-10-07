@@ -218,6 +218,31 @@ function Utils.ID.set(self,id)
    return self
 end
 
+--- removes the object from the ID database.
+---@generic S
+---@param x S|ID<S>
+---@return boolean? existed_beforehand -- you could assert this to debug
+function Utils.ID.clear(x)
+  local id = Utils._ids[x]
+  if id then
+    Utils._idInv[id] = nil
+    Utils._ids[x] = nil
+    return true
+  else
+    local sl = Utils._idInv[x]
+    if sl then
+      Utils._idInv[x] = nil
+      Utils._ids[sl] = nil
+      return true
+    else
+      return
+      -- error( "trying to clear nonexistent id: " .. type(self) .. " " .. tostring(self))
+    end
+
+  end
+end
+
+
 ---@generic S
 ---@param id ID<S>
 ---@param checkType? Type<S>

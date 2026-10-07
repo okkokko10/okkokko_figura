@@ -17,9 +17,15 @@
 Positioning = {}
 
 
+---@package
+Utils.table._kmode = {__mode='k'}
+
+function Utils.table.kmode()
+    return setmetatable({},Utils.table._kmode)
+end
 
 ---@package
-Positioning._isActive = {}
+Positioning._isActive = Utils.table.kmode()
 
 ---returns true if during the last render this part successfully adjusted itself.
 ---returns false if it failed
@@ -38,6 +44,25 @@ function Positioning.isManaged(part)
 end
 
 
+---@package
+Positioning._ephemeral = Utils.table.kmode()
+
+---when this part is inactive, it is removed
+---@param part ModelPart?
+function Positioning.setEphemeral(part)
+    if part then
+        Positioning._ephemeral[part] = true
+        return part
+    end
+end
+
+function Positioning.ephemeral_remove(part)
+    if Positioning._ephemeral[part] then
+        Positioning._ephemeral[part] = nil
+        Utils.ID.clear(part)
+        part:remove()
+    end
+end
 
 ---@package
 ---@param part ModelPart
@@ -45,6 +70,9 @@ end
 ---@return nil
 function Positioning.setActive(part,status)
     Positioning._isActive[part] = status
+    if not status then
+        Positioning.ephemeral_remove(part)
+    end
 end
 
 
@@ -327,7 +355,7 @@ end)
 function Positioning.constructID(input,extra)
     local id
     if Utils.entity.isEntity(input) then
-        if extra == "eyes" then
+        if string.find(extra,"eyes",nil,true) then
             id = "!ple:".. input:getUUID()
         else
             id = "!pl:".. input:getUUID()

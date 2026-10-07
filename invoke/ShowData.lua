@@ -163,6 +163,7 @@ local w = Invoke:registerWithArgsNoRest("display",{"on","text"},function  (self,
         :setWidth(PS*4*16)
         :setScale(1/4)
         :setOpacity(0.75)
+    return txt
 
 end)
 w:addDoc{

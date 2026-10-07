@@ -12,6 +12,6 @@ Invoke:registerByValue("load", function (self, rest, input)
 end)
 
 
-Invoke:registerByValue("private", function (self, rest, input)
+Invoke:registerByValue("privateHost", function (self, rest, input)
     return self.plr == client:getViewer()
 end)

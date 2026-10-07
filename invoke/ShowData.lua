@@ -7,7 +7,7 @@ Invoke.infos = {}
 Invoke.infos_inverse = setmetatable({},{__mode="k"})
 
 
-
+--- unused.
 function Invoke:createInfo(pos,text,plr,ephemeral)
     local str = tostring(pos)
     local lis = self.infos
@@ -149,12 +149,15 @@ function Utils.table.getKeys(tbl)
 end
 
 
-local w = Invoke:registerWithArgsNoRest("display",{"text","on"},function  (self, input)
-    local w = (input["text"])
+local w = Invoke:registerWithArgsNoRest("display",{"on","text"},function  (self, input)
     local o = (input["on"])
+    local w = (input["text"])
+    assert(type(o) == "ModelPart")
     if not o then return end
-    o
-    :newText("text")
+
+    local txt = o:getTask("text") or o:newText("text")
+
+    txt
     :setText(tostring(w)):setSeeThrough(true)
         :setLight(15,15)
         :setWidth(PS*4*16)
@@ -164,10 +167,10 @@ local w = Invoke:registerWithArgsNoRest("display",{"text","on"},function  (self,
 end)
 w:addDoc{
     text = "adds a TextTask to target with text",
-    value = "{text=<text>, on=<target>}",
+    value = "{ on=<target>, text=<text>}",
     types = {
-        text = "string",
-        on = "ModelPart"
+        on = "ModelPart",
+        text = "string"
     },
     alts = {
         on = {"target"}

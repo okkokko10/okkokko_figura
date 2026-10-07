@@ -240,3 +240,7 @@ function Ccom.playerSwap(partID)
 
 
 end
+
+function Ccom.attribute_range(r)
+    Ccom.sendChatCommand(("attribute @s minecraft:player.block_interaction_range modifier add range %d add_value"):format(r or 100))
+end

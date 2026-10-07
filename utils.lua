@@ -332,6 +332,10 @@ end
 
 Utils.entity = {}
 
+--- todo: replace instances of .isLoaded with this
+function Utils.entity.isEntity(obj)
+  return (obj.isLoaded) and obj
+end
 
 Utils.table = {}
 

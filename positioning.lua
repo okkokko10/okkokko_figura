@@ -292,10 +292,16 @@ Utils.ID.field.pl = (models:newPart("player root","World"))
 
 
 
-function Positioning.make.playerNameFollower(name)
-    return Positioning.make.entityFollower(name,"PlayerFollower_"..name):moveTo(Utils.ID.field.pl)
+function Positioning.make.playerNameFollower(name,...)
+    return Positioning.make.entityFollower(name,"PlayerFollower_"..name,...):moveTo(Utils.ID.field.pl)
 end
 Utils.registerIDConstructor("pl",Positioning.make.playerNameFollower)
+
+function Positioning.make.playerNameFollowerEyes(name)
+    return Positioning.make.playerNameFollower(name,"eyes")
+end
+Utils.registerIDConstructor("ple",Positioning.make.playerNameFollowerEyes)
+
 
 GrabAttributes.c.unselectable = true
 Utils.ID.field.c = (models:newPart("player root","World"))
@@ -311,3 +317,29 @@ Utils.registerIDConstructor("c",function (arg)
 
 
 end)
+
+
+---returns a ID'd ModelPart tracking the input
+---@param input any
+---@param extra any?
+---@return ModelPart?
+---@return string?
+function Positioning.constructID(input,extra)
+    local id
+    if Utils.entity.isEntity(input) then
+        if extra == "eyes" then
+            id = "!ple:".. input:getUUID()
+        else
+            id = "!pl:".. input:getUUID()
+        end
+    end
+    if type(input) == "Vector3" then
+        id = "!c:".. Utils.vectorString(input)
+    end
+    if not id then
+        error("unimplemented: " .. type(input))
+    end
+    return Utils.ID.from(id),id
+
+
+end

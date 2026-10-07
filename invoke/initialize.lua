@@ -14,16 +14,18 @@ Text:newLine';invoke okkokko {gsub ={ p="%-%>", r="]["}}'
 
 Text:newLine'>>>[text.initialization started] log'
 
+Text:newLine'>>>fun.entity_status_small: formats.${[call?getHealth] S}/${[call?getMaxHealth] S}HP'
+
 
 Text:newLine'>>>fun.lentc: ite([args[var!SelectedRow][var!key] -> equal]){text.#000000} O(get.v) entitycolor'
 -- Text:newLine'>>>fun.lentt: formats.${get.p} ${[O(get.v) S]} ${[]} | ${Nl}'
-Text:newLine'>>>fun.lentt: formats.${get.p} (${get.c})${Nl}'
+Text:newLine'>>>fun.lentt: formats.${get.p} (${get.c}) ${O(get.v) run.entity_status_small} ${Nl}'
 
 
 Text:newLine'>>>fun.display_entity_list_f: [M[Array{text=[run.lentt] color=[run.lentc]}] ]J'
 Text:newLine'>>>fun.display_entity_list:O(var.ent)[run.display_entity_list_f][say]'
 
-Text:newLine'>>>fun.arrayDisp: [keyvalue] [  M Array[get.k][text : ] [ [get.v] J ][Nl]  ]'
+Text:newLine'>>>fun.arrayDisp: [keyvalue]   M Array[get.k][text : ][ [get.v] J ][Nl]  '
 
 
 
@@ -32,7 +34,18 @@ Text:newLine'>>>fun.entin: I(Lo) formats.${method.getName}\n${[run.gitems][M [me
 Text:newLine'>>>fun.second_disp:O(var.slg)[run.entin] S'
 
 
-Text:newLine'>>>fun.display_entity_list_two:[formats[${O(var.ent)[run.display_entity_list_f]},"${Nl}","${run.second_disp}","\n${[I(Lo) O(method.getNbt) run.arrayDisp]}"] ] say'
+Text:newLine
+'>>>fun.display_entity_list_two:'
+'['
+    'formats['
+    '${O(var.ent)[run.display_entity_list_f]}'
+    ',"${Nl}",'
+    '"${run.second_disp}",'
+    '"\ndebug: type: ${O(var.slg) type}",'
+    '"\n${O(var.slg) [I(Lo) O(method.getNbt) run.arrayDisp] }"'
+    '] '
+']'
+'say'
 
 
 
@@ -54,10 +67,10 @@ Text:newLine'>>>fun.U_update_ent_constantly: [E run.init_ent] [E run.U_update_en
 
 Text:newLine'>>>fun.blockDataDisplay: O(method.getEntityData) O(get.BlockEntityTag) [run.arrayDisp] J'
 
-Text:newLine(
-    '>>>fun.checkedBlockDisplay: O(method.getEntityData) O(get.BlockEntityTag) [E set.checkedBlockTags] [E M [var!key] assign.checkedBlockKeys]'..
-    '[var.checkedBlockKeys] [M Od( args(getkv)[var.checkedBlockTags][var!key] ) False ]'..
-    ' [keyvalue] [  M Array[get.k][text : ] [ [get.v] ite(){J} text ][Nl]  ] J')
+Text:newLine
+'>>>fun.checkedBlockDisplay: O(method.getEntityData) O(get.BlockEntityTag) [E set.checkedBlockTags] [E M [var!key] assign.checkedBlockKeys]'
+'[var.checkedBlockKeys] [M Od( args(getkv)[var.checkedBlockTags][var!key] ) False ]'
+' [keyvalue] [  M Array[get.k][text : ] [ [get.v] ite(){J} text ][Nl]  ] J'
 Text:newLine'>>>fun.checkBlock: [I(on.sneak) [set.checkedBlock:[User]PickBlock]] [D [text] say] set.checkedBlockKeys:Array{}'
 Text:newLine'>>>fun.checkBlockVisF:O(var.checkedBlock) [run.checkedBlockDisplay] say.left'
 
@@ -66,6 +79,14 @@ Text:newLine'>>>fun.checkBlockVis:fun!AlwaysActive:run.checkBlockVisF'
 Text:newLine''
 Text:newLine''
 
+
+-- Text:newLine'>>>fun.trackMatching'
+
+Text:newLine
+'>>>fun.EntityDisplayData:'
+'run.entity_status'
+
+Text:newLine'>>>fun.DisplayDataEntities:'
 
 
 
@@ -91,9 +112,10 @@ Text:newLine''
 -- Text:newLine''
 -- Text:newLine'>>>[text.initialization ended 2] log'
 
+-- Text:newLine
+-- '>>>[text{"text":"","extra":["<",{"text":"","extra":[{"text":"","extra":["okkokko"," ",{"text":"△","hoverEvent":{"contents":{"translate":"figura.badges.system.default"},"action":"show_text"},"font":"figura:badges","obfuscated":false,"color":"#5555FF"}]}],"hoverEvent":{"contents":{"type":"minecraft:player","id":[1341784454,953436005,-1716287089,339402456],"name":"okkokko"},"action":"show_entity"},"insertion":"okkokko","clickEvent":{"action":"suggest_command","value":"/tell okkokko "}},"> ",{"text":"","hoverEvent":{"contents":{"text":":heart:","extra":["\n",{"translate":"figura.emoji.heart","color":"dark_gray"}]},"action":"show_text"},"font":"figura:emoji_heart","color":"white"}]}] [E say] log'
 
-
-
+-- {"text":"","extra":["<",{"text":"","extra":[{"text":"","extra":["okkokko"," ",{"text":"△","hoverEvent":{"contents":{"translate":"figura.badges.system.default"},"action":"show_text"},"font":"figura:badges","obfuscated":false,"color":"#5555FF"}]}],"hoverEvent":{"contents":{"type":"minecraft:player","id":[1341784454,953436005,-1716287089,339402456],"name":"okkokko"},"action":"show_entity"},"insertion":"okkokko","clickEvent":{"action":"suggest_command","value":"/tell okkokko "}},"> ",{"text":"","hoverEvent":{"contents":{"text":":heart:","extra":["\n",{"translate":"figura.emoji.heart","color":"dark_gray"}]},"action":"show_text"},"font":"figura:emoji_heart","color":"white"}]}
 
 
 local initializer_player = {

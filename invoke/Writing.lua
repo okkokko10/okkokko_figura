@@ -208,12 +208,31 @@ function Virtual:setOpen(t)
     self.open = t
 end
 
+
+---@alias RecCurryString fun(x:string):(RecCurryString)
+
+---comment
+---@param tbl table
+---@param key any
+---@param initial string?
+---@return RecCurryString
+function Utils.string.curryable(tbl,key,initial)
+    tbl[key] = initial or ""
+    local function f(cont)
+        tbl[key] = tbl[key].. cont
+        return f
+    end
+    return f
+end
+
 ---adds a line to the end of the first or specified page
 ---@param line string
 ---@param pagei integer?
+---@return RecCurryString
 function Virtual:newLine(line,pagei)
     local pg = self.content[pagei or 1]
-    pg[#pg+1] = line
+    local index = #pg+1
+    return Utils.string.curryable(pg,index,line)
     -- table.insert(self.content[pagei or 1],line)
 end
 

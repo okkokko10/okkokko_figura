@@ -93,3 +93,39 @@ end)
 Invoke:registerByValue("error",function (self, rest,input)
     error("manual error: "..rest ..": "..toJson(input))
 end)
+
+
+---type but adds information about tables. 
+---if a value is a table
+---@param obj any
+function Utils.table.deepType(obj)
+    if type(obj) ~= "table" then
+        return type(obj)
+    end
+    local out = {}
+    local appears = {}
+    for key, value in pairs(obj) do
+        local kt = Utils.table.deepType(key)
+        local vt = Utils.table.deepType(value)
+        local txt
+        if kt == "string" then
+            txt = ("\"%s\" : %s"):format(key,vt)
+        else
+            txt = ("%s : %s"):format(kt,vt)
+        end
+        if not appears[txt] then
+            appears[txt] = #out
+            table.insert(out,txt)
+        end
+    end
+    return ("{%s}"):format(table.concat(out,", "))
+end
+
+
+Invoke:registerByValue("type",function (self, rest, input)
+    local extra = ""
+    if self:isMutable(input) then
+        extra = "Mutable"
+    end
+    return Utils.table.deepType(input)
+end)

@@ -42,12 +42,40 @@ end)
 local function recursives() end
 
 
+
 Invoke:registerByValue("formats",function  (self, rest,input)
     return string.gsub(string.match(rest,"^(.-)%'?$"),"$(%b{})",function (q,...)
         
-        return self:call(string.sub(q,2,-2),input)
+        local out = self:call(string.sub(q,2,-2),input)
+        return ((out ~= nil) or nil) and tostring(out)
     end)
-end)
+end):addAlternateNames("f")
+-- :compilation(function (self, rest)
+
+--     --- formats.a is ${A} b is ${B}
+--     --- compiles to:
+--     --- plan: create array, assign results of each ${} to indices,
+--     --- then use string.gsub
+--     --- 
+
+    
+--     local fns = {}
+--     local i = 0
+--     local flat = string.gsub(string.match(rest,"^(.-)%'?$"),"$(%b{})",function (q,...)
+--         i = i + 1
+
+--         local p = self:compileCall(string.sub(q,2,-2))
+        
+--         fns[i] = p
+
+--         return ("$%d%s"):format(i,q)
+
+--     end)
+    
+
+--     local str = ""
+
+-- end)
 
 Invoke:registerByValue("format",function  (self, rest, input)
 

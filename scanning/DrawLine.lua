@@ -3,6 +3,8 @@
 DrawLine = {}
 
 
+-- -@class DrawLineConfigChar
+
 ---@class DrawLineConfig
 ---@field char string?
 ---@field charHeight number?
@@ -15,6 +17,7 @@ DrawLine = {}
 ---@field name string?
 
 
+--- todo: only lineWidth (and even that rarely) changes unless the character is changed.
     --- goes rightmost in the matrix multiplication. 
     --- transforms the text to occupy the rectangle [0, 1] × [-.5, .5]
     --- from [0,widthChar] × [startY, startY + height]
@@ -37,12 +40,17 @@ local function characterToLineMatrix(widthChar,height,startY,lineWidth,z)
     -- ):transpose()
 end
 
+local nx_pointingMatrix
+
 --- should return a matrix where the first column is v, and is orthogonal
 --- todo: make work
----@param v Vector
----@param o Vector
+---@param v Vector?
+---@param o Vector?
 ---@return Matrix<4>
 local function pointingMatrix(v,o)
+    if not v then
+        return nx_pointingMatrix
+    end
     local toCamera = vec(0,1,0)
     local orthogonalToCam = v:crossed(toCamera)
     if orthogonalToCam:length() == 0 then
@@ -57,6 +65,11 @@ local function pointingMatrix(v,o)
         o:augmented(1)
         )
 end
+---@package
+DrawLine._pointingMatrix = pointingMatrix
+
+--- todo: DrawLine.line that has the matrix for vec(0,0,0)-vec(1,0,0) hardcoded
+nx_pointingMatrix = pointingMatrix(vec(-1,0,0),vec(0,0,0))
 
 
 function DrawLine.line_texts(part,config)
@@ -120,14 +133,23 @@ function DrawLine.line(part,from,to,config)
     ---     add thickness to lines with cross. 
     
     
-    local text = toJson{text = config.char or ".", color = config.color}
+    local text = config.char or "."
+    if config.color then
+        text = toJson{text = text, color = config.color}
+        
+    end
     local nm = tostring(from)..tostring(to) .. math.random()
 
     local function wf(id)
-        return part:newText(nm..id):setSeeThrough(config.seeThrough)
+        local t = part:newText(nm..id):setSeeThrough(config.seeThrough)
             :setText(text)
             :setAlignment("LEFT")
-            :setOpacity(config.opacity or 1)
+        if config.opacity then
+            t:setOpacity(config.opacity)
+        end
+        
+        return t
+
         
     end
 
@@ -219,6 +241,8 @@ function Positioning.make.lineTo(parent,target,name)
             :setPreRender(Positioning.functions.lineTo(target))
 end
 
+
+
 ---returns a new child that draws a line to target. safe to move to another parent. Should be safe to duplicate.
 ---@param part ModelPart
 ---@param target ModelPart
@@ -226,7 +250,7 @@ end
 function DrawLine.lineBetween(part,target,config)
 
     local p = Positioning.make.lineTo(part,target,config and config.name)
-    DrawLine.line(p,vec3(),vec(1,0.01,-0.02),config)
+    DrawLine.line(p,vec3(),vec(1,0.0,0.0),config)
     return p
 end
 

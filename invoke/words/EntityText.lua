@@ -9,6 +9,13 @@ Invoke:registerByValue("Track",function (self, rest, input)
 
 end)
 
+Invoke:registerNative("isType",function (rest)
+    -- log("isType native",rest)
+    -- error()
+    return ("args(equal)[method?getType][text.%s]"):format(rest)
+end)
+
+
 Invoke:registerByValue("child",function (self, rest, input)
     assert(type(input) == "ModelPart")
     return input[rest] or input:newPart(rest,rest)

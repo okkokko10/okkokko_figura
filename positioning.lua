@@ -283,6 +283,40 @@ Positioning.parts = {
     World = models:newPart("World","World"),
 }
 
+Utils.conversion = {}
+--- a ptwm that hasn't been updated yet.
+Utils.conversion.uninitializedPtwm = models.World:partToWorldMatrix()
+
+--- returns nil if the ptwm is the same as an uninitialized one. 
+--- warning: this will return nil for models.World
+---@param part ModelPart
+---@return Matrix?
+function Utils.conversion.initializedPtwm(part)
+    local ptwm = part:partToWorldMatrix()
+    if ptwm == Utils.conversion.uninitializedPtwm then
+        -- if part:getParentType() == "World" then
+        --     return Utils.conversion.uninitializedPtwm * part:getPositionMatrix()
+        -- end
+        return nil
+    end
+    return ptwm
+end
+
+--- equal to matrices.scale4(16)
+Utils.conversion.worldToVoxelMatrix = models.World:partToWorldMatrix():inverted()
+if host:isHost() then Utils.assert.equals(Utils.conversion.worldToVoxelMatrix,matrices.scale4(16)) end
+
+--- after calling
+--- `p:setParentType("World"):setMatrix(Utils.conversion.ptwmToWorldPartMatrix(ptwm))`
+--- `p:partToWorldMatrix() == ptwm` once it updates.
+function Utils.conversion.ptwmToWorldPartMatrix(ptwm)
+    return Utils.conversion.worldToVoxelMatrix * ptwm
+end
+--- is just vector*16
+function Utils.conversion.posToWorldPart(vector)
+    return Utils.conversion.worldToVoxelMatrix:apply(vector)
+end
+
 Utils.ID.field.FollowMe = (models:newPart("player root","World"))
 
 Positioning.parts.PlayerFollowerEyes = Positioning.make.entityFollower(require"playerValues","PlayerFollowerEyes","eyes"):moveTo(Utils.ID.field.FollowMe)

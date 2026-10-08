@@ -245,6 +245,25 @@ end
 ---@param func fun(self:Invoke,rest:string,input:{[T|string]:unknown}):...?
 ---@return FunctionDoc
 function Invoke:registerWithArgs(key,args,func)
+
+    local asserts = {}
+    --- removes ? and ! so they don't change the param value.
+    local args = Utils.table.map(args,function (b, index)
+        local asse = false
+        local a = string.gsub(b,"[%?%!]",function (t)
+            -- log(args,b,t)
+            if t == "!" then
+                asse = true
+            end
+            return ""
+        end)
+        if asse then
+            asserts[a] = true
+        end
+        return a
+    end)
+
+
     return self:register(key,function (self, value, rest)
         -- log(key,args, value,value.Literal)
         if self:isArgs(value and value.Literal) then
@@ -252,6 +271,9 @@ function Invoke:registerWithArgs(key,args,func)
             for index, v in pairs(value.Literal) do
                 rg[args[index] or index] = v
             end -- copies value.Literal as well as changes numbers to names.
+            for key, value in pairs(asserts) do
+                assert(rg[key],key .. " not found")
+            end
             return func(self,rest,rg)
         end
         local l = {}
@@ -592,7 +614,35 @@ function function_metatable:compilation(func)
     return self
 end
 
+--- makes the compilation just the native code.
+---@param func fun(rest:string,self:Invoke):string
+---@return FunctionDoc
+function function_metatable:native(func)
+    self:compilation(function (self,rest)
+        return self:compileCall(func(rest,self))
+        
+    end)
+    return self
+end
 
-
+-- defers to :compilation
+---@param key string
+---@return FunctionDoc
+function Invoke:registerCompilation(key)
+    return self:registerByValue(key,function (self, rest, input)
+        error("not compile called")
+        return self:callCompile(key.."."..rest,input)
+    end)
+end
+-- 
+---@param key string 
+---@param func fun(rest:string,self:Invoke):string
+---@return FunctionDoc
+function Invoke:registerNative(key,func)
+    return self:registerByValue(key,function (self, rest, input)
+        -- log("not compile called",rest)
+        return self:callCompile(func(rest,self),input)
+    end):native(func)
+end
 
 return Invoke

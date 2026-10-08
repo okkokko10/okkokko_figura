@@ -12,7 +12,7 @@ Text:newLine'invoke okkokko {gsub={p="^%s*>>>(.*)",r="invokeX okkokko %1"}}'
 -- Text:newLine';>> gsub ={ p="<[|:](.*)$", r="={ %1 }",rec=true}'
 Text:newLine';invoke okkokko {gsub ={ p="%-%>", r="]["}}'
 
-Text:newLine'>>>[text.initialization started] log'
+-- Text:newLine'>>>[text.initialization started] log'
 
 --- maps 0..1 to red..green
 Text:newLine'>>>fun.safecolor:[args(lerp)[fromHex.RED][fromHex.GREEN][]] rgb'
@@ -106,7 +106,9 @@ Text:newLine
 -- 'run.entity_status'
 'f["",${I(Lo) O(method.getNbt) [run.arrayDisp] J}]'
 
-Text:newLine'>>>fun.DisplayDataEntities:[Entities] M '
+
+
+Text:newLine'>>>fun.DisplayDataEntity:'
 '['
     'args(display)'
         '['
@@ -116,9 +118,27 @@ Text:newLine'>>>fun.DisplayDataEntities:[Entities] M '
 ']' 
 'method.setPos -16, 0, 0'
 
+Text:newLine'>>>fun.DisplayDataEntities:[Entities] M run.DisplayDataEntity'
 
 
-Text:newLine'>>>[text.initialization ended 1] log'
+Text:newLine'>>>fun.TrailEntities:'
+'['
+    '[Entities] M args(Trail)[Track][method.getPos]'
+']' 
+Text:newLine'>>>fun.TrailArrows:'
+'[E ite(var.flipTrArCol){[nil] set.flipTrArCol} [text#FF8800] set.flipTrArCol]'
+'['
+    '[Entities] M I(args(equal)[method.getType][text.minecraft:arrow])' 
+        'args(Trail)[Track][method.getPos][var.flipTrArCol][O(method.getNbt) [get.Motion] vec]'
+']' 
+
+Text:newLine'>>>fun.ClearTrailEntities:'
+'['
+    '[Entities] M args(Trail.clear)[Track]'
+']' 
+
+
+Text:newLine'>>>[text.initialization ended] log'
 Text:newLine''
 Text:newLine''
 Text:newLine''

@@ -64,13 +64,14 @@ function Invoke:compileCall(word)
 
 end
 
+Invoke.VERBOSE_COMPILE = true
 
 function Invoke:callCompileFunc(word)
     local compiled = self:compileCall(word)
     local s = ("local input,call = ...; %s; return input"):format(compiled)
     -- log("callCompile",s)
-    local verbose = false
-    local f,p = load(s,word .. (verbose and ("\n|||compiles to|||\n"..s) or ""),"t",{})
+    
+    local f,p = load(s,word .. (Invoke.VERBOSE_COMPILE and ("\n|||compiles to|||\n"..s) or ""),"t",{})
     if not f then
         error(p)
     end

@@ -578,5 +578,31 @@ function Utils.math.matrix3Abs(matrix)
 end
 
 
+Utils.assert = {}
+
+---
+---@generic T
+---@param a? T
+---@param b? T
+---@param message? any
+---@return T
+function Utils.assert.equals(a,b,message)
+  if a~= b then
+    error(("%s: (%s) %s == (%s) %s"):format(tostring(message or "equals assertion failed"),type(a),tostring(a),type(b),tostring(b)))
+  end
+  return a
+end
+
+Utils.parts = {}
+
+---comment
+---@param parent ModelPart
+---@param name string
+---@param parentType string?
+---@return ModelPart
+function Utils.parts.child(parent,name,parentType)
+  return parent[name] or parent:newPart(name,parentType)
+end
+
 
 return Utils

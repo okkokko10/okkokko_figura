@@ -210,6 +210,15 @@ function Positioning.functions._worldRotation(delta, ctx, part)
     Positioning.setActive(part,true)
 end
 
+---@type PreRenderFunction
+function Positioning.functions._worldOrigin(delta, ctx, part)
+    local ptwm = part:getParent():partToWorldMatrix()
+    local rot = ptwm:inverted() * Utils.conversion.uninitializedPtwm
+    part:setMatrix(rot)
+    -- log(delta,ctx,part,ptwm,rot)
+    Positioning.setActive(part,true)
+end
+
 --- makes it so part:partToWorldMatrix() has identity rotation (up to floating point error) and is positioned at the parent.
 ---@return PreRenderFunction
 function Positioning.functions.worldRotation()
@@ -249,6 +258,7 @@ function Positioning.functions.coordinate(pos)
         end
     end
 end
+
 
 
 Positioning.make = {}
@@ -344,7 +354,10 @@ function Positioning.make.absoluteRot(name,parent)
     return (parent or models):newPart(name)
         :setPreRender( Positioning.functions.worldRotation() )
 end
-
+function Positioning.make.absoluteOrigin(name,parent)
+    return (parent or models):newPart(name)
+        :setPreRender( Positioning.functions._worldOrigin )
+end
 
 --- todo: these should be unselectable in the grab UI
 
@@ -404,4 +417,15 @@ function Positioning.constructID(input,extra)
     return Utils.ID.from(id),id
 
 
+end
+
+
+
+---returns the same each time.
+---@param parent ModelPart
+---@param name string?
+---@return ModelPart
+function Positioning.make.WorldChild(parent,name)
+    name = name or "WChild"
+    return parent[name] or Positioning.make.absoluteOrigin(name,parent)
 end

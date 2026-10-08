@@ -605,4 +605,88 @@ function Utils.parts.child(parent,name,parentType)
 end
 
 
+Utils.tick = {}
+
+
+---todo
+
+Utils.tick.tick_counter = 0
+Utils.tick.frame_counter = 0
+--- what objects have seen this tick already
+---@package 
+Utils.tick.seen = {}
+
+Utils.tick.garbage_collectors = {}
+
+---@package
+function Utils.tick.advance_tick()
+  Utils.tick.do_gc()
+  Utils.tick.tick_counter = Utils.tick.tick_counter + 1
+  Utils.tick.frame_counter = 0
+  Utils.tick.seen = {}
+end
+function Utils.tick.advance_frame()
+  Utils.tick.frame_counter = Utils.tick.frame_counter + 1
+end
+
+events.WORLD_TICK:register(Utils.tick.advance_tick)
+events.WORLD_RENDER:register(Utils.tick.advance_frame)
+
+function Utils.tick.frame()
+  return Utils.tick.frame_counter
+end
+
+function Utils.tick.tick()
+  return Utils.tick.tick_counter
+end
+
+function Utils.tick.first_frame()
+  return Utils.tick.frame_counter == 1
+end
+
+function Utils.tick.first_frame_for(obj)
+  local y = Utils.tick.seen[obj]
+  Utils.tick.seen[obj] = true
+  return not y
+end
+
+---@generic T
+---@param obj T
+---@param func fun(t:T):boolean?
+function Utils.tick.register_gc(obj,func)
+  Utils.tick.garbage_collectors[obj] = func
+end
+function Utils.tick.do_gc()
+  for key, value in pairs(Utils.tick.garbage_collectors) do
+    if (not Utils.tick.seen[key]) and not value(key) then
+      Utils.tick.garbage_collectors[key] = nil
+    end
+  end
+end
+
+
+function Utils.tick.test_order()
+
+  local evts = {"TICK",
+  "WORLD_TICK",
+  "RENDER",
+  "POST_RENDER",
+  "WORLD_RENDER",
+  "POST_WORLD_RENDER"}
+  
+  for index, value in ipairs(evts) do
+    events[value]:register(function (...)
+      log(Utils.tick.tick(),Utils.tick.frame(),value,...)
+    end)
+  end
+
+
+end
+
+-- Utils.tick.test_order()
+
+-- todo: a callback when a value hasn't been seen in a frame
+
+
+
 return Utils

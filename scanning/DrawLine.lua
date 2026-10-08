@@ -41,6 +41,7 @@ local function characterToLineMatrix(widthChar,height,startY,lineWidth,z)
 end
 
 local nx_pointingMatrix
+local x_pointingMatrix
 
 --- should return a matrix where the first column is v, and is orthogonal
 --- todo: make work
@@ -49,7 +50,7 @@ local nx_pointingMatrix
 ---@return Matrix<4>
 local function pointingMatrix(v,o)
     if not v then
-        return nx_pointingMatrix
+        return x_pointingMatrix
     end
     local toCamera = vec(0,1,0)
     local orthogonalToCam = v:crossed(toCamera)
@@ -60,8 +61,8 @@ local function pointingMatrix(v,o)
 
     return matrices.mat4(
         v:augmented(0),
-        orthogonalToCam:normalize():augmented(0),
         toCamera:augmented(0),
+        orthogonalToCam:normalize():augmented(0),
         o:augmented(1)
         )
 end
@@ -70,6 +71,8 @@ DrawLine._pointingMatrix = pointingMatrix
 
 --- todo: DrawLine.line that has the matrix for vec(0,0,0)-vec(1,0,0) hardcoded
 nx_pointingMatrix = pointingMatrix(vec(-1,0,0),vec(0,0,0))
+x_pointingMatrix = pointingMatrix(vec(1,0,0),vec(0,0,0))
+local change_pointingMatrix = x_pointingMatrix:inverted() * nx_pointingMatrix
 
 
 function DrawLine.line_texts(part,config)
@@ -119,9 +122,17 @@ end
 function DrawLine.line(part,from,to,config)
     config = config or {}
     
-    local mat = pointingMatrix(from-to,from)
+    local mat = pointingMatrix(from and (to-from),from)
+    -- local mat = pointingMatrix(from and (from-to),from) --* change_pointingMatrix
     -- part:setMatrix(mat)
+    local nm = tostring(from)..tostring(to) .. math.random()
     
+    if type(config) == "ModelPart" then
+        local p = config:copy(nm)
+        part:addChild(p)
+        p:setMatrix(mat) -- todo: fix pointingMatrix signs 
+        return p, {}, {}
+    end
 
     -- local rep = config.rep or 5
     local startY = 6 or config.charStartY
@@ -138,7 +149,6 @@ function DrawLine.line(part,from,to,config)
         text = toJson{text = text, color = config.color}
         
     end
-    local nm = tostring(from)..tostring(to) .. math.random()
 
     local function wf(id)
         local t = part:newText(nm..id):setSeeThrough(config.seeThrough)
@@ -166,11 +176,12 @@ function DrawLine.line(part,from,to,config)
         wf("debug"):setMatrix(characterToLine1) -- debugging
     end
 
+    local mat2 = mat*change_pointingMatrix
     
-    return part, {wf("a"):setMatrix(mat*characterToLine1),
-        wf("b"):setMatrix(mat*characterToLine2),
-        wf("c"):setMatrix(mat*characterToLine3),
-        wf("d"):setMatrix(mat*characterToLine4)}, {characterToLine1,characterToLine2,characterToLine3,characterToLine4}
+    return part, {wf("a"):setMatrix(mat2*characterToLine1),
+        wf("b"):setMatrix(mat2*characterToLine2),
+        wf("c"):setMatrix(mat2*characterToLine3),
+        wf("d"):setMatrix(mat2*characterToLine4)}, {characterToLine1,characterToLine2,characterToLine3,characterToLine4}
     
 end
 

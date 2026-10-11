@@ -120,6 +120,7 @@ Invoke:registerByValue("match",function  (self, rest, input)
     return string.match(input,rest)
 end)
 
+---@class Denominations
 local prices = {
     spur = 1,
     bevel = 8,
@@ -128,6 +129,7 @@ local prices = {
     crown = 512,
     sun = 4096
 }
+
 local currency =
     {"spur",
     "bevel",
@@ -144,41 +146,112 @@ local currencysymbols = {
     sun = ""
 }
 
+local currency_upper =
+    {"SPUR",
+    "BEVEL",
+    "SPROCKET",
+    "COG",
+    "CROWN",
+    "SUN"
+}
+
 
  
     
     
+Utils.currency = {}
 
-Invoke:registerByValue("pricestring",function  (self, rest, input)
+---lists coins with their symbols
+---@param denominations Denominations
+---@return string
+function Utils.currency.pricestring(denominations)
     local out = ""
     for key, value in ipairs(currency) do
-        if input[value] and input[value]~= 0 then
-            out = out .. tostring(input[value]) .. currencysymbols[value]
+        if denominations[value] and denominations[value]~= 0 then
+            out = out .. tostring(denominations[value]) .. currencysymbols[value]
         end
     end
     return out
+end
+--- for denominations where the keys are UPPERCASE
+---@param denominations Denominations
+---@return string
+function Utils.currency.pricestring_upper(denominations)
+    local out = ""
+    for key, value in ipairs(currency) do
+        local v = currency_upper[key]
+        local d = denominations[v]
+        if d and d ~= 0 then
+            out = out .. tostring(d) .. currencysymbols[value]
+        end
+    end
+    return out
+end
+
+
+---sum a with weights in b
+---@generic K,V
+---@param a {[K]:V}
+---@param b {[K]:V}
+---@return V
+function Utils.table.dotProduct(a,b)
+    local out = 0
+    for key, value in pairs(a) do
+        if b[key] then
+            out = out + value * b[key]
+        end
+    end
+    return out
+end
+
+---comment
+---@param denominations Denominations
+function Utils.currency.price(denominations)
+    return Utils.table.dotProduct(denominations,prices)
+end
+
+---reads
+---@param t {id:string,count:number}?
+---@return number
+---@return string?
+function Utils.currency.fromItemJson(t)
+    error("unimplemented")
+
+end
+
+---reads
+---@return number
+---@return string?
+function Utils.currency.fromItemCount(item_id,count)
+    error("unimplemented")
+end
+
+Invoke:registerByValue("pricestring",function  (self, rest, input)
+    return Utils.currency.pricestring(input)
 end)
 Invoke:registerByValue("price",function  (self, rest, input)
-    local out = 0
-    for key, value in pairs(input) do
-        if prices[key] then
-            out = out + value * prices[key]
-        end
-    end
-    return out
+    return Utils.currency.price(input)
 end)
 
-Invoke:registerByValue("stacks",function  (self, rest, input)
-    if rest == "" then
-        rest = "%s:%s"
+---formats an amount of things in mixed base 64.
+---@param amount number
+---@param formater string?
+---@return string
+function Utils.string.stacks(amount,formater)
+    if not formater then
+        formater = "%s:%s"
     end
-    local d = math.floor(input/64)
-    local r = math.fmod(input,64)
+    local d = math.floor(amount/64)
+    local r = math.fmod(amount,64)
     if d == 0 then
         return tostring(r)
     end
 
-    return string.format(rest,d,r)
+    return string.format(formater,d,r)
+end
+
+Invoke:registerByValue("stacks",function  (self, rest, input)
+    return Utils.string.stacks(input,(rest~="") and rest or nil)
 end)
 
 
@@ -211,3 +284,7 @@ Invoke:registerByValue("clipboard",function  (self, rest, input)
     end
 end)
 
+
+function Utils.string.indentBrackets(str,min_width)
+    
+end

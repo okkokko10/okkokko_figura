@@ -2,14 +2,15 @@ require"invoke.Invoke"
 local Writing = require "invoke.Writing"
 
 
----@class DB<N,K,H>
+---@class DB<N,K,H,F>
 ---@field keyname `N`
----@field data {[H] : {[`N`] : K, [any] : any}}
+---@field data {[H] : {[`N`] : K, [F] : any}}
 ---@field keyhash fun(key:K):H
 ---@field indexes table
 ---@field i_indexes any[]
 ---@field indexing_hashes table
 local DB = {}
+DB.__index = DB
 
 
 function Utils.functions.id(...)
@@ -19,7 +20,7 @@ end
 ---@generic N,K,H
 ---@param keyname `N`
 ---@param keyhash? fun(key:K):H
----@return DB<N,K,H>
+---@return DB<N,K,H,N>
 function DB.create(keyname,keyhash)
     return setmetatable(
     {
@@ -31,7 +32,13 @@ function DB.create(keyname,keyhash)
 end
 
 
----@return DB<N,K,H>
+
+---@generic N,K,H,F,Q
+---@param self DB<N,K,H,F>
+---@param name `Q`
+---@param hash unknown
+---@param type any
+---@return DB<N,K,H,F|`Q`>
 function DB:setup_index(name,hash,type)
     self.i_indexes[#self.i_indexes+1] = name
     self.indexes[name] = {}
@@ -40,13 +47,21 @@ function DB:setup_index(name,hash,type)
 end
 
 ---doesn't do anything
----@return DB<N,K,H>
+
+
+---@generic N,K,H,F,Q
+---@param self DB<N,K,H,F>
+---@param name `Q`
+---@param type any
+---@return DB<N,K,H,F|`Q`>
 function DB:inform_field(name,type)
     return self
 end
 
 
 function DB:gethash(tbl)
+    log(tbl[self.keyname])
+
     return self.keyhash(tbl[self.keyname])
 end
 
@@ -95,7 +110,7 @@ end
 ---adds a data item only if it did not exist beforehand 
 ---@return boolean
 function DB:add_first(record)
-    if self:get(record) then
+    if self:get(record[self.keyname]) then
         return false
     end
     self:add(record)
@@ -112,7 +127,12 @@ function DB:getField(key,field)
     local q = self:get(key)
     return q and q[field]
 end
+
+---@generic N,K,H,F,Q
+---@param self DB<N,K,H,F>
+---@param record {[F]: any}
 function DB:add(record)
+    log(record)
     local hash = self:gethash(record)
     local t = Utils.table.getDefaultEmptyInit(self.data,hash)
     for key, value in pairs(record) do
@@ -169,10 +189,12 @@ end
 
 local TradeData = {}
 
-TradeData.database = DB.create("pos",Utils.vectorHash):setup_index("updated_or_chunk",nil,"string|true")
+TradeData.database = DB.create("pos",Utils.vectorHash)
+:setup_index("updated_or_chunk",nil,"string|true")
 :setup_index("sells",nil,"Item string")
 :setup_index("buys",nil,"Item string")
 :inform_field("price","number")
+:inform_field("price_per","number")
 :inform_field("amount","number")
 :inform_field("stock","number")
 :inform_field("coins","number") -- coin inventory. relevant for buying.
@@ -180,6 +202,9 @@ TradeData.database = DB.create("pos",Utils.vectorHash):setup_index("updated_or_c
 :setup_index("owner",nil,"uuid string") -- uses the shop network uuid if necessary.
 :setup_index("section",nil,"string concatenated")
 :setup_index("shop",nil,"string")
+:setup_index("currency",nil,"Item string")  -- nil means spurs
+:inform_field("error","string")
+:inform_field("block","string")
 
 
 
@@ -200,12 +225,19 @@ function TradeData.registerCoord(vector,desc,shop,section)
     }
 end
 
+TradeData.one_at_a_time = avatar:getPermissionLevel() ~= "MAX"
+
 --- call when a chunk becomes loaded
-function TradeData.onNewChunk(chunkString)
-    local ind = TradeData.database:index("updated_or_chunk",chunkString)
+--- 
+function TradeData.onNewChunk(chunkString,indexing)
+    local ind = indexing or TradeData.database:index("updated_or_chunk",chunkString)
     for key, record in pairs(ind) do
-        TradeData.scanRecord(record)
+        local success = TradeData.scanRecord(record)
+        if success and TradeData.one_at_a_time then
+            return true
+        end
     end
+    return false
 end
 
 
@@ -213,18 +245,63 @@ TradeData.reads = {}
 
 
 --- call with data read from a vendor/table_cloth to add onto a record.
-function TradeData.vendor_node(item_id,amount,price,stock,coins,owner)
-    
+function TradeData.add_vendor_node(block,item_id,amount,price,owner,stock,is_buying,currency,note)
+    local sells
+    local buys
+    if is_buying then
+        buys = item_id
+    else
+        sells = item_id
+    end
+    local price_per = price and amount and price/amount
+    TradeData.database:add{
+        pos=block:getPos(),
+        block = block.id,
+        sells = sells,
+        buys = buys,
+        price = price,
+        amount = amount,
+        stock = stock,
+        owner = owner,
+        price_per = price_per,
+        currency = currency,
+        note = note,
+        updated_or_chunk = true
+    }
+
 end
 
 function TradeData.reads.vendor(block)
     local BED = block:getEntityData()
-    --- todo
+    if not BED then
+        return
+    end
+    -- local CoinInventory = BED.CoinInventory and Utils.currency.pricestring_upper(BED.CoinInventory)
+    local stock = 0
+    for index, value in ipairs((BED.Inventory or {}).Items or {}) do
+        stock = stock + (value.count or 0)
+    end
+    local is_buying = BED.Mode == 1
+    local Owner = BED.Owner and client.intUUIDToString(BED.Owner)
+    local price = BED.Prices and Utils.currency.price(BED.Prices)
+    local count = BED.Selling.count
+    local item_id = BED.Selling.id
+
+    TradeData.add_vendor_node(block,item_id,count,price,Owner,stock,is_buying)
+
 end
 
 function TradeData.reads.table_cloth(block)
     local BED = block:getEntityData()
-    --- todo
+    if not BED then
+        return
+    end
+    local Owner = BED.OwnerUUID and client.intUUIDToString(BED.OwnerUUID)
+    local price, currency = Utils.currency.fromItemCount(BED.Filter.id,BED.FilterAmount)
+    local entries1 = BED.RequestData.encoded_request.ordered_stacks.entries[1]
+    local count = entries1.count
+    local item_id = entries1.item_stack.id
+    TradeData.add_vendor_node(block,item_id,count,price,Owner,nil,nil,currency)
 end
 
 --- todo: hm, should I store x,y,z as separate fields instead of a vec, and have the hash function take the whole record as input?
@@ -247,7 +324,7 @@ function TradeData.parseCoords(line)
     end
 end
 
---- incomplete
+
 --- "shop <name>" -- should be the first line? what if it's just a routing clipboard?
 --- "section <name>"
 --- "<x>, <y>, <z>, [<description>]", the commas are optional.
@@ -273,21 +350,51 @@ function TradeData.reads.clipboard(block)
             end
         end
     end
+    TradeData.database:add{
+            pos=block:getPos(),
+            updated_or_chunk = true,
+            block = block.id,
+            -- shop = shop,
+            -- section = section,
+        }
+    
 end
 
 
 --- reads the block at the coordinates, and updates the database to add discovered nodes.
 ---@param vector Vector
+---@return boolean success
 function TradeData.scan(vector)
     local block = world.getBlockState(vector)
     
     local strip_id = string.match(block.id,"[^%:]$")-- id after the colon.
     local cloth = string.match(block.id,"table%_cloth")
+    local s, r
     if cloth then
-        TradeData.reads.table_cloth(block)
+        s,r = pcall(TradeData.reads.table_cloth,block)
     elseif TradeData.reads[strip_id] then
-        TradeData.reads[strip_id](block)
+        s,r = pcall(TradeData.reads[strip_id],block)
+    else
+        TradeData.database:add{
+                pos=vector,
+                updated_or_chunk = true,
+                block = block.id,
+                note = "incompatible block"
+            }
+        return false
     end
+    if not s then
+        if avatar:getPermissionLevel() ~= "MAX" then
+            r = tostring(r):sub(1,50)
+        end
+        TradeData.database:add{
+                pos=vector,
+                error = r,
+                updated_or_chunk = true,
+                block = block.id,
+            }
+    end
+    return true
 
 
 end
@@ -295,10 +402,11 @@ end
 
 
 ---@param record table
+---@return boolean success
 function TradeData.scanRecord(record)
-    local data = TradeData.scan(record.pos)
-    TradeData.database:update(record,"data",data)
-    TradeData.database:update(record,"updated_or_chunk",true)
+    return TradeData.scan(record.pos)
+    -- TradeData.database:update(record,"data",data)
+    -- TradeData.database:update(record,"updated_or_chunk",true)
 end
 
 function Utils.table.any(tbl)
@@ -312,15 +420,35 @@ function TradeData.tryChunks()
     for chunk, value in pairs(q) do -- hm, this might add to the table during iteration.
         if chunk ~= true then
             if Utils.world.isChunkLoaded(chunk) then
-                TradeData.onNewChunk(chunk)
-                if not Utils.table.any(value) then
+
+                TradeData.onNewChunk(chunk,value)
+
+                if not Utils.table.any(value) then -- clears empty indexing groups
                     q[chunk] = nil
                 else
-                    log("error TradeData.tryChunks")
-                end -- clears
+                end 
             end
         
         end
 
     end
+end
+
+
+function events.skull_render(delta, block, item, entity, mode)
+    -- if Utils.tick.first_frame() then
+    -- if player:isLoaded() and player:isSneaking() then
+    --     log(delta,block,item,entity,mode)
+    --     if block then
+    --         log(block:toStateString())
+    --         log(block.properties)
+    --     end
+    -- end
+    if block then
+        local pos = block:getPos()
+        TradeData.registerCoord(pos + vec(0,1,0))
+        TradeData.tryChunks()
+    end
+
+    -- end
 end

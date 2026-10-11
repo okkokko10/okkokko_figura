@@ -1,0 +1,70 @@
+create:white_table_cloth[entity=true]{Facing:1,
+Filter:{count:1,
+id:"numismatics:spur"},
+FilterAmount:1,
+HasAttachedComputer:0b,
+Items:[],
+OwnerUUID:[I;1341784454,953436005,-1716287089,339402456],
+RequestData:{
+    encoded_request:{
+        ordered_crafts:[],
+        ordered_stacks:{entries:[{
+            count:64,
+            item_stack:{count:1,id:"minecraft:oak_log"}
+        }]}
+    },
+    encoded_target_address:"abc",
+    is_valid:1b,
+    target_dim:"minecraft:overworld",
+    target_offset:[I;-2,-1,-3]
+},
+UpTo:1b}
+
+
+create:stock_ticker[facing=south]{Added:0b,Categories:[],Freq:[I;-1239622785,-1113962515,-1776841854,-1377261874],HasAttachedComputer:0b,HiddenCategories:[],Power:0,PreviousAddress:"abc",ReceivedPayments:{Items:[{Slot:0,count:5,id:"numismatics:spur"}],Size:27}}
+
+create:stock_link[face=floor,facing=north,powered=false,waterlogged=false]{Added:1b,Freq:[I;-1239622785,-1113962515,-1776841854,-1377261874],PlacedBy:[I;1341784454,953436005,-1716287089,339402456],Power:0}
+create:packager[facing=west,linked=true,powered=false]{Active:0b,AnimationInward:1b,AnimationTicks:0,ComputerAddress:"",HasAttachedComputer:0b,HasComputerAddress:0b,HeldBox:{},InsertedBox:{},QueuedExitingPackages:[],SignAddress:""}
+
+numismatics:vendor[facing=south]
+{
+    CoinInventory:{COG:1,SPROCKET:1,SPUR:8},
+    Inventory:{Items:[
+        {Slot:1b,count:64,id:"minecraft:oak_log"},
+        {Slot:2b,count:64,id:"minecraft:oak_log"},
+        {Slot:3b,count:64,id:"minecraft:oak_log"},
+        {Slot:4b,count:64,id:"minecraft:oak_log"},
+        {Slot:5b,count:64,id:"minecraft:oak_log"},
+        {Slot:6b,count:64,id:"minecraft:oak_log"},
+        {Slot:7b,count:64,id:"minecraft:oak_log"},
+        {Slot:8b,count:64,id:"minecraft:oak_log"}]},
+    Mode:0,
+    Owner:[I;1341784454,953436005,-1716287089,339402456],
+    Prices:{bevel:0,cog:1,crown:0,sprocket:1,spur:8,sun:0},
+    Selling:{count:64,id:"minecraft:oak_log"}
+}
+numismatics:vendor[facing=east]
+{
+    CoinInventory:{BEVEL:2},
+    Inventory:{Items:[{Slot:0b,count:32,id:"minecraft:comparator"}]},
+    Mode:0,
+    Owner:[I;1341784454,953436005,-1716287089,339402456],
+    Prices:{bevel:1,cog:0,crown:0,sprocket:0,spur:0,sun:0},
+    Selling:{count:1,id:"minecraft:comparator"}}
+
+create:blaze_burner[blaze=smouldering,facing=south]{burnTimeRemaining:0,fuelLevel:0}
+
+create:factory_gauge[face=floor,facing=east,powered=false,waterlogged=false]{Restocker:0b,top_left:{Craft:[],Filter:{count:1,id:"minecraft:oak_log"},FilterAmount:100,Freq:[I;-1239622785,-1113962515,-1776841854,-1377261874],LastLevel:320,LastPromised:0,LastUnloadedLinks:0,PromiseClearingInterval:-1,PromisedSatisfied:1b,RecipeAddress:"",RecipeOutput:1,RedstonePowered:0b,Satisfied:1b,TargetedBy:[],TargetedByLinks:[],Targeting:[],Timer:50,UpTo:1b,Waiting:0b}}
+
+-- this is a buying vendor
+numismatics:vendor[facing=east]
+{
+    CoinInventory:{BEVEL:2},
+    Inventory:{
+        Items:[{Slot:0b,count:32,id:"minecraft:comparator"}]
+    },
+    Mode:1,
+    Owner:[I;1341784454,953436005,-1716287089,339402456],
+    Prices:{bevel:1,cog:0,crown:0,sprocket:0,spur:0,sun:0},
+    Selling:{count:1,id:"minecraft:comparator"}}
+

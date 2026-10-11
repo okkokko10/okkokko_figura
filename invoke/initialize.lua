@@ -97,6 +97,7 @@ Text:newLine'>>>fun.checkBlockVis:fun!AlwaysActive:run.checkBlockVisF'
 Text:newLine''
 Text:newLine''
 
+--- O(var.checkedBlock) O(method.getEntityData) O(get.BlockEntityTag.RequestData) [keyvalue] [  M Array[get.k][text : ] [ [get.v] ite(){J} text ][Nl]  ] J
 
 -- Text:newLine'>>>fun.trackMatching'
 

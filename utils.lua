@@ -354,6 +354,13 @@ function Utils.vectorString(vector)
   return table.concat({vector:unpack()}," ")
 end
 
+---to set vectors as table keys.
+---@param vector Vector
+---@return unknown
+function Utils.vectorHash(vector)
+  return Utils.vectorString(vector)
+end
+
 
 Utils.entity = {}
 
@@ -650,16 +657,22 @@ function Utils.tick.first_frame_for(obj)
   return not y
 end
 
+
+---if this key hasn't been checked for a whole tick, the function is called and then removed.
 ---@generic T
 ---@param obj T
 ---@param func fun(t:T):boolean?
 function Utils.tick.register_gc(obj,func)
   Utils.tick.garbage_collectors[obj] = func
 end
+
+---@package
 function Utils.tick.do_gc()
   for key, value in pairs(Utils.tick.garbage_collectors) do
-    if (not Utils.tick.seen[key]) and not value(key) then
-      Utils.tick.garbage_collectors[key] = nil
+    if not Utils.tick.seen[key] then
+      if not value(key) then
+        Utils.tick.garbage_collectors[key] = nil
+      end
     end
   end
 end
@@ -687,6 +700,8 @@ end
 
 -- todo: a callback when a value hasn't been seen in a frame
 
+
+Utils.world = {}
 
 
 return Utils

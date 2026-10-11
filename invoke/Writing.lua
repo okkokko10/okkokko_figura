@@ -46,6 +46,31 @@ function Writing:pageIndices()
     return Utils.table.range(self:pageCount())
 end
 
+--- todo: test
+--- todo: generic flat iterator 
+--- iterates through all pages.
+function Writing:iter()
+    local index = 1
+    local pg = self:getPage(index)
+    local f = self:pageIter(index)
+    return function ()
+        local w = f()
+        while w == nil do
+            index = index + 1
+            pg = self:getPage(index)
+            if not pg then
+                return
+            end
+            f = self:pageIter(index)
+            w = f()
+        end
+        return w
+        
+        
+    end
+
+end
+
 
 ---@package
 ---@type {[string] : fun(item:ItemStack,entity:Entity):Writing?}

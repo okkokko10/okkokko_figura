@@ -60,8 +60,6 @@ end
 
 
 function DB:gethash(tbl)
-    log(tbl[self.keyname])
-
     return self.keyhash(tbl[self.keyname])
 end
 
@@ -132,7 +130,7 @@ end
 ---@param self DB<N,K,H,F>
 ---@param record {[F]: any}
 function DB:add(record)
-    log(record)
+    logTable(record)
     local hash = self:gethash(record)
     local t = Utils.table.getDefaultEmptyInit(self.data,hash)
     for key, value in pairs(record) do
@@ -199,7 +197,10 @@ TradeData.database = DB.create("pos",Utils.vectorHash)
 :inform_field("stock","number")
 :inform_field("coins","number") -- coin inventory. relevant for buying.
 :inform_field("desc","string") -- would be used to store extra info about the item.
-:setup_index("owner",nil,"uuid string") -- uses the shop network uuid if necessary.
+:setup_index("owner",nil,"uuid string")
+-- :setup_index("owner",function (t)
+--     return client.intUUIDToString(table.unpack(t))
+-- end,"uuid string")
 :setup_index("section",nil,"string concatenated")
 :setup_index("shop",nil,"string")
 :setup_index("currency",nil,"Item string")  -- nil means spurs
@@ -271,7 +272,12 @@ function TradeData.add_vendor_node(block,item_id,amount,price,owner,stock,is_buy
 
 end
 
-function TradeData.reads.vendor(block)
+function TradeData.ownerUUID(intarray)
+    return intarray and client.intUUIDToString(table.unpack(intarray))
+    
+end
+
+TradeData.reads["numismatics:vendor"] = function(block)
     local BED = block:getEntityData()
     if not BED then
         return
@@ -282,7 +288,7 @@ function TradeData.reads.vendor(block)
         stock = stock + (value.count or 0)
     end
     local is_buying = BED.Mode == 1
-    local Owner = BED.Owner and client.intUUIDToString(BED.Owner)
+    local Owner = TradeData.ownerUUID(BED.Owner)
     local price = BED.Prices and Utils.currency.price(BED.Prices)
     local count = BED.Selling.count
     local item_id = BED.Selling.id
@@ -296,8 +302,8 @@ function TradeData.reads.table_cloth(block)
     if not BED then
         return
     end
-    local Owner = BED.OwnerUUID and client.intUUIDToString(BED.OwnerUUID)
-    local price, currency = Utils.currency.fromItemCount(BED.Filter.id,BED.FilterAmount)
+    local Owner = TradeData.ownerUUID(BED.OwnerUUID)
+    local price, currency = Utils.currency.fromItemCount(assert(BED.Filter.id,"invalid: no price set"),BED.FilterAmount)
     local entries1 = BED.RequestData.encoded_request.ordered_stacks.entries[1]
     local count = entries1.count
     local item_id = entries1.item_stack.id
@@ -312,10 +318,12 @@ end
 --- parses " x   y,z,   description   "
 ---@param line string
 function TradeData.parseCoords(line)
-    local x,y,z,desc = (line):match("^%s*(%S-)%,?%s*(%S-)%,?%s*(%S-)%,?%s*(.-)%s*$")
+    local x,y,z,desc = (line):match("^%s*(%S*)%s*(%S*)%s*(%S*)%s*(.-)%s*$")
     local x1 = tonumber(x)
     local y1 = tonumber(y)
     local z1 = tonumber(z)
+    -- log("parsing:",line,x,x1,y,y1,z,z1,"desc:",desc)
+
     if x1 and y1 and z1 then
         if desc == "" then
             desc = nil
@@ -328,12 +336,19 @@ end
 --- "shop <name>" -- should be the first line? what if it's just a routing clipboard?
 --- "section <name>"
 --- "<x>, <y>, <z>, [<description>]", the commas are optional.
-function TradeData.reads.clipboard(block)
-    local item = block:asItem()-- todo: check whether this works correctly
+TradeData.reads["create:clipboard"] = function (block)
+    -- local item = block:asItem()-- todo: check whether this works correctly
+    local item = {
+        tag = {["create:clipboard_content"] = block:getEntityData().components["create:clipboard_content"]},
+        id = block.id
+    }
+    -- print()
+    -- print(item.tag.display)
     local writing = Writing.extract(item)
     local shop
     local section
     for line in writing:iter() do
+        -- print("  ",line)
         local shop1 = line:match("^%s*shop%s*(.-)%s*$")
         if shop1 then
             shop = shop1
@@ -367,13 +382,13 @@ end
 function TradeData.scan(vector)
     local block = world.getBlockState(vector)
     
-    local strip_id = string.match(block.id,"[^%:]$")-- id after the colon.
+    -- local strip_id = string.match(block.id,"[^%:]$")-- id after the colon.
     local cloth = string.match(block.id,"table%_cloth")
     local s, r
     if cloth then
         s,r = pcall(TradeData.reads.table_cloth,block)
-    elseif TradeData.reads[strip_id] then
-        s,r = pcall(TradeData.reads[strip_id],block)
+    elseif TradeData.reads[block.id] then
+        s,r = pcall(TradeData.reads[block.id],block)
     else
         TradeData.database:add{
                 pos=vector,
@@ -445,9 +460,9 @@ function events.skull_render(delta, block, item, entity, mode)
     --     end
     -- end
     if block then
+        TradeData.tryChunks()
         local pos = block:getPos()
         TradeData.registerCoord(pos + vec(0,1,0))
-        TradeData.tryChunks()
     end
 
     -- end

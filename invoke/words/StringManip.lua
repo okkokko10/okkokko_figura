@@ -223,7 +223,12 @@ end
 ---@return number
 ---@return string?
 function Utils.currency.fromItemCount(item_id,count)
-    error("unimplemented")
+    local c = string.match(item_id,"^numismatics%:(.*)$")
+    if c and prices[c] then
+        return count * prices[c]
+    else
+        return count,item_id
+    end
 end
 
 Invoke:registerByValue("pricestring",function  (self, rest, input)

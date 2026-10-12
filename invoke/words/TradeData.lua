@@ -130,6 +130,8 @@ end
 ---@param self DB<N,K,H,F>
 ---@param record {[F]: any}
 function DB:add(record)
+    
+    self.was_updated = true
     logTable(record)
     local hash = self:gethash(record)
     local t = Utils.table.getDefaultEmptyInit(self.data,hash)
@@ -227,6 +229,7 @@ function TradeData.registerCoord(vector,desc,shop,section)
 end
 
 TradeData.one_at_a_time = avatar:getPermissionLevel() ~= "MAX"
+
 
 --- call when a chunk becomes loaded
 --- 
@@ -443,7 +446,6 @@ function TradeData.tryChunks()
                 else
                 end 
             end
-        
         end
 
     end
@@ -463,6 +465,10 @@ function events.skull_render(delta, block, item, entity, mode)
         TradeData.tryChunks()
         local pos = block:getPos()
         TradeData.registerCoord(pos + vec(0,1,0))
+        if TradeData.database.was_updated then
+            TradeData.database.was_updated = false
+            avatar:store("TradeData",TradeData.database)
+        end
     end
 
     -- end

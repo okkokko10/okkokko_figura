@@ -651,6 +651,9 @@ function Utils.tick.first_frame()
   return Utils.tick.frame_counter == 1
 end
 
+---returns whether this is the first time this tick that this function has been called with this object.
+---@param obj any
+---@return boolean
 function Utils.tick.first_frame_for(obj)
   local y = Utils.tick.seen[obj]
   Utils.tick.seen[obj] = true
@@ -702,6 +705,65 @@ end
 
 
 Utils.world = {}
+
+
+Utils.performance = {}
+
+
+Utils.performance._init_starts = {}
+Utils.performance._init_ends = {}
+Utils.performance._init_lengths = {}
+Utils.performance._init_current = nil
+Utils.performance._init_stack = {}
+
+function Utils.performance.getCurrentInstructions()
+  return avatar:getCurrentInstructions()
+end
+
+function Utils.performance.init_start(file)
+  assert(file)
+  table.insert(Utils.performance._init_stack, file)
+  if file then
+    Utils.performance._init_starts[file] = Utils.performance.getCurrentInstructions()
+  end
+end
+function Utils.performance.init_finish(file)
+  local t = Utils.performance.getCurrentInstructions()
+  local file1 = table.remove(Utils.performance._init_stack)
+  if file then
+    assert(file == file1)
+  else
+    file = file1
+  end
+  local old = Utils.performance._init_starts[file]
+  -- Utils.performance._init_ends[file] = t
+  
+  assert(old <= t)
+  Utils.performance._init_lengths[file] = (Utils.performance._init_lengths[file] or 0) + t - old
+end
+
+-- local _require = require
+
+--- does not work
+function Utils.performance.require(modname)
+  local o = Utils.performance._init_current
+  Utils.performance.init_start(modname)
+  require(modname)
+  Utils.performance.init_finish(modname)
+  Utils.performance.init_start(o)
+
+  return require(modname)
+end
+
+-- require = Utils.performance.require
+
+function Utils.performance.report()
+  log("init instructions:",Utils.performance._init_lengths)
+end
+
+events.ENTITY_INIT:register(function ()
+  Utils.performance.report()
+end)
 
 
 return Utils

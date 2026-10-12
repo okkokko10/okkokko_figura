@@ -452,7 +452,8 @@ function TradeData.tryChunks()
 end
 
 
-function events.skull_render(delta, block, item, entity, mode)
+
+function TradeData.skull_render(delta, block, item, entity, mode)
     -- if Utils.tick.first_frame() then
     -- if player:isLoaded() and player:isSneaking() then
     --     log(delta,block,item,entity,mode)
@@ -461,15 +462,17 @@ function events.skull_render(delta, block, item, entity, mode)
     --         log(block.properties)
     --     end
     -- end
+    if not Utils.tick.first_frame_for("TradeData") then return end
     if block then
         TradeData.tryChunks()
         local pos = block:getPos()
         TradeData.registerCoord(pos + vec(0,1,0))
         if TradeData.database.was_updated then
             TradeData.database.was_updated = false
+            Invoke:setVariable("!TradeData",TradeData.database)
             avatar:store("TradeData",TradeData.database)
         end
     end
-
-    -- end
 end
+
+events.SKULL_RENDER:register(TradeData.skull_render)

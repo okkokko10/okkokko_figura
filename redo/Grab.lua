@@ -77,7 +77,10 @@ end
 
 ---@param partID ID<ModelPart>
 function Grabbing.addSelectableGenerate(partID)
-    Grabbing.addSelectable({partID = partID, hitbox = Hitbox.fromModelPartItems(partID)})
+    Utils.ID.init(partID,function (s)
+        Grabbing.addSelectable({partID = partID, hitbox = Hitbox.fromModelPartItems(partID)})
+        
+    end)
 end
 
 

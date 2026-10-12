@@ -1,6 +1,6 @@
 
 
-
+local ENABLE = false
 
 
 
@@ -55,10 +55,11 @@ local function newLog(...)
     end
     appendLogText(out)
 end
-
-log = newLog
-logTable = newLogTable
-
+if ENABLE then
+    log = newLog
+    logTable = newLogTable
+end
+    
 function LogCurrentTime(extra)
     local date = client.getDate()
     log(("time log: %s:%s:%s"):format(date.hour,date.minute,date.second), extra)

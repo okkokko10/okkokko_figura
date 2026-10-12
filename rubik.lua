@@ -1,4 +1,5 @@
 
+
 require"Direction"
 --- could I get away with serializing the cube with raw tiles, instead of the 16 moving parts?
 --- do I store position -> color or tile -> position?
@@ -9,6 +10,35 @@ require"Direction"
 --- maybe generalize for arbitrary permutations?
 --- yes, maybe the state and side rotations are stored as permutations
 --- Utils.table.compose 
+
+
+--#region init outside parts.
+
+require("utils")
+local RubikBase = Positioning.parts.Disabled:newPart("RubikBase"):setPos(PS*1,PS*1,PS*-3)
+
+Utils.ID.field.RubikBase = RubikBase
+
+require"invoke.AltRendering"
+
+
+Utils.ID.field.SkullStabilized = Positioning.make.absoluteRot("rubikR",Utils.ID.field.Skull:newPart("Rubik1"):setPos(0,0,-PS*7))
+
+Utils.ID.field.Rubik =Utils.ID.field.SkullStabilized:newPart("Rubik"):setLight(8):setRot(45,0,35.264):setScale(1/3)
+-- Utils.ID.field.Rubik:newItem("center"):setItem("target")
+
+-- DrawLine.test(RubikBase)
+
+require("redo.Grab").addSelectableGenerate("RubikBase")
+require("redo.Grab").addSelectableGenerate("Rubik")
+
+
+
+--#endregion
+
+
+
+
 
 ---@class Permutation
 ---@field arr table
@@ -537,27 +567,10 @@ function RubiksCube:rotateSideAnimation(side,dir,endState)
 end
 
 
-require("utils")
-local RubikBase = Positioning.parts.Disabled:newPart("RubikBase"):setPos(PS*1,PS*1,PS*-3)
-
 if false and avatar:getPermissionLevel() == "MAX" then RubiksCubeSides.drawPermutationDebug(RubikBase) end
 
-
-Utils.ID.field.RubikBase = RubikBase
-
-require"invoke.AltRendering"
-
-
-Utils.ID.field.SkullStabilized = Positioning.make.absoluteRot("rubikR",Utils.ID.field.Skull:newPart("Rubik1"):setPos(0,0,-PS*7))
-
-Utils.ID.field.Rubik =Utils.ID.field.SkullStabilized:newPart("Rubik"):setLight(8):setRot(45,0,35.264):setScale(1/3)
-Utils.ID.field.Rubik:newItem("center"):setItem("target")
-
--- DrawLine.test(RubikBase)
-
-require("redo.Grab").addSelectableGenerate("RubikBase")
-require("redo.Grab").addSelectableGenerate("Rubik")
-
-TheCube = RubiksCube.new(Utils.ID.field.Rubik)
+if false then
+    TheCube = RubiksCube.new(Utils.ID.field.Rubik)
+end
 
 -- for synchronization, rotateSide returns a serialized state

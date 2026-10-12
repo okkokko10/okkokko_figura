@@ -105,10 +105,10 @@ end)
 
 
 TrailArrow = models:newPart("TrailArrow","Arrow")
-:setPostRender(function (delta, ctx, part)
-    -- log(delta,ctx,part,part:partToWorldMatrix())
+-- :setPostRender(function (delta, ctx, part)
+--     -- log(delta,ctx,part,part:partToWorldMatrix())
     
-end)
+-- end)
 
 TrailArrow:newItem("blk"):setItem("glass"):setScale(1/8,1/8,1):setPos(0,0,8)
 -- local spd = TrailArrow:newPart("bb","Billboard"):newText("spd"):setText(""):setSeeThrough(true):setScale(1/4)
@@ -186,7 +186,9 @@ local function arrow_render2(delta, arrow)
     -- log(arrow)
     -- return TrailArrow.WTrail
 end
-function events.arrow_render(delta,arrow)
-    pcall(arrow_render2,delta,arrow)
-    
+
+if avatar:getPermissionLevel() == "MAX" then
+    function events.arrow_render(delta,arrow)
+        pcall(arrow_render2,delta,arrow)
+    end
 end

@@ -9,7 +9,12 @@ local dit = dbox:newItem("a"):setItem("red_stained_glass")
 
 Utils.ID.field.dbox = dbox
 
-local DEBUG = false
+local text_cursor = models:newPart("text_cursor"):remove()
+text_cursor:newItem("glass"):setItem("red_wool"):setScale(2/PS)
+Utils.ID.field.text_cursor = text_cursor
+
+
+local DEBUG = true
 
 ---comment
 ---@param modelPart ModelPart
@@ -18,8 +23,8 @@ local DEBUG = false
 ---@param direction Vector
 local function text_raycast(modelPart,text,origin,direction,height)
     
-    local m = modelPart:partToWorldMatrix() * text:getPositionMatrix()
-    local cm = Conversion.ComposedMatrix(modelPart,text:getPositionMatrix())
+    local text_matrix = text:getPositionMatrix()
+    local cm = Conversion.ComposedMatrix(modelPart,text_matrix)
 
     ---@type string?
     local tx = text:getText()
@@ -40,8 +45,8 @@ local function text_raycast(modelPart,text,origin,direction,height)
 
     local hi = Hitbox:create(cm,rect)
 
-    local q = Conversion.toMatrix(cm)
-    dbox:setMatrix(q*PS)
+    -- local q = Conversion.toMatrix(cm)
+    -- dbox:setMatrix(q*PS)
     -- log(q)
     -- rect:setCenteredItemTo(dit)
 
@@ -52,9 +57,11 @@ local function text_raycast(modelPart,text,origin,direction,height)
     if ou then
         -- log(ou)
         if DEBUG then
-            debugpart:setPos(PS*ou.globalPos)
+            
+            AnchorAffix.direct.part_alter(text_cursor,modelPart,text_matrix * matrices.translate4(ou.localPos))
+            -- debugpart:setPos(PS*ou.globalPos)
             -- local selectedText = strings[math.ceil(ou.localPos.y/(-10))]
-            dtext:setText(tostring(math.ceil(ou.localPos.y/(-10))).." "..tostring(ou.localPos/vec(1,-10,1)))
+            -- dtext:setText(tostring(math.ceil(ou.localPos.y/(-10))).." "..tostring(ou.localPos/vec(1,-10,1)))
             
         end
         Invoke:setVariable("!SelectedRow",math.ceil(ou.localPos.y/(-10)))

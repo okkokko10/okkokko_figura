@@ -28,7 +28,8 @@ end
 function Conversion.InvertedMatrix(matrix)
     return setmetatable({matrix},Conversion._InvertedMatrix)
 end
----lazily inverts matrix
+---AnchorAffix.complex.affixInPlace treats this as if 
+---  ```A * Conversion.toMatrix( Conversion.LocalMatrix(matrix) ) = matrix```
 ---@param matrix ConvertsToMatrix
 ---@return ComposedMatrix
 function Conversion.LocalMatrix(matrix)

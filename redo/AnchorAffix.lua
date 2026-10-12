@@ -13,23 +13,18 @@ AnchorAffix.direct = {}
 
 
 ---comment
----@param partID ID<ModelPart>
----@param parentID? ID<ModelPart>
+---@param partID IDS<ModelPart>
+---@param parentID? IDS<ModelPart>
 ---@param matrix? ConvertsToMatrix
 ---@param pos? Vector
 ---@param rot? Vector
 function AnchorAffix.direct.part_alter(partID,parentID,matrix,pos,rot)
     
-    local part = Utils.ID.from(partID)
+    local part = Utils.ID.materialize(partID)
     if not part then
         return host:isHost() and log("no such part: " .. partID)
     end
-    local parent
-    if type(parentID) == "ModelPart" then
-        parent = parentID
-    else
-        parent = parentID and Utils.ID.from(parentID)
-    end
+    local parent = Utils.ID.materialize(parentID)
     if parent then
         if parent:isChildOf(part) or parent == part then
             if host:isHost() then

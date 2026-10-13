@@ -764,6 +764,33 @@ function Utils.performance.getCurrentInstructions()
   return avatar:getCurrentInstructions()
 end
 
+---gets the file this was called from. 
+---depth=0=default is the line that calls this function, depth=1 is the line that calls that
+---@param depth number?
+function Utils.performance.getPosition(depth)
+  local error_identifier = "\1\2\2"
+  local s,r = pcall(function ()
+    error(error_identifier,4 + (depth or 0))
+  end)
+  local ma = string.match(r --[[@as string]],"(.-)"..error_identifier)
+  local section,line = string.match(ma,"^(.-)%:(.-)$")
+  -- print("error",s,r,"matched:",ma,"section:",section,"line:",line)
+  return section, tonumber(line)
+end
+
+
+
+-- ---put this at the top of every file that uses requires
+-- ---flags the end of the previous file.
+-- function Utils.performance.preRequire()
+
+-- end
+
+-- ---put this at the top of every file after requires.
+-- function Utils.performance.postRequire()
+  
+-- end
+
 function Utils.performance.init_start(file)
   assert(file)
   table.insert(Utils.performance._init_stack, file)

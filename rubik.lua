@@ -1,4 +1,5 @@
 
+local DISABLE = true
 
 require"Direction"
 --- could I get away with serializing the cube with raw tiles, instead of the 16 moving parts?
@@ -15,11 +16,16 @@ require"Direction"
 --#region init outside parts.
 
 require("utils")
+require"invoke.AltRendering"
+require("redo.Grab")
+
+if DISABLE then return end
+
+Utils.performance.init_start("rubik.lua")
 local RubikBase = Positioning.parts.Disabled:newPart("RubikBase"):setPos(PS*1,PS*1,PS*-3)
 
 Utils.ID.field.RubikBase = RubikBase
 
-require"invoke.AltRendering"
 
 
 Utils.ID.field.SkullStabilized = Positioning.make.absoluteRot("rubikR",Utils.ID.field.Skull:newPart("Rubik1"):setPos(0,0,-PS*7))
@@ -574,3 +580,5 @@ if false then
 end
 
 -- for synchronization, rotateSide returns a serialized state
+
+Utils.performance.init_finish("rubik.lua")

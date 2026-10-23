@@ -81,7 +81,7 @@ Invoke:registerKeyword("PickBlock",function (self, tbl, rest)
 end)
 
 Invoke:registerOld("Entities",function (self, value, rest)
-    local entities = world.getEntities(-10000,-10000,-10000,10000,10000,10000)
+    local entities = world.getEntities(-11000,-11000,-11000,11000,11000,11000)
     -- if value.type then
     --     log("type:",value)
     -- end

@@ -331,9 +331,11 @@ Invoke:registerByValue("Array", function (self, rest, input)
     return out
 end)
 
-Invoke:registerWithArgs("insert",{"table","key","value"}, function (self, rest, input)
+
+Invoke:registerWithArgs("insert",{"table","value","key?"}, function (self, rest, input)
     self:isMutableAssertion(input.table)
-    input.table[input.key] = input.value
+    input.table[input.key or (#input.table + 1)] = input.value
+    return input.table
 end)
 
 Invoke:registerByValue("assign", function (self, rest, input)

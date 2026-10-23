@@ -32,7 +32,6 @@ Text:newLine'>>>fun.entity_status_hp: formats.${[call?getHealth] S}/${[call?getM
 
 Text:newLine'>>>fun.entity_status_small:ite(args(equal)[call?getType][text.minecraft:item]){run.item_age} run.entity_status_hp'
 
-
 Text:newLine'>>>fun.lentc: ite([args[var!SelectedRow][var!key] -> equal]){text.#000000} O(get.v) entitycolor'
 -- Text:newLine'>>>fun.lentt: formats.${get.p} ${[O(get.v) S]} ${[]} | ${Nl}'
 Text:newLine'>>>fun.lentt: formats.${get.p} (${get.c}) ${O(get.v) run.entity_status_small} ${Nl}'
@@ -118,6 +117,24 @@ Text:newLine'>>>fun.DisplayDataEntity:'
         '[run.EntityDisplayData]'
 ']' 
 'method.setPos -16, 0, 0'
+
+
+
+Text:newLine'>>>fun.entity_status_hp_bar: args(bar)[call?getHealth][call?getMaxHealth][text#FF0000]'
+Text:newLine'>>>fun.entity_status_hp_bar_text: args(insert)[run.entity_status_hp_bar][run.entity_status_hp]'
+Text:newLine'>>>fun.entity_status_small_bar:ite(args(equal)[call?getType][text.minecraft:item]){run.item_age} run.entity_status_hp_bar_text'
+
+
+Text:newLine'>>>fun.DisplayHealthEntity:'
+'['
+    'args(display)'
+        '['
+            '[Track.eyes] [child.up] [method.setPos 0, 16, 0] child.BILLBOARD'
+        ']'
+        '[[run.entity_status_small_bar] J]'
+']' 
+''
+
 
 Text:newLine'>>>fun.DisplayDataEntities:[Entities] M run.DisplayDataEntity'
 

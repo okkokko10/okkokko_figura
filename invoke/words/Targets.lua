@@ -5,11 +5,12 @@ require"invoke.Invoke"
 
 Invoke:registerKeyword("plr", function (self,tbl, rest)
     if rest == "" then
-        return plr
+        return world.getPlayers()
     else
         return world.getPlayers()[rest]
     end
 end)
+:addAlternateNames("Player")
 
 --- deprecated. this should be a filter. also should be Infos
 Invoke:registerKeyword("All", function (self,tbl, rest)

@@ -59,4 +59,9 @@ end)
 --- >>>[set.target:text.S:Umbrella]
 --- >>>[+on.sneak-> set.part:text.SpareLineStart -> set.parent:var.target -> affix]
 --- 
---- 
+
+
+
+Invoke:registerKeyword("Freecam",function (self)
+    return Freecam.Parent()
+end)

@@ -218,7 +218,10 @@ function Ccom.teleportEyes(vector)
     Ccom.sendChatCommand(("tp %s"):format(Ccom.helper.vectorPrecise(vector - vec(0,player:getEyeHeight(),0))))
 end
 
-function Ccom.playerSwap(partID)
+---comment
+---@param partID ID<ModelPart>? to swap with. defaults to Freecam parent
+---@param stay boolean? keep the part where it is
+function Ccom.playerSwap(partID,stay)
     partID = partID or Freecam.ParentID()
     if AnchorAffix.info.isChildOf(partID,  "Disabled") then
         log("trying to teleport to disabled")
@@ -232,6 +235,8 @@ function Ccom.playerSwap(partID)
     -- log(p)
     Ccom.teleportEyes(p)
 
+    if stay then return end
+
     --- pp -> world to part = pp in partID's coordinates
     local dp = m:inverted():apply(pp)
     local nm = m * matrices.translate4(dp)
@@ -239,6 +244,10 @@ function Ccom.playerSwap(partID)
     AnchorAffix.complex.affixInPlace(partID,nil,nm)
 
 
+end
+
+function Ccom.players()
+    logTable(world.getPlayers())
 end
 
 function Ccom.attribute_range(r)

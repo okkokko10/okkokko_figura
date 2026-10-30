@@ -477,8 +477,8 @@ KineticPath.pretty_rules = {
     {vars = "index", format = "(%i)", condition = "always"},
     {vars = "Id", format = "Kinetic Network %i", condition = "change"}, -- change looks at vars and checks whether they are equal to the previous
     {vars = "Stress Capacity", format = "%s/%s SU", condition = "change"},
-    {vars = "AddedStress", format = "%s SU used", condition = "found"},
-    {vars = "AddedCapacity", format = "%s SU added", condition = "found"},
+    {vars = "AddedStress", format = "%s×RPM SU used", condition = "found"},
+    {vars = "AddedCapacity", format = "%s×RPM SU added", condition = "found"},
     {vars = "Size", format = "size: %i", condition = "change"},
     {vars = "Speed", format = "%sRPM", condition = "change"},
     {format = "root", condition = {"isEnd",{key = "status", value = "root_reached", op = "equals"}, op = "and"}},

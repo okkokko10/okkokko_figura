@@ -37,6 +37,9 @@ function Freecam.enable()
     pings.setFC(true)
   
 end
+function Freecam.isEnabled()
+    return freecamOn
+end
 
 function Freecam.disable()
   

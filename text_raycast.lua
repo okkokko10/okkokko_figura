@@ -67,6 +67,11 @@ local function text_raycast(modelPart,text,origin,direction,height)
         Invoke:setVariable("!SelectedRow",math.ceil(ou.localPos.y/(-10)))
     else
         Invoke:setVariable("!SelectedRow",nil)
+        if DEBUG then
+            
+            AnchorAffix.direct.part_alter(text_cursor,Positioning.parts.Disabled)
+            
+        end
     end
 
 

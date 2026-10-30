@@ -161,10 +161,17 @@ end
 local function arrow_render2(delta, arrow)
     local uuid = arrow:getUUID()
     local pos = arrow:getPos(delta)
+    -- log(pos,delta,arrow:getPos(0),arrow:getPos(1))
+    
     local nbt = arrow:getNbt()
     local motion =nbt.Motion and vec(table.unpack(nbt.Motion))
     spd:setText(("%.2f"):format(motion:length()))
     local first = Utils.tick.first_frame_for(uuid)
+    if Utils.Sublevel.isInSublevel(arrow:getPos(0)) ~= Utils.Sublevel.isInSublevel(arrow:getPos(1)) then
+        return --- pos will be a nonsense value
+        -- log("different arrow lerp:",arrow:getPos(0),arrow:getPos(1),arrow:getPos(delta),delta)
+
+    end
     if true then
 
 
@@ -187,7 +194,9 @@ local function arrow_render2(delta, arrow)
     -- return TrailArrow.WTrail
 end
 
-if avatar:getPermissionLevel() == "MAX" then
+local ENABLE_ARROW_TRAIL = false
+
+if avatar:getPermissionLevel() == "MAX" and ENABLE_ARROW_TRAIL then
     function events.arrow_render(delta,arrow)
         pcall(arrow_render2,delta,arrow)
     end

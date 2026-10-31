@@ -9,42 +9,188 @@
 Utils.coroutine = {}
 
 
----@class CoroutineConstructor
----@field funcs (fun(...):...)[]
+---@class CoroutineConstructor<A...,B>
+---@field funcs (fun(...:A...):B,...)[]
+---@field labels { [any] : integer }
+---@field direct_onto {[integer] : boolean} -- sections that when advanced to by another section, there is no yield,
 Utils.coroutine.con = {}
 Utils.coroutine.con.__index = Utils.coroutine.con
+Utils.coroutine.con.__type = "CoroutineConstructor"
 
 function Utils.coroutine.constructor()
-    local out = setmetatable({funcs={}},Utils.coroutine.con)
+    local out = setmetatable({funcs={}, labels={}, direct_onto = {}},Utils.coroutine.con)
     return out
 end
+
+--#region builder
+
+
+
+
+---adds a label that can be used in :go to goto the section added after this
+---@param l any
+---@return CoroutineConstructor
+function Utils.coroutine.con:label(l)
+    self.labels[l] = #self.funcs+1
+    return self
+end
+
+---@alias CoroutineAddable (fun(...?):...?)|CoroutineConstructor
+
+---@param section CoroutineAddable?
+function Utils.coroutine.con:add(section)
+    if not section then
+        return self
+    end
+    return ({
+        ["function"] = Utils.coroutine.con.addFunc,
+        ["CoroutineConstructor"] = Utils.coroutine.con.addCoroutine
+    })[type(section)](self,section)
+end
+
+---@param func fun(...?):...?
+function Utils.coroutine.con:addFunc(func)
+    table.insert(self.funcs,func)
+    return self
+end
+
+
+local function nesting_loopIf(cond, ...)
+    if cond then
+        return assert(Utils.coroutine.current):loop(...)
+    else
+        Utils.coroutine.vars._nest_child = nil
+        return ...
+    end
+end
+
+local latest_child_vars = Utils.table.kmode() -- todo
+
+
+---@param constr CoroutineConstructor
+---@return function
+local function nesting(constr)
+    return function (...)
+        if not Utils.coroutine.vars._nest_child then
+            local vars = {parent = Utils.coroutine.vars}
+            Utils.coroutine.vars.latest_child_vars = vars 
+            Utils.coroutine.vars._nest_child = constr:instance(vars) -- maybe use some other way to store this
+        end
+        return nesting_loopIf(Utils.coroutine.vars._nest_child:resume(...))
+    end
+
+end
+
+
+---@param constr CoroutineConstructor
+function Utils.coroutine.con:addCoroutine(constr)
+    return self:addFunc(nesting(constr))
+end
+
+-- todo: "glue" which modifies the previous such that if it would advance to the next, it does so with no yield
+
+--- a section leading to the next section will have no_yield
+---@param section? CoroutineAddable
+---@return CoroutineConstructor
+function Utils.coroutine.con:glue(section)
+    self.direct_onto[#self.funcs+1] = true
+    if section then
+        self:add(section)
+    end
+    return self
+end
+
+---modifies the previous such that if it would advance to the next, it does so with no yield
+---@return CoroutineConstructor
+function Utils.coroutine.con:pipe()
+    local f = self.funcs[#self.funcs]
+    self.funcs[#self.funcs] = function (...)
+        local t = table.pack(f(...))
+        if Utils.coroutine.current:successing() then
+            Utils.coroutine.no_yield()
+        end
+        return table.unpack(t)
+    end
+    return self
+end
+
+
+--- takes the first value of the input, then repeats section that many times 
+--- (repeat n times: the first n times this advances to the next, it instead loops)
+--- hm, what happens if this is gotod out of and then reentered?
+---@param section CoroutineAddable? -- modifies previous otherwise
+---@return CoroutineConstructor
+function Utils.coroutine.con:rep(section)
+    local sentinel = {}
+
+    self:add(section)
+    local f = self.funcs[#self.funcs]
+    self.funcs[#self.funcs] = function (...)
+        if not Utils.coroutine.vars[sentinel] then
+            Utils.coroutine.vars[sentinel] = (...)
+            if ... and ... > 0 then
+                Utils.coroutine.loop()
+            end
+            return "loop start", ..., nil
+        end
+        if Utils.coroutine.vars[sentinel] <= 0 then
+            error("is this possible?")
+        else
+            local t = table.pack(f(...))
+            if Utils.coroutine.current:successing() then
+                    Utils.coroutine.vars[sentinel] = Utils.coroutine.vars[sentinel] - 1
+                    if Utils.coroutine.vars[sentinel] > 0 then 
+                        Utils.coroutine.loop()
+                    else
+                        Utils.coroutine.vars[sentinel] = nil
+                    end
+            end
+            return table.unpack(t)
+        end
+    end
+
+
+    return self
+end
+
+
+
+
+--#endregion builder
+
+
+
+--#region instance
 
 ---@class Coroutine
 ---@field con CoroutineConstructor
 ---@field vars table
 ---@field pointer integer?
----@field pointer_next integer?
+---@field pointer_next integer|boolean? -- the value true means advance to the next
 ---@field active boolean?
 Utils.coroutine.ins = {}
 Utils.coroutine.ins.__index = Utils.coroutine.ins
+Utils.coroutine.ins.__type = "Coroutine"
 
 
+
+---@param vars table?
+---@return Coroutine
 function Utils.coroutine.con:instance(vars)
-    local out = setmetatable({con=self,pointer=false,pointer_next = 1,vars= vars or {}},Utils.coroutine.ins)
+    local out = setmetatable({con=self,pointer=nil,pointer_next = 1,vars= vars or {}},Utils.coroutine.ins)
     return out
 end
 
----@param func fun(...?):...?
-function Utils.coroutine.con:add(func)
-    table.insert(self.funcs,func)
+
+function Utils.coroutine.ins:isResumable()
+    return not not self.pointer_next
 end
 
 
+function Utils.coroutine.ins:getLatestChildVars()
+    return self.vars.latest_child_vars
+end
 
----@type Coroutine?
-Utils.coroutine.current = nil
----@type table?
-Utils.coroutine.vars = nil
 
 --- pointer is set to current function
 function Utils.coroutine.ins:loop(...)
@@ -59,7 +205,7 @@ end
 
 
 function Utils.coroutine.ins:go(pos,...)
-    self.pointer_next = pos
+    self.pointer_next = self.con.labels[pos] or pos
     return ...
 end
 
@@ -68,11 +214,30 @@ function Utils.coroutine.ins:halt(...)
     return ...
 end
 
+--#endregion instance
+
+
+--#region current
+
+---@type Coroutine?
+Utils.coroutine.current = nil
+--- equal to Utils.coroutine.current.vars
+---@type {[any] : any, latest_child_vars : table?}?
+Utils.coroutine.vars = nil
 
 -- if flagged, the next resume continues from the current section, not the next.
 function Utils.coroutine.loop(...)
     return assert(Utils.coroutine.current):loop(...)
 end
+function Utils.coroutine.loopIf(cond, ...)
+    if cond then
+        return assert(Utils.coroutine.current):loop(...)
+    else
+        return ...
+    end
+end
+
+
 --- if flagged, the return is instead passed onto the next section, which executes immediately
 ---@param ... unknown
 ---@return ...
@@ -82,7 +247,7 @@ end
 
 
 --- goto
----@param pos integer
+---@param pos any
 ---@param ... unknown
 ---@return ...
 function Utils.coroutine.go(pos,...)
@@ -97,11 +262,9 @@ function Utils.coroutine.halt(...)
     return assert(Utils.coroutine.current):halt(...)
 end
 
+--#endregion current
 
 
-function Utils.coroutine.ins:isResumable()
-    return not not self.pointer_next
-end
 
 
 ---@package
@@ -115,6 +278,14 @@ function Utils.coroutine._switch(new)
 end
 
 
+local pointer_next_succ_sentinel = {}
+local function is_pointer_next_succ_sentinel(s)
+    return s == pointer_next_succ_sentinel
+end
+
+function Utils.coroutine.ins:successing()
+    return is_pointer_next_succ_sentinel(self.pointer_next)
+end
 
 ---@param ... unknown
 ---@return any? continues
@@ -130,15 +301,23 @@ function Utils.coroutine.ins:resume(...)
 
 
         if self.pointer_next then
+            assert(type(self.pointer_next) == "number")
             local f = self.con.funcs[self.pointer_next]
             if f then
                 self.pointer = self.pointer_next
-                self.pointer_next = self.pointer_next + 1 -- this way it increments by default but can change with f
+                self.pointer_next = pointer_next_succ_sentinel -- this way it increments by default but can change with f
                 t = table.pack(f(table.unpack(t)))
+                if is_pointer_next_succ_sentinel(self.pointer_next) then
+                    self.pointer_next = self.pointer + 1
+                end
+                if self.con.direct_onto[self.pointer_next] then
+                    self:no_yield()
+                end
             end
-            if not self.con.funcs[self.pointer_next] then
-                self.pointer_next = nil
-            end
+            -- if not self.con.funcs[self.pointer_next] then
+            --     self.pointer_next = nil
+            
+
         end
 
     until not self._no_yield
@@ -146,7 +325,7 @@ function Utils.coroutine.ins:resume(...)
 
     --- reestablish outer state
     Utils.coroutine._switch(parent_current)
-    return self.pointer_next, table.unpack(t)
+    return self.con.funcs[self.pointer_next] and self.pointer_next, table.unpack(t)
 
 end
 

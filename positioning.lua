@@ -296,6 +296,7 @@ Positioning.parts = {
 Utils.conversion = {}
 --- a ptwm that hasn't been updated yet.
 Utils.conversion.uninitializedPtwm = models.World:partToWorldMatrix()
+-- assert(Utils.conversion.uninitializedPtwm == matrices.scale4(1/16))
 
 --- returns nil if the ptwm is the same as an uninitialized one. 
 --- warning: this will return nil for models.World

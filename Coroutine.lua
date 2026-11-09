@@ -9,13 +9,29 @@
 Utils.coroutine = {}
 
 
----@class CoroutineConstructor<A...,B>
----@field funcs (fun(...:A...):B,...)[]
+---@class CoroutineConstructor<F>
+---@field funcs (F|(fun(...):...))[]
 ---@field labels { [any] : integer }
 ---@field direct_onto {[integer] : boolean} -- sections that when advanced to by another section, there is no yield,
 Utils.coroutine.con = {}
 Utils.coroutine.con.__index = Utils.coroutine.con
 Utils.coroutine.con.__type = "CoroutineConstructor"
+
+
+---@class Coroutine
+---@field con CoroutineConstructor
+---@field vars table
+---@field pointer integer?
+---@field pointer_next integer|boolean? -- the value true means advance to the next
+---@field active boolean? -- todo: whether this is executing, including if a child is
+---@field parent? Coroutine
+---@field child? Coroutine -- currently active recursion child
+---@field latest_child_vars? table
+Utils.coroutine.ins = {}
+Utils.coroutine.ins.__index = Utils.coroutine.ins
+Utils.coroutine.ins.__type = "Coroutine"
+
+
 
 function Utils.coroutine.constructor()
     local out = setmetatable({funcs={}, labels={}, direct_onto = {}},Utils.coroutine.con)
@@ -54,29 +70,32 @@ function Utils.coroutine.con:addFunc(func)
     return self
 end
 
+function Utils.coroutine.ins:exitChild()
+    self.child = nil
+end
 
 local function nesting_loopIf(cond, ...)
     if cond then
         return assert(Utils.coroutine.current):loop(...)
     else
-        Utils.coroutine.vars._nest_child = nil
+        Utils.coroutine.current:exitChild()
         return ...
     end
 end
-
-local latest_child_vars = Utils.table.kmode() -- todo
 
 
 ---@param constr CoroutineConstructor
 ---@return function
 local function nesting(constr)
     return function (...)
-        if not Utils.coroutine.vars._nest_child then
-            local vars = {parent = Utils.coroutine.vars}
-            Utils.coroutine.vars.latest_child_vars = vars 
-            Utils.coroutine.vars._nest_child = constr:instance(vars) -- maybe use some other way to store this
+        if not Utils.coroutine.current.child then
+            local vars = {}
+            Utils.coroutine.current.latest_child_vars = vars
+            local child = constr:instance(vars)
+            Utils.coroutine.current.child = child -- maybe use some other way to store this
+            child.parent = Utils.coroutine.current
         end
-        return nesting_loopIf(Utils.coroutine.vars._nest_child:resume(...))
+        return nesting_loopIf(Utils.coroutine.current.child:resume(...))
     end
 
 end
@@ -121,28 +140,28 @@ end
 ---@param section CoroutineAddable? -- modifies previous otherwise
 ---@return CoroutineConstructor
 function Utils.coroutine.con:rep(section)
-    local sentinel = {}
+    local sentinel = Utils.table.kmode()
 
     self:add(section)
     local f = self.funcs[#self.funcs]
     self.funcs[#self.funcs] = function (...)
-        if not Utils.coroutine.vars[sentinel] then
-            Utils.coroutine.vars[sentinel] = (...)
+        if not sentinel[Utils.coroutine.current] then
+            sentinel[Utils.coroutine.current] = (...)
             if ... and ... > 0 then
                 Utils.coroutine.loop()
             end
             return "loop start", ..., nil
         end
-        if Utils.coroutine.vars[sentinel] <= 0 then
+        if sentinel[Utils.coroutine.current] <= 0 then
             error("is this possible?")
         else
             local t = table.pack(f(...))
             if Utils.coroutine.current:successing() then
-                    Utils.coroutine.vars[sentinel] = Utils.coroutine.vars[sentinel] - 1
-                    if Utils.coroutine.vars[sentinel] > 0 then 
+                    sentinel[Utils.coroutine.current] = sentinel[Utils.coroutine.current] - 1
+                    if sentinel[Utils.coroutine.current] > 0 then 
                         Utils.coroutine.loop()
                     else
-                        Utils.coroutine.vars[sentinel] = nil
+                        sentinel[Utils.coroutine.current] = nil
                     end
             end
             return table.unpack(t)
@@ -162,16 +181,6 @@ end
 
 --#region instance
 
----@class Coroutine
----@field con CoroutineConstructor
----@field vars table
----@field pointer integer?
----@field pointer_next integer|boolean? -- the value true means advance to the next
----@field active boolean?
-Utils.coroutine.ins = {}
-Utils.coroutine.ins.__index = Utils.coroutine.ins
-Utils.coroutine.ins.__type = "Coroutine"
-
 
 
 ---@param vars table?
@@ -188,7 +197,7 @@ end
 
 
 function Utils.coroutine.ins:getLatestChildVars()
-    return self.vars.latest_child_vars
+    return self.latest_child_vars
 end
 
 
@@ -222,7 +231,7 @@ end
 ---@type Coroutine?
 Utils.coroutine.current = nil
 --- equal to Utils.coroutine.current.vars
----@type {[any] : any, latest_child_vars : table?}?
+---@type table?
 Utils.coroutine.vars = nil
 
 -- if flagged, the next resume continues from the current section, not the next.
@@ -278,7 +287,7 @@ function Utils.coroutine._switch(new)
 end
 
 
-local pointer_next_succ_sentinel = {}
+local pointer_next_succ_sentinel = {"succ_sentinel"}
 local function is_pointer_next_succ_sentinel(s)
     return s == pointer_next_succ_sentinel
 end

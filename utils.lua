@@ -486,6 +486,14 @@ function Utils.table.equals(a,b)
 end
 
 
+---@package
+Utils.table._kmode = {__mode='k'}
+
+function Utils.table.kmode()
+    return setmetatable({},Utils.table._kmode)
+end
+
+
 function Utils.nop()
   
 end

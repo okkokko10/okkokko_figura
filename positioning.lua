@@ -17,12 +17,6 @@
 Positioning = {}
 
 
----@package
-Utils.table._kmode = {__mode='k'}
-
-function Utils.table.kmode()
-    return setmetatable({},Utils.table._kmode)
-end
 
 ---@package
 Positioning._isActive = Utils.table.kmode()

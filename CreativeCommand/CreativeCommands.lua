@@ -1,4 +1,6 @@
 
+require(".redo.Rect")
+
 
 
 Ccom = {} 
@@ -95,18 +97,6 @@ function Ccom.expressions.manhattanHalfSphere(pos,radius)
     return ("(%s)*(%d<=y)"):format(Ccom.expressions.manhattanSphere(pos,radius),pos.y)
 end
 
-
---- expands the rect at both edges by the vector
---- negative vectors contract
----@param vector Vector
----@return Rect
-function Rect:expand(vector)
-    return Rect(self[1] - vector, self[2] + vector)
-end
-
-function Rect:bottom()
-    return Rect(self[1],self[2].x_z + self[1]._y_)
-end
 
 --- at the position, fills a hollow cup at the rect
 ---@param rect Rect

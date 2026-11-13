@@ -270,5 +270,16 @@ function Rect:matrixInto(result)
 end
 
 
+--- expands the rect at both edges by the vector
+--- negative vectors contract
+---@param vector Vector
+---@return Rect
+function Rect:expand(vector)
+    return Rect(self[1] - vector, self[2] + vector)
+end
+
+function Rect:bottom()
+    return Rect(self[1],self[2].x_z + self[1]._y_)
+end
 
 return Rect

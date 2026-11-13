@@ -774,4 +774,17 @@ events.ENTITY_INIT:register(function ()
 end)
 
 
+---fixes an issue with `loadstring`
+---@param text string
+---@param chunkname? string
+---@param env? table
+---@return function?
+---@return string? error_message
+---@nodiscard
+function Loadstring(text, chunkname, env)
+    return loadstring(text.." ",chunkname,env)
+end
+
+
+
 return Utils

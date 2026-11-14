@@ -41,6 +41,23 @@ function Utils.string.prettierLists(str)
   end
 end
 
+
+---checks that str fits inside the dimensions of model
+---@param str string
+---@param model number|string
+---@return boolean
+function Utils.string.correctlyFormatted(str,model)
+    if type(model) == "string" then
+        local v = client.getTextDimensions(model)
+        model = v.x+v.y
+    end
+    local v = client.getTextDimensions(str)
+    return v.x+v.y <= model
+    
+end
+
+
+
 ---comment
 ---@param pos Vector
 ---@return Matrix
@@ -551,6 +568,23 @@ function Utils.table.range(stop,start)
     if i > stop then return end
     return i
   end
+end
+
+
+---@param a1  table
+---@param f   integer
+---@param e   integer
+---@param t   integer
+---@param a2? table
+---@return table a2
+function Utils.table.move(a1, f, e, t, a2)
+  a2 = a2 or a1
+  local offset = t - f
+  for i = f, e do
+    a2[i+offset] = a1[i]
+  end
+  return a2
+
 end
 
 

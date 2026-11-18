@@ -2,10 +2,11 @@
 
 
 ---@class ModelPart : HasGetSetScalePos
----@field newPart fun(...): ModelPart
----@field [string] any|(fun(...):ModelPart)|fun(...):any
----@field ["moveTo"|"setMatrix"|"setPos"|"setRot"|"setScale"] fun(...): ModelPart
----@field partToWorldMatrix fun(self:self):Matrix
+
+-- -@field newPart fun(...): ModelPart
+-- -@field [string] any|(fun(...):ModelPart)|fun(...):any
+-- -@field ["moveTo"|"setMatrix"|"setPos"|"setRot"|"setScale"] fun(...): ModelPart
+-- -@field partToWorldMatrix fun(self:self):Matrix
 
 ---@alias RenderFunction fun(delta:number,ctx:string,part:ModelPart)
 ---@alias PreRenderFunction RenderFunction
@@ -219,7 +220,12 @@ function Positioning.functions.worldRotation()
     return Positioning.functions._worldRotation
 end
 
----@type {[Vector] : {old?: Matrix, current: Matrix, loaded: boolean}}
+---@class LerpMatrix
+---@field old Matrix4?
+---@field current Matrix4
+---@field loaded boolean?
+
+---@type {[Vector] : LerpMatrix}
 Positioning._CoordinateMatrices = {}
 
 
@@ -227,6 +233,7 @@ Positioning._CoordinateMatrices = {}
 --- lerps matrices, which is not ideal.
 ---@return fun() world_tick_function
 ---@return PreRenderFunction
+---@return LerpMatrix coordinateMatrix
 function Positioning.functions.coordinate(pos)
     -- local matri = matrices.mat4()
     -- local oldMatri = matri
@@ -250,7 +257,7 @@ function Positioning.functions.coordinate(pos)
         else
             Positioning.setActive(part,false)
         end
-    end
+    end,Positioning._CoordinateMatrices[pos]
 end
 
 
@@ -259,15 +266,20 @@ Positioning.make = {}
 
 
 
+---@param pos Vector3
+---@param name string?
+---@param parent ModelPart? defaults to `models`
+---@return ModelPart
+---@return LerpMatrix coordinateMatrix
 function Positioning.make.coordinateFollower(pos,name,parent)
     local nm = name or ("follows " ..Utils.vectorString(pos))
-    local onTick, onPreRender = Positioning.functions.coordinate(pos)
+    local onTick, onPreRender,coordinateMatrix = Positioning.functions.coordinate(pos)
     local tick_name = "tick_coordinate_" .. tostring(pos)
     if events.WORLD_TICK:getRegisteredCount(tick_name) == 0 then
         events.WORLD_TICK:register(onTick,tick_name)
     end
     return (parent or models):newPart(nm)
-        :setPreRender(onPreRender)
+        :setPreRender(onPreRender), coordinateMatrix
 end
 
 

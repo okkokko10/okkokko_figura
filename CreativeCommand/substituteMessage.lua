@@ -53,8 +53,9 @@ end
 
 local prev_chat_text = nil
 
-function Ccom.chatTextPreview (force)
-    local tx = host:getChatText()
+
+function Ccom.chatTextPreview (force,text)
+    local tx = text or host:getChatText()
     if (force == "force") or prev_chat_text ~=tx then
         prev_chat_text = tx
         if not tx then
@@ -83,10 +84,66 @@ end
 
 local evaluate_key = keybinds:newKeybind("evaluate open chat","key.keyboard.grave.accent",true)
 
-function evaluate_key.press(mod,self)
-    Ccom.chatTextPreview("force")
+---@type string?
+local latest = nil
+
+
+---@return string?
+local function getLatest()
+    latest = latest or config:setName("substitution"):load("latest")
+    return latest
 end
 
+---@param v string?
+local function setLatest(v)
+    latest = v or ""
+    config:setName("substitution"):save("latest",latest)
+end
+
+local updating = false
+
+
+function evaluate_key.press(mod,self)
+
+    if bit32.btest(mod,1) then
+        updating = not updating
+        if mod == 1 then
+            return
+        end
+    end
+
+    
+    local ct = host:getChatText()
+    if bit32.btest(mod,2) then
+        if host:isChatOpen() then
+            if ct == "" then
+                host:setChatText(getLatest() or "")
+            else
+                setLatest(ct)
+            end
+            return
+        else
+            ct = ""
+        end
+    elseif not host:isChatOpen() then
+        ct = getLatest()
+    end
+
+    Ccom.chatTextPreview("force",ct)
+    -- log(mod,self)
+    if host:isChatOpen() then
+        return
+    end
+end
+
+local function evaluate_update(delta)
+    if updating then
+        Ccom.chatTextPreview("force",getLatest())
+        
+    end
+end
+
+events.world_render:register(evaluate_update)
 
 
 -- events.world_render:register(Ccom.chatTextPreview)

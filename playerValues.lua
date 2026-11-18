@@ -1,6 +1,6 @@
 
 
----@class Entity
+---@type Entity
 PlayerValues = {
 }
 

@@ -59,8 +59,8 @@ end
 
 
 ---comment
----@param pos Vector
----@return Matrix
+---@param pos Vector3
+---@return Matrix3
 ---@return Vector
 function Utils.Sublevel.sublevelRotationMatrix3(pos)
   if not pos then
@@ -122,7 +122,7 @@ end
 ---by default multiplies the coordinate by 16
 ---@param pos Vector3
 ---@param posScaling? number
----@return Matrix
+---@return Matrix4
 ---@return boolean loaded
 function Utils.Sublevel.sublevelPositionMatrix(pos,posScaling)
   local mat,v = Utils.Sublevel.sublevelRotationMatrix3(pos)
@@ -332,10 +332,12 @@ end
 
 ---@package
 function Utils.ID._launch_inits(id,v)
-  if not Utils._id_inits[id] then return end
-
-  for index, value in ipairs(Utils._id_inits[id]) do
-    value(v)
+  local t = Utils._id_inits[id]
+  if not t then return end
+  local i = 1
+  while i <= #t do -- in case the table is updated? wait, if init is called in the middle then it just instantly runs...
+    t[i](v)
+    i = i + 1
   end
   Utils._id_inits[id] = nil
 end
@@ -803,9 +805,9 @@ function Utils.performance.report()
   log("init instructions:",Utils.performance._init_lengths)
 end
 
-events.ENTITY_INIT:register(function ()
-  Utils.performance.report()
-end)
+-- events.ENTITY_INIT:register(function ()
+--   Utils.performance.report()
+-- end)
 
 
 ---fixes an issue with `loadstring`

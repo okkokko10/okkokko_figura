@@ -395,16 +395,22 @@ end
 
 Utils.Sublevel.defaultSublevelParent = models:newPart("defaultSublevelParent","World")
 
----moves part to be a child of a child of `grandparent or models` that tracks the position of a sublevel.
+---moves part to be a child of a child of `grandparent or models.defaultSublevelParent` that tracks the position of a sublevel.
 ---if part is string|nil, creates a new part named that or a generated name.
 ---@param pos Vector
 ---@param grandparent ModelPart?
 ---@param part ModelPart|string|nil
----@return ModelPart
-function Utils.Sublevel.SublevelPositionPart(pos,grandparent,part)
+---@param offset Vector3? equivalent to pos := pos + offset, but better precision
+---@return ModelPart part
+---@return LerpMatrix slOriginMatrixLerp
+function Utils.Sublevel.SublevelPositionPart(pos,grandparent,part,offset)
     grandparent = grandparent or Utils.Sublevel.defaultSublevelParent
     local slOrigin, slOffset = Utils.Sublevel.getSublevelOriginOffset(pos)
     local sublevelID = Utils.Sublevel.sublevelIDname(slOrigin)
+    if offset then
+        slOffset = slOffset + offset
+    end
+    
     if not grandparent[sublevelID] then
         Positioning.make.coordinateFollower(slOrigin,sublevelID,grandparent)
     end
@@ -415,7 +421,7 @@ function Utils.Sublevel.SublevelPositionPart(pos,grandparent,part)
         part = grandparent[sublevelID]:newPart((type(part) == "string") and part or tostring(slOffset))
     end
     part:setPos(slOffset*PS)
-    return part
+    return part,Positioning._CoordinateMatrices[slOrigin]
 end
 
 

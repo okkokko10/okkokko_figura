@@ -47,6 +47,12 @@ function Freecam.disable()
     pings.setFC(false)
 end
 
+--- 
+---@param f fun(freecam: ModelPart)
+function Freecam.onInit(f)
+    return Utils.ID.init("Freecam",f)
+end
+
 local head = models:newPart("head","HEAD")
 
 

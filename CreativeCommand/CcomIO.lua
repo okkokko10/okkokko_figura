@@ -143,7 +143,7 @@ Ccom.IO.copying = false
 
 -- Utils.parts.child(models,"gui","GUI")
 local gui = models:newPart("Ccom_gui","GUI")
-local center_text = gui:newText("center_text"):setPos(client.getScaledWindowSize().x__/(-2)):setWidth(client.getScaledWindowSize().x/2)
+local center_text = gui:newText("center_text"):setPos(client.getScaledWindowSize().x__/(-2) + vec(0,-100,0)):setWidth(client.getScaledWindowSize().x/2)
 
 
 function Ccom.IO.write_text_center(text)

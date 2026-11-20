@@ -27,6 +27,7 @@ for i = 0, 7 do
     if flip then
         ex,ez = ez,ex
     end
+    
 
     Mirroring.reflect_matrices[i] = matrices.mat4(
             ex,
@@ -34,10 +35,20 @@ for i = 0, 7 do
             ez,
             vec(0,0,0,1)
         )
-
-
-
 end
+
+Mirroring.reflect_matrices2 = {}
+do
+    local flip = matrices.scale4(-1,1,1)
+    for i = 0, 3 do
+        local rot = matrices.rotation4(0,90*i,0)
+        Mirroring.reflect_matrices2[i] = rot
+        Mirroring.reflect_matrices2[i+4] = rot * flip
+        
+    end
+end
+
+
 
 
 

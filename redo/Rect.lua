@@ -254,7 +254,7 @@ function Rect:transformed(matrix)
 end
 
 
---- gives a matrix that maps from Rect.fromPosSize(vec(0,0,0),vec(1,1,1)) to self
+--- gives a matrix that maps from Rect.unit to self
 ---@return Matrix
 function Rect:matrix()
     local a = self.pos1
@@ -281,5 +281,13 @@ end
 function Rect:bottom()
     return Rect(self[1],self[2].x_z + self[1]._y_)
 end
+
+--- [0,1]^3
+Rect.unit = Rect.fromEndpoints(vec(0,0,0),vec(1,1,1))
+--- [-1,1]^3
+Rect.radius_box = Rect.fromEndpoints(vec(-1,-1,-1),vec(1,1,1))
+--- [-1/2,1/2]^3
+Rect.diameter_box = Rect.radius_box * (1/2)
+
 
 return Rect

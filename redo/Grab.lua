@@ -82,7 +82,14 @@ function Grabbing.addSelectableGenerate(partID)
         
     end)
 end
-
+---@param partID ID<ModelPart>
+---@param hitbox Hitbox
+function Grabbing.addSelectableWithHitbox(partID,hitbox)
+    Utils.ID.init(partID,function (s)
+        Grabbing.addSelectable({partID = partID, hitbox = hitbox})
+        
+    end)
+end
 
 -- todo: place snapped to grid
 

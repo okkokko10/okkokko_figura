@@ -15,16 +15,15 @@ function Ccom.substitute_message(message,fake)
     --     local a = string.sub(b,2,-2)
     local modified = string.gsub(message,"!#(.-)#!", function (a)
         -- local a = string.sub(b,2,-2)
-        local w,dots,res = string.match(a,"^(.-)([%.%:]+)([%w_]*)$")
-        if res == "" then
+        -- local w,dots,res = string.match(a,"^(.-)([%.%:]+)([%w_]*)$")
+        local w,dots = string.match(a,"^(.-)([%.%:]+)%s*$")
+        if w then
             a = w
-        else
-            -- log("res:",w,dots,res)
         end
         local c, q = loo(a)
-        if fake and w and not c and string.find(q,"function arguments expected") then
-            c,q = loo(w)
-        end
+        -- if fake and w and not c and string.find(q,"function arguments expected") then
+        --     c,q = loo(w)
+        -- end
 
         if c then
             local r, s = pcall(c)

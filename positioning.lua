@@ -77,7 +77,8 @@ Positioning.functions = {}
 
 local function materializeEntity(entity)
     if type(entity) == "string" then
-        local ent = world.getEntity(entity) or (world.getPlayers())[entity]
+        local s, e = pcall(world.getEntity,entity)
+        local ent = (s and e) or (world.getPlayers())[entity]
         if ent then
             return ent, ent:isLoaded()
         else

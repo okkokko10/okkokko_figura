@@ -61,6 +61,7 @@ Conversion._toMatrix = {
     Matrix3 = function (value) return value:augmented() end,
     Matrix4 = function (value) return value end,
     Vector3 = function (value) return matrices.mat4():translate(value) end,
+    Vector4 = function (value) return matrices.scale4(1/value.w):translate(value.xyz) end,
     ModelPart = function (part,...) return part:partToWorldMatrix() end,
     string =  function (id,...) return Conversion.toMatrix(Utils.ID.from(id),...) end,
     ["nil"] = function (n,...)

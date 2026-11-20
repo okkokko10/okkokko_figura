@@ -28,6 +28,13 @@ function Utils.math.directionToEulerAngle(dirVec)
     return vec(0, 180, 0)-vec(-math.deg(math.atan2(dirVec.y, dirVec.xz:length())), -math.deg(math.atan2(dirVec.x, dirVec.z)), 0)
 end
 
+function Utils.math.floor(x,r)
+  r = r or 1
+  return math.floor(x/r) * r
+  
+end
+
+
 NewlineLists = true
 
 Utils.string = {}

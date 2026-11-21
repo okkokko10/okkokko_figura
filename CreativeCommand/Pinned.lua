@@ -35,12 +35,14 @@ function Pinned.find_message(marker)
     local i = 0
     while true do
         i = i + 1
-        local msg = host:getChatMessage(i)
-        if not msg then
-            return nil, i
-        end
-        if string.find(msg.json, marker, 1, true) then
-            return msg, i
+        local s, msg = pcall(host.getChatMessage, host, i) -- host.getChatMessage can error
+        if s then
+            if not msg then
+                return nil, i
+            end
+            if string.find(msg.json, marker, 1, true) then
+                return msg, i
+            end
         end
     end
 end
@@ -169,9 +171,19 @@ function Pinned.chat_receive_message(message, json)
     if not w then
         return
     end
-
-    return ('{"extra":[%s,%s], "text":""}'):format(w, json)
+    local out = ('{"extra":["",%s,%s], "text":""}'):format(w, json)
+    local out_dim = client.getTextDimensions(out)
+    -- local in_dim = client.getTextDimensions(json)
+    local message_dim = client.getTextDimensions(message)
+    -- Ccom.IO.write_text_center(('%s  %s  %s'):format(tostring(out_dim), tostring(in_dim), tostring(message_dim)))
+    if not (out_dim < message_dim + 30) then -- in this case the output won't be properly parsed
+        return
+    end
+    return out
 end
+
+
+
 
 
 
@@ -317,6 +329,6 @@ end
 
 if host:isHost() then
     events.CHAT_RECEIVE_MESSAGE:register(Pinned.chat_receive_message)
-    events.CHAT_RECEIVE_MESSAGE:register(Pinned.do_separator_chat_receive_message)
+    -- events.CHAT_RECEIVE_MESSAGE:register(Pinned.do_separator_chat_receive_message)
     events.WORLD_RENDER:register(Pinned.render)
 end

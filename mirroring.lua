@@ -1,7 +1,9 @@
 
 
 local TARGET_ORIGINAL = true
+local TARGET_ALWAYS = false
 local TARGET_REQUIRE_HOLDING = false
+local TARGET_SNEAK = true
 local PREVIEW_BLOCK_TARGET = false
 local EXTRA_HEIGHT = 0
 local ENABLE_AVATARS = true
@@ -309,7 +311,7 @@ end
 Mirroring.root:setMidRender(function (delta, context, part)
     if not player:isLoaded() then return end
 
-    if not (Mirroring.slOriginMatrixLerp.loaded and Mirroring.pos) then
+    if not (Mirroring.slOriginMatrixLerp and Mirroring.slOriginMatrixLerp.loaded and Mirroring.pos) then
         Mirroring.root.root:setVisible(false)
         -- todo: should make it invisible
         return
@@ -351,7 +353,7 @@ Mirroring.root:setMidRender(function (delta, context, part)
 
 
     local target, hit_pos, side = player:getTargetedBlock(true)
-    if target and target:getID() ~= "minecraft:air" and (holding_wand or not (TARGET_REQUIRE_HOLDING)) and (Mirroring.bitmask ~= 0) then
+    if target and target:getID() ~= "minecraft:air" and (TARGET_ALWAYS or (TARGET_REQUIRE_HOLDING and holding_wand) or (TARGET_SNEAK and player:isSneaking())) and (Mirroring.bitmask ~= 0) then
         Mirroring.target:setVisible(true)
         local side_dir = Direction.toVector(side)
 

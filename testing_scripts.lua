@@ -168,6 +168,7 @@ function Testing.dumpCharsPartView(prev,post)
     
 end
 
+
 function Testing.active1()
 
     -- Testing.dumpCharsPartInit()
@@ -200,6 +201,83 @@ function Testing.active2()
 end
 
 
+
+---@param message? string
+---@param json? string
+---@return string|false? replace
+---@return Vector3? bgcolor
+function Testing.test_dimensions_chat_receive_message(message, json)
+    local out = ('{"extra":[%s], "text":""}'):format(json)
+    local message_dim = client.getTextDimensions(message)
+    local json_dim = client.getTextDimensions(json)
+    local out_dim = client.getTextDimensions(out)
+    host:setClipboard(('%s  %s  %s'):format(tostring(message_dim), tostring(json_dim), tostring(out_dim)))
+    return json
+end
+
+-- events.CHAT_RECEIVE_MESSAGE:register(Testing.test_dimensions_chat_receive_message)
+
+
+function Testing.world_newItem()
+    local item = player:getHeldItem()
+    log(item)
+    local stack_string = item:toStackString()
+    log(stack_string)
+    local new_item = world.newItem(stack_string)
+    log(new_item)
+end
+
+Testing.item_enchantments = {}
+
+function Testing.item_hover()
+    
+    -- local item = player:getHeldItem()
+    -- log(item)
+    -- local stack_string = item:toStackString()
+    
+
+    local first_item = player:getNbt().Inventory[1]
+    -- logTable(first_item,3)
+
+    printJson(toJson{
+        text = "item",
+        hoverEvent = {
+            action = "show_item",
+            contents = first_item
+        }
+    })
+end
+
+Testing.item_enchantments.simpler_unenchanted = '{"text":"unenchanted","hoverEvent":{"contents":{"id":"minecraft:netherite_sword","components":{"minecraft:enchantments":{"levels":{}}}},"action":"show_item"}}'
+Testing.item_enchantments.unenchanted = ('{"text":"","extra":[%s]}'):format(Testing.item_enchantments.simpler_unenchanted)
+Testing.item_enchantments.simpler_enchanted = '{"text":"enchanted","hoverEvent":{"contents":{"id":"minecraft:netherite_sword","components":{"minecraft:enchantments":{"levels":{"minecraft:mending":1}}}},"action":"show_item"}}'
+Testing.item_enchantments.enchanted = ('{"text":"","extra":[%s]}'):format(Testing.item_enchantments.simpler_enchanted)
+
+
+--- shows that printJson cannot do a hoverEvent with enchantments unlike tellraw
+function Testing.item_enchantments.item_hoverText_tellraw()
+
+
+    printJson(Testing.item_enchantments.unenchanted)
+    printJson("\n\n")
+    printJson( Testing.item_enchantments.enchanted)
+    printJson("\n\n")
+    printJson( Testing.item_enchantments.simpler_enchanted)
+    printJson("\n\n")
+    host:sendChatCommand("/tellraw @s " .. Testing.item_enchantments.simpler_enchanted)
+end
+
+function Testing.item_enchantments.item_hoverText_tellraw_only()
+
+    local unenchanted = '{"text":"","extra":[{"text":"unenchanted","hoverEvent":{"contents":{"id":"minecraft:netherite_sword","components":{"minecraft:enchantments":{"levels":{}}}},"action":"show_item"}}]}'
+    local enchanted = '{"text":"","extra":[{"text":"enchanted","hoverEvent":{"contents":{"id":"minecraft:netherite_sword","components":{"minecraft:enchantments":{"levels":{"minecraft:mending":1}}}},"action":"show_item"}}]}'
+
+    host:sendChatCommand("/tellraw @s " .. unenchanted)
+    host:sendChatCommand("/tellraw @s " .. enchanted)
+
+end
+
+
 function Testing.active()
     Testing.active2()
 end
@@ -215,7 +293,7 @@ if host:isHost() and START_WITH_TESTING_PART then
 end
 end
 
-
+-- !#(function(x) MYS = x; return x end)(host:getChatMessage(16)).#!
 
  
 return Testing

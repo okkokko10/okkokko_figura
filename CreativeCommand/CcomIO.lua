@@ -1,5 +1,5 @@
 
-local Ccom = require"CreativeCommand.CreativeCommands"
+require"CreativeCommand.CreativeCommands"
 
 local Coroutine = require"Coroutine"
 

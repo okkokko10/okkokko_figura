@@ -156,7 +156,7 @@ Text:newLine'>>>fun.ClearTrailEntities:'
 ']' 
 
 
-Text:newLine'>>>[text.initialization ended] log'
+-- Text:newLine'>>>[text.initialization ended] log'
 Text:newLine''
 Text:newLine''
 Text:newLine''

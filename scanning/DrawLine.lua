@@ -115,7 +115,7 @@ end
 ---@param part ModelPart
 ---@param from Vector
 ---@param to Vector
----@param config DrawLineConfig?
+---@param config DrawLineConfig|ModelPart?
 ---@return ModelPart
 ---@return table
 ---@return Matrix[]

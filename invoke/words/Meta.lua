@@ -109,9 +109,12 @@ function Utils.table.deepType(obj)
         local vt = Utils.table.deepType(value)
         local txt
         if kt == "string" then
-            txt = ("\"%s\" : %s"):format(key,vt)
+            if string.find(key,":", nil, true) then
+                key = '["' .. key .. '"]'
+            end
+            txt = ("%s : %s"):format(key,vt)
         else
-            txt = ("%s : %s"):format(kt,vt)
+            txt = ("[%s] : %s"):format(kt,vt)
         end
         if not appears[txt] then
             appears[txt] = #out

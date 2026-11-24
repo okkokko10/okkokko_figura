@@ -31,8 +31,8 @@ local test_text = {
 InsertText.test_text2 = {
 
     main = {
-        text = '["json", " ", "allowed"]',
-        height = 15
+        text = '["main", " ", "part"]',
+        -- height = 15
     },
 
     -- position(right) := e_x * width(main)
@@ -44,8 +44,10 @@ InsertText.test_text2 = {
             --     -- you could also just find this ModelPart and add a new child
             -- },
             model = "name1",
-            width = 10
+            width = 16,
         },
+        height = 16,
+        
         scale = vec(1,2),
         right = {
             text = "right"
@@ -56,7 +58,10 @@ InsertText.test_text2 = {
         main = {
             json = {
                 "next",
-                "row"
+                " ",
+                "row",
+                " ",
+                "here"
             }
         }
     },
@@ -95,10 +100,13 @@ InsertText.test_text2 = {
 
 
 ---recursively calculates the dimensions, ie the position of the bottom right corner in pixels
----@param textHierarchy TextHierarchy?
+---@param textHierarchy TextHierarchy | ModelPart?
 ---@return Vector2
 function InsertText.dimensions(textHierarchy)
     if not textHierarchy then
+        return vec(0,0)
+    end
+    if type(textHierarchy) == "ModelPart" then -- todo
         return vec(0,0)
     end
     if textHierarchy.width and textHierarchy.height then
@@ -142,34 +150,45 @@ end
 
 ---creates parts
 ---@param part ModelPart
----@param textHierarchy TextHierarchy
+---@param textHierarchy TextHierarchy|ModelPart
 ---@param state {atlas: {[string]: ModelPart}, names: {[string]: ModelPart}}
 function InsertText.init(part,textHierarchy,state)
 
     part:newBlock("dummy"):block("minecraft:target"):setScale(1/16)
 
+    if type(textHierarchy) == "ModelPart" then
+        part:addChild(textHierarchy)
+        return
+    end
+    
+    if textHierarchy.json then
+        textHierarchy.text = toJson(textHierarchy.json)
+    end
+
     if textHierarchy.main then
         InsertText.init(
-            part:newPart("main"),
+            Utils.parts.child(part,"main"),
             textHierarchy.main,
             state
         )
     end
 
-    local main_corner = InsertText.dimensions(textHierarchy.main)
+    local corner_position = InsertText.dimensions(textHierarchy.main)
 
     if textHierarchy.right then
         
         InsertText.init(
-            part:newPart("main"):setPos(-main_corner.x__),
+            Utils.parts.child(part,"right"):setPos(-corner_position.x__),
             textHierarchy.right,
             state
         )
-        
+        -- corner_position = InsertText.dimensions(textHierarchy.right)
     end
+
+
     if textHierarchy.below then
         InsertText.init(
-            part:newPart("main"):setPos(-main_corner._y_),
+            Utils.parts.child(part,"below"):setPos(-corner_position._y_),
             textHierarchy.below,
             state
         )
@@ -178,15 +197,15 @@ function InsertText.init(part,textHierarchy,state)
     if textHierarchy.corner then
         
         InsertText.init(
-            part:newPart("main"):setPos(-main_corner.xy_),
+            Utils.parts.child(part,"corner"):setPos(-corner_position.xy_),
             textHierarchy.corner,
             state
         )
     end
 
-    local text = textHierarchy.json and toJson(textHierarchy.json) or textHierarchy.text
+    local text = textHierarchy.text --textHierarchy.json and toJson(textHierarchy.json) or textHierarchy.text
     if text then
-        part:newText("text"):setWidth(textHierarchy.width):setWrap(textHierarchy.wrap):setText(text)
+        (part:getTask("text") or part:newText("text")):setWidth(textHierarchy.width):setWrap(textHierarchy.wrap):setText(text)
     end
     
     local model = textHierarchy.model
@@ -221,5 +240,75 @@ function InsertText.render(part,text_hierarchy,atlas)
 end
 
 
+---@alias Insertable Insertable[] | string | ModelPart 
+
+---no plan yet
+---@param out TextHierarchy
+---@param insertables Insertable[]
+---@param index integer
+function InsertText.parse(out,insertables,index,stop)
+    out = out or {}
+    
+    local first = insertables[index]
+    if not first then
+        return index
+    end
+    if first == "\n" then
+        return index + 1
+    end
+    
+    -- out.main = {}
+    -- local index_main = InsertText.parse(out.main,insertables,index+1)
 
 
+
+    
+    for i = index, #insertables do
+        local value = insertables[i]
+        local t = type(value)
+        if t == "ModelPart" then
+            return -- todo
+        elseif t == "string" then
+            if t == "\n" then
+                
+            end
+            return
+        end
+    end
+
+end
+
+
+
+--[[
+
+idea: 2d table for rows, columns.
+
+with capability to nest
+
+
+]]
+
+---@alias TextCell.code {code:string,value:any}
+
+---@alias TextCell string|ModelPart|TextCell.code
+
+---no plan yet
+---@param out TextHierarchy
+---@param rows TextCell[][]
+---@param index integer
+function InsertText.parseRows(out,rows,index,stop)
+
+    for y, row in ipairs(rows) do
+        for x, cell in ipairs(row) do
+            local t = type(cell)
+            
+            
+        end
+        
+    end
+    
+
+    
+
+end

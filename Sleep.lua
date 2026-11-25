@@ -191,6 +191,17 @@ end
 function Sleep:_world_tick()
     self = self or Sleep
     local current_time = world.getTime()
+    
+    -- makes it so skipping a lot of world.getTime() doesn't cause a lagspike
+    if current_time - self.last_time > 100 then
+        local mi = current_time
+        for key, value in pairs(self._queued) do
+            if key < mi then
+                mi = key
+            end
+        end
+        self.last_time = mi
+    end
     for time = self.last_time, current_time do
         local t = self._queued[time]
         if t then
@@ -221,5 +232,6 @@ function Sleep:_init()
     events.WORLD_TICK:register(Sleep._world_tick)
     self._init = Utils.nop
 end
+
 
 return Sleep

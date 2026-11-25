@@ -207,12 +207,14 @@ function Testing.active2()
     }
     Testing.InsertText.cells_hierarchy = InsertText.parseCells(Testing.InsertText.cells)
 
-    Testing.InsertText.state = InsertText.render(Testing.part,Testing.InsertText.cells_hierarchy,atlas)
+    local part = Testing.part:newPart("TextHierarchy")
+
+    Testing.InsertText.state = InsertText.render(part,Testing.InsertText.cells_hierarchy,atlas)
     -- InsertText.render(Testing.part,InsertText.test_text2,atlas)
-    -- events.TICK:register(function ()
-    --     InsertText.render(Testing.part,Testing.InsertText.cells_hierarchy,atlas)
+    events.TICK:register(function ()
+        -- InsertText.render(part,Testing.InsertText.cells_hierarchy,atlas)
         
-    -- end)
+    end)
 
     
 

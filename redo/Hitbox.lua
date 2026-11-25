@@ -5,6 +5,7 @@ require"./Rect"
 ---@class Hitbox
 ---@field matrix ConvertsToMatrix
 ---@field AABBs {[any] : Rect}
+---@field disabled boolean?
 Hitbox = {}
 Hitbox.__index = Hitbox
 Hitbox.__type = "Hitbox"
@@ -61,6 +62,7 @@ end
 ---@param endPos VectorWorld
 ---@return HitboxRaycastOutput?
 function Hitbox:raycastOriented(startPos,endPos,scaleScaling)
+    if self.disabled then return end
     local ptwm = Conversion.toMatrix(self.matrix)
     local wtpm = ptwm:inverted()
     local aabbs = self.AABBs
@@ -73,12 +75,19 @@ function Hitbox:raycastOriented(startPos,endPos,scaleScaling)
 end
 
 
+---disables hitting this
+---@param state boolean?
+function Hitbox:setDisabled(state)
+    self.disabled = state
+end
+
+
 -- raycast:aabb(vec(0,0,0),vec(0,0,1),{{}})
 
 ---comment
 ---@param startPos VectorWorld
 ---@param endPos VectorWorld
----@param objects (Hitbox|HasHitbox)[]
+---@param objects { [any] : (Hitbox|HasHitbox) }
 ---@return HitboxRaycastOutput?
 function Hitbox.raycastsOriented(startPos,endPos,objects)
     local out

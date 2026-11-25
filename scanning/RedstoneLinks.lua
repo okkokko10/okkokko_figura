@@ -253,6 +253,16 @@ function Utils.math.vectorMin(a,b)
         return math.min(x,b[i])
     end)
 end
+
+
+---@param target Vector
+---@param b Vector
+---@return Vector target
+function Utils.math.vectorMaxInPlace(target,b)
+    return target:applyFunc(function (x,i)
+        return math.max(x,b[i])
+    end)
+end
 function Utils.math.vectorMax(a,b)
     return a:copy():applyFunc(function (x,i)
         return math.max(x,b[i])

@@ -63,6 +63,9 @@ InsertText.test_text2 = {
                 " ",
                 "here"
             }
+        },
+        below = {
+            text = "row 3"
         }
     },
     -- position(extra) := e_0
@@ -91,18 +94,22 @@ InsertText.test_text2 = {
 ---@field corner? TextHierarchy
 ---@field width? number
 ---@field height? number
----@field scale? Vector2|number
+---@field scale? Vector3|number
 ---@field invisible boolean? -- should this change the dimensions to 0?
 ---@field model ModelPart|string?
 ---@field key string?
----@field onClick fun(pos:Vector3)?
-
+---@field onClick fun(pos:Vector3)? -- todo
+---@field offset Vector2|Vector3? -- offsets the main's position (and the rest by extension)
+---@field _part ModelPart
+---@field hitbox Hitbox
+---@field onChangeHover fun(entered:boolean)? -- when exited or entered
 
 
 ---recursively calculates the dimensions, ie the position of the bottom right corner in pixels
 ---@param textHierarchy TextHierarchy | ModelPart?
+---@param noScale boolean?
 ---@return Vector2
-function InsertText.dimensions(textHierarchy)
+function InsertText.dimensions(textHierarchy,noScale)
     if not textHierarchy then
         return vec(0,0)
     end
@@ -114,8 +121,12 @@ function InsertText.dimensions(textHierarchy)
         -- should this use scale_x?
     end
     local main = InsertText.dimensions(textHierarchy.main)
-    local max_x = main.x
-    local max_y = main.y
+    if textHierarchy.offset then
+        main = main + textHierarchy.offset.xy
+    end
+
+    local max_x = math.max(main.x,0)
+    local max_y = math.max(main.y,0)
 
     
     if textHierarchy.text then
@@ -139,48 +150,132 @@ function InsertText.dimensions(textHierarchy)
         max_x = math.max(max_x, a.x)
         max_y = math.max(max_y, a.y)
     end
+
+    local out = vec(textHierarchy.width or max_x,textHierarchy.height or max_y)
+
+    if textHierarchy.scale and not noScale then
+        if type(textHierarchy.scale) == "number" then
+            return out  * (textHierarchy.scale)
+        else
+            return out * textHierarchy.scale.xy
+        end
+    end
     
-    return vec(textHierarchy.width or max_x,textHierarchy.height or max_y) * (textHierarchy.scale or 1)
+    return out
 
 end
 
 
 
+---@class TextHierarchy.RenderState
+---@field atlas {[string]: ModelPart}
+---@field names  {[string]: ModelPart}
+---@field withHitbox TextHierarchy[]
+---@field raycastHit HitboxRaycastOutput?
 
 
 ---creates parts
 ---@param part ModelPart
 ---@param textHierarchy TextHierarchy|ModelPart
----@param state {atlas: {[string]: ModelPart}, names: {[string]: ModelPart}}
-function InsertText.init(part,textHierarchy,state)
+---@param state TextHierarchy.RenderState
+---@param local_pos Vector3?
+---@param matrix Matrix4
+function InsertText.init(part,textHierarchy,state, local_pos, matrix)
+    
+    local debugging = true
+    if local_pos then
+        part:setPos(-local_pos)
+    end
 
-    part:newBlock("dummy"):block("minecraft:target"):setScale(1/16)
-
+    if debugging then
+        part:newBlock("dummy"):block("minecraft:target"):setScale(1/16):setPos(-1,-1,-1)
+    end
     if type(textHierarchy) == "ModelPart" then
         part:addChild(textHierarchy)
         return
     end
+    textHierarchy._part = part
     
     if textHierarchy.json then
         textHierarchy.text = toJson(textHierarchy.json)
     end
 
+    
+    if textHierarchy.scale then
+        if type(textHierarchy.scale) == "Vector2" then
+            part:setScale(textHierarchy.scale:augmented(1))
+        else
+            part:setScale(textHierarchy.scale)
+        end
+    end
+    
+
+    if local_pos then
+        
+        matrix = matrix * matrices.translate4(-local_pos)
+    end
+
+
+    local matrix_children = matrix * matrices.scale4(textHierarchy.scale)
+
+    
+
+
+    local offset = vec(0,0,0)
+    if textHierarchy.offset then
+        offset = vectors.vec3(textHierarchy.offset:unpack())
+    end
+
+    if debugging then
+        offset = offset + vec(0,0,2)
+    end
     if textHierarchy.main then
+        local main_part = Utils.parts.child(part,"main")
+        -- if offset then
+        --     main_part:setPos(-offset)
+        -- end
         InsertText.init(
-            Utils.parts.child(part,"main"),
+            main_part,
             textHierarchy.main,
-            state
+            state,
+            offset,
+            matrix_children
         )
     end
 
-    local corner_position = InsertText.dimensions(textHierarchy.main)
+    local corner_position = InsertText.dimensions(textHierarchy.main):augmented(0) + (offset or 0)
+    local own_corner = InsertText.dimensions(textHierarchy,true):augmented(0)
+
+    
+    if textHierarchy.onClick or true then
+        textHierarchy.hitbox = Hitbox:create(matrix,Rect.fromEndpoints(-own_corner,-offset))
+        table.insert(state.withHitbox,textHierarchy)
+    end
+
+
+    
+    -- -@class BlockTask: HasSetScalePos
+
+    if debugging then
+        
+        Rect.fromEndpoints(-corner_position,vec(0,0,0)):setCornerBlockTo(part:newBlock("background"):block("minecraft:blue_stained_glass"))
+        -- Rect.fromEndpoints(-own_corner,vec(0,0,0)):setCornerBlockTo(part:newBlock("background2"):block("minecraft:green_wool"))
+
+        local hover_part = Rect.fromEndpoints(-own_corner,vec(0,0,0)):setCornerBlockTo(part:newBlock("hover"):block("minecraft:red_wool")):setVisible(false)
+        textHierarchy.onChangeHover = function (entered)
+            hover_part:setVisible(entered)
+        end
+    end
+
 
     if textHierarchy.right then
         
         InsertText.init(
-            Utils.parts.child(part,"right"):setPos(-corner_position.x__),
+            Utils.parts.child(part,"right"),
             textHierarchy.right,
-            state
+            state,
+            corner_position.x_z,
+            matrix_children
         )
         -- corner_position = InsertText.dimensions(textHierarchy.right)
     end
@@ -188,18 +283,22 @@ function InsertText.init(part,textHierarchy,state)
 
     if textHierarchy.below then
         InsertText.init(
-            Utils.parts.child(part,"below"):setPos(-corner_position._y_),
+            Utils.parts.child(part,"below"),
             textHierarchy.below,
-            state
+            state,
+            corner_position._yz,
+            matrix_children
         )
         
     end
     if textHierarchy.corner then
         
         InsertText.init(
-            Utils.parts.child(part,"corner"):setPos(-corner_position.xy_),
+            Utils.parts.child(part,"corner"),
             textHierarchy.corner,
-            state
+            state,
+            corner_position.xyz,
+            matrix_children
         )
     end
 
@@ -219,12 +318,41 @@ function InsertText.init(part,textHierarchy,state)
     if textHierarchy.key then
         state.names[textHierarchy.key] = part
     end
-    
+
     
     
 
 end
 
+
+---comment
+---@param startPos Vector3
+---@param endPos Vector3
+---@param textHierarchy TextHierarchy
+---@param state TextHierarchy.RenderState
+function InsertText.raycast(startPos,endPos,textHierarchy,state)
+
+    local r = Hitbox.raycastsOriented(startPos,endPos,state.withHitbox)
+
+    local oldOwner = state.raycastHit and state.raycastHit.owner --[[@as TextHierarchy?]]
+    local newOwner = r and r.owner --[[@as TextHierarchy?]]
+    local owner_changed = oldOwner ~= newOwner
+
+    if oldOwner and owner_changed then
+            if oldOwner.onChangeHover then
+                oldOwner.onChangeHover(false)
+            end
+    end
+    if newOwner and owner_changed then
+        
+        if newOwner.onChangeHover then
+            newOwner.onChangeHover(true)
+        end
+    end
+    state.raycastHit = r
+
+    
+end
 
 
 ---comment
@@ -232,10 +360,23 @@ end
 ---@param text_hierarchy table
 function InsertText.render(part,text_hierarchy,atlas)
 
-    local state = {atlas = atlas or {}, names = {}}
-    InsertText.init(part,text_hierarchy,state)
+    local state = {atlas = atlas or {}, names = {}, withHitbox = {}}
+    InsertText.init(part,text_hierarchy,state,nil,matrices.mat4())
 
-    return state.names
+    part:setPostRender(function (delta, context, part2)
+        
+        local origin = client.getCameraPos()
+        local direction = client.getCameraDir()
+        local destination = origin + direction * 1000
+        local wtpm = part2:partToWorldMatrix():inverted()
+        local loc_origin = wtpm:apply(origin)
+        local loc_destination = wtpm:apply(destination)
+        InsertText.raycast(loc_origin,loc_destination,text_hierarchy,state)
+        
+
+    end)
+
+    return state
 
 end
 
@@ -293,20 +434,48 @@ with capability to nest
 
 ---@alias TextCell string|ModelPart|TextCell.code
 
----no plan yet
----@param out TextHierarchy
----@param rows TextCell[][]
----@param index integer
-function InsertText.parseRows(out,rows,index,stop)
+---
+---@param rows {[integer]: {[integer] : TextCell, head: TextHierarchy?}}
+---@return TextHierarchy
+function InsertText.parseCells(rows)
 
+    ---@type TextHierarchy
+    local row_hierarchy = {}
+    local out = row_hierarchy
     for y, row in ipairs(rows) do
+        row_hierarchy.below = {}
+        ---@type TextHierarchy
+        row_hierarchy = row_hierarchy.below
+        row_hierarchy.main = row.head or {}
+        ---@type TextHierarchy
+        local column_hierarchy = row_hierarchy.main
         for x, cell in ipairs(row) do
+
             local t = type(cell)
-            
+            column_hierarchy.right = {}
+
+            if t == "table" and cell.head then
+                column_hierarchy.right = cell.head
+            end
+
+            ---@type TextHierarchy
+            column_hierarchy = column_hierarchy.right
+
+            if t == "string" then
+                column_hierarchy.main = {
+                    text = cell
+                }
+            elseif t == "ModelPart" then
+                column_hierarchy.main = cell
+            elseif t == "table" and not cell.head then
+                column_hierarchy.main = cell
+            end
             
         end
         
     end
+
+    return out
     
 
     

@@ -53,6 +53,7 @@ end
 ---@field distanceSq number
 ---@field side string?
 ---@field objectKey? any -- when raycasting a table of multiple Hitboxes, is the key
+---@field owner? HasHitbox -- 
 
 
 ---
@@ -88,6 +89,7 @@ function Hitbox.raycastsOriented(startPos,endPos,objects)
             distanceSq = out1.distanceSq
             out = out1
             out.objectKey = key
+            out.owner = value.hitbox and value
         end
     end
     return out

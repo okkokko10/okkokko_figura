@@ -188,14 +188,32 @@ function Testing.active1()
 
 end
 
+Testing.InsertText = {}
+
+
 function Testing.active2()
 
-
+    
     local atlas = {
         name1 = models:newPart("model"):remove()
     }
-    atlas.name1:newItem("item"):item("minecraft:glass"):setPos(-8):setScale(1/2)
-    InsertText.render(Testing.part,InsertText.test_text2,atlas)
+    atlas.name1:newItem("item"):item("minecraft:glass"):setPos(-8,-8,-8):setScale(1)
+    
+    Testing.InsertText.cells = {
+        {"line 1", "  a", ". .", "<>", atlas.name1, {height = 16, width = 16}, " bc"},
+        {"line  2", " b"},
+        {"line   3", {head = {scale = 2}}, "c","d"},
+        {"line 4", "d", atlas.name1},
+    }
+    Testing.InsertText.cells_hierarchy = InsertText.parseCells(Testing.InsertText.cells)
+
+    Testing.InsertText.state = InsertText.render(Testing.part,Testing.InsertText.cells_hierarchy,atlas)
+    -- InsertText.render(Testing.part,InsertText.test_text2,atlas)
+    -- events.TICK:register(function ()
+    --     InsertText.render(Testing.part,Testing.InsertText.cells_hierarchy,atlas)
+        
+    -- end)
+
     
 
 end

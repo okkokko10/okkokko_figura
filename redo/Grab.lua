@@ -46,9 +46,6 @@ Grabbing.hitboxToGizmo = {}
 ---@field partID ID<ModelPart>
 
 
----@class HasHitbox
----@field hitbox Hitbox
-
 ---@class HasPartIDHitbox: HasPartID, HasHitbox
 
 

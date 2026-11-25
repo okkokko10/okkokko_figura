@@ -301,7 +301,6 @@ end
 ---@field side string?
 ---@field objectKey? any -- when raycasting a table of multiple FloatingObject, is the key
 
-local debugKey = keybinds:newKeybind("debug", "key.keyboard.j")
 
 ---comment
 ---@param startPos vec3

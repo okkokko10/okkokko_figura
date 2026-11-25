@@ -288,6 +288,13 @@ Rect.unit = Rect.fromEndpoints(vec(0,0,0),vec(1,1,1))
 Rect.radius_box = Rect.fromEndpoints(vec(-1,-1,-1),vec(1,1,1))
 --- [-1/2,1/2]^3
 Rect.diameter_box = Rect.radius_box * (1/2)
+Rect.zero = Rect.fromEndpoints(vec(0,0,0),vec(0,0,0))
 
+
+---swaps the sign and order of the corners to keep its orientation
+---@return Rect
+function Rect:flip_neg()
+    return Rect(-self[2], -self[1])
+end
 
 return Rect

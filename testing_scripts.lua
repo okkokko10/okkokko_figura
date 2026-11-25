@@ -6,6 +6,8 @@ require"redo.Grab"
 Testing = {}
 
 
+Testing.debugKey = keybinds:newKeybind("debug", "key.keyboard.j")
+
 
 Testing.part = models:newPart("TestingPart"):remove()
 
@@ -191,6 +193,17 @@ end
 Testing.InsertText = {}
 
 
+function Testing.localCameraRaycastLine(ptwm)
+    
+    local origin = client.getCameraPos()
+    local direction = client.getCameraDir()
+    local destination = origin + direction * 1000
+    local wtpm = ptwm:inverted()
+    local loc_origin = wtpm:apply(origin)
+    local loc_destination = wtpm:apply(destination)
+    return loc_origin, loc_destination
+end
+
 function Testing.active2()
 
     
@@ -212,8 +225,19 @@ function Testing.active2()
     Testing.InsertText.state = InsertText.render(part,Testing.InsertText.cells_hierarchy,atlas)
     -- InsertText.render(Testing.part,InsertText.test_text2,atlas)
     events.TICK:register(function ()
-        -- InsertText.render(part,Testing.InsertText.cells_hierarchy,atlas)
+        InsertText.render(part,Testing.InsertText.cells_hierarchy,atlas)
         
+    end)
+    part:setPostRender(function (delta, context, part2)
+        local loc_origin,loc_destination = Testing.localCameraRaycastLine(part:partToWorldMatrix())
+        InsertText.raycast(loc_origin,loc_destination,Testing.InsertText.cells_hierarchy,Testing.InsertText.state)
+    end)
+
+    Testing.debugKey:onPress(function (modifiers, self)
+        
+        local loc_origin,loc_destination = Testing.localCameraRaycastLine(part:partToWorldMatrix())
+        InsertText.raycast(loc_origin,loc_destination,Testing.InsertText.cells_hierarchy,Testing.InsertText.state,{modifiers,self})
+
     end)
 
     

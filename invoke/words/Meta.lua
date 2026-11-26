@@ -98,15 +98,22 @@ end)
 ---type but adds information about tables. 
 ---if a value is a table
 ---@param obj any
-function Utils.table.deepType(obj)
+---@param visited table? -- handles self-reference
+function Utils.table.deepType(obj,visited)
+    visited = visited or {}
     if type(obj) ~= "table" then
         return type(obj)
     end
+    if visited[obj] then
+        return visited[obj]
+    end
+    visited[obj] = tostring(obj)
+
     local out = {}
     local appears = {}
     for key, value in pairs(obj) do
-        local kt = Utils.table.deepType(key)
-        local vt = Utils.table.deepType(value)
+        local kt = Utils.table.deepType(key,visited)
+        local vt = Utils.table.deepType(value,visited)
         local txt
         if kt == "string" then
             if string.find(key,":", nil, true) then

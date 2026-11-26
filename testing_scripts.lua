@@ -204,9 +204,37 @@ function Testing.localCameraRaycastLine(ptwm)
     return loc_origin, loc_destination
 end
 
+
+function Testing.InsertText.display(textHierarchy,atlas)
+    
+    local part = Testing.part.TextHierarchy
+
+    local state = InsertText.render(part,textHierarchy,atlas)
+    -- InsertText.render(Testing.part,InsertText.test_text2,atlas)
+    events.TICK:register(function ()
+        -- Utils.performance
+        -- InsertText.render(part,textHierarchy,atlas)
+        
+    end)
+    part:setPostRender(function (delta, context, part2)
+        local loc_origin,loc_destination = Testing.localCameraRaycastLine(part:partToWorldMatrix())
+        InsertText.raycast(loc_origin,loc_destination,textHierarchy,state)
+    end)
+
+    Testing.debugKey:onPress(function (modifiers, self)
+        
+        local loc_origin,loc_destination = Testing.localCameraRaycastLine(part:partToWorldMatrix())
+        InsertText.raycast(loc_origin,loc_destination,textHierarchy,state,{modifiers,self})
+
+    end)
+    return state
+end
+
+
 function Testing.active2()
     
 
+    local part = Testing.part:newPart("TextHierarchy")
     
     local atlas = {
         name1 = models:newPart("model"):remove()
@@ -221,26 +249,14 @@ function Testing.active2()
     }
     Testing.InsertText.cells_hierarchy = InsertText.parseCells(Testing.InsertText.cells)
 
-    local part = Testing.part:newPart("TextHierarchy")
 
-    Testing.InsertText.state = InsertText.render(part,Testing.InsertText.cells_hierarchy,atlas)
-    -- InsertText.render(Testing.part,InsertText.test_text2,atlas)
-    events.TICK:register(function ()
-        -- Utils.performance
-        InsertText.render(part,Testing.InsertText.cells_hierarchy,atlas)
-        
-    end)
-    part:setPostRender(function (delta, context, part2)
-        local loc_origin,loc_destination = Testing.localCameraRaycastLine(part:partToWorldMatrix())
-        InsertText.raycast(loc_origin,loc_destination,Testing.InsertText.cells_hierarchy,Testing.InsertText.state)
-    end)
+    -- InsertText.render(part,textHierarchy,atlas)
 
-    Testing.debugKey:onPress(function (modifiers, self)
-        
-        local loc_origin,loc_destination = Testing.localCameraRaycastLine(part:partToWorldMatrix())
-        InsertText.raycast(loc_origin,loc_destination,Testing.InsertText.cells_hierarchy,Testing.InsertText.state,{modifiers,self})
+    Testing.InsertText.cells_hierarchy = InsertText.displayTable(Testing.InsertText.cells_hierarchy)
+    Testing.InsertText.cells_hierarchy = InsertText.displayTable(Testing.InsertText.cells_hierarchy)
 
-    end)
+    
+    Testing.InsertText.state = Testing.InsertText.display(Testing.InsertText.cells_hierarchy,atlas)
 
     
 

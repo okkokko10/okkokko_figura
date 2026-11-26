@@ -200,9 +200,20 @@ end
 ---@param posScaling? number -- 
 ---@param scaleScaling? number -- 
 ---@return S
-function Rect:setCornerBlockTo(target,posScaling,scaleScaling)
+function Rect:setCornerBlockTo(target)
+    return (target --[[@as HasSetScalePos]]):setPos(self[1]):setScale(1/PS * self:getScale())
+end
+
+--- works for BlockTask
+---@generic S : HasSetScalePos
+---@param target S
+---@param posScaling? number -- 
+---@param scaleScaling? number -- 
+---@return S
+function Rect:setCornerBlockTo_scaling(target,posScaling,scaleScaling)
     return (target --[[@as HasSetScalePos]]):setPos((posScaling or 1)*self[1]):setScale((scaleScaling or (1/PS)) * self:getScale())
 end
+
 -- function Rect:setCornerBlockTo(target,posScaling,scaleScaling)
 --     return target:setPos((posScaling or PS)*self[1]):setScale((scaleScaling or 1) * self:getScale())
 -- end
@@ -305,12 +316,12 @@ Rect.zero = Rect.fromEndpoints(vec(0,0,0),vec(0,0,0))
 ---swaps the sign and order of the corners to keep its orientation
 ---@return Rect
 function Rect:flip_neg()
-    return Rect(-self[2], -self[1])
+    return Rect.fromEndpoints(-self[2], -self[1])
 end
 
 
 function Rect:multiplySecond(v)
-    return Rect(self[1],self[1] + (self[2] - self[1]) * v)
+    return Rect.fromEndpoints(self[1],self[1] + (self[2] - self[1]) * v)
 end
 
 

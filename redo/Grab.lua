@@ -321,11 +321,15 @@ if host:isHost() then
     events.TICK:register(function ()
         
         if not player:isLoaded() then return end
-            
-        local rc2 = Grabbing.raycastLook(Grabbing.Selectable)
-        Grabbing.rc = rc2
-        Grabbing.updateOntoList()
-        Grabbing.updateGUI()
+
+
+        if Grabbing.GUI:getVisible() then
+            local rc2 = Grabbing.raycastLook(Grabbing.Selectable)
+            Grabbing.rc = rc2
+            -- todo: this is very costly
+            Grabbing.updateOntoList()
+            Grabbing.updateGUI()
+        end
     end)
     events.ENTITY_INIT:register(function ()
 

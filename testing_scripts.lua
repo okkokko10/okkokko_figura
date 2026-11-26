@@ -205,6 +205,7 @@ function Testing.localCameraRaycastLine(ptwm)
 end
 
 function Testing.active2()
+    
 
     
     local atlas = {
@@ -225,6 +226,7 @@ function Testing.active2()
     Testing.InsertText.state = InsertText.render(part,Testing.InsertText.cells_hierarchy,atlas)
     -- InsertText.render(Testing.part,InsertText.test_text2,atlas)
     events.TICK:register(function ()
+        -- Utils.performance
         InsertText.render(part,Testing.InsertText.cells_hierarchy,atlas)
         
     end)

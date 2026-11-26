@@ -110,6 +110,17 @@ function Rect:union(other)
     return Rect.fromEndpoints(Utils.math.vectorMin(self[1],other[1]),Utils.math.vectorMax(self[2],other[2]))
 end
 
+
+---modifies both the Rect and its component vectors in place
+---@param other Rect
+---@return Rect self
+function Rect:unionInPlace(other)
+    Utils.math.vectorMinInPlace(self[1],other[1])
+    Utils.math.vectorMaxInPlace(self[2],other[2])
+    return self
+end
+
+
 --- not tested. if the intersection is empty, will probably return a nonsense result. Needs the inputs to be correctly oriented.
 function Rect:intersection(other)
     return Rect.fromEndpoints(Utils.math.vectorMax(self[1],other[1]),Utils.math.vectorMin(self[2],other[2]))
@@ -296,5 +307,11 @@ Rect.zero = Rect.fromEndpoints(vec(0,0,0),vec(0,0,0))
 function Rect:flip_neg()
     return Rect(-self[2], -self[1])
 end
+
+
+function Rect:multiplySecond(v)
+    return Rect(self[1],self[1] + (self[2] - self[1]) * v)
+end
+
 
 return Rect

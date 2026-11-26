@@ -248,6 +248,14 @@ function Frequency:updateStrength(strength)
 end
 
 
+---@param target Vector
+---@param b Vector
+---@return Vector target
+function Utils.math.vectorMinInPlace(target,b)
+    return target:applyFunc(function (x,i)
+        return math.min(x,b[i])
+    end)
+end
 function Utils.math.vectorMin(a,b)
     return a:copy():applyFunc(function (x,i)
         return math.min(x,b[i])

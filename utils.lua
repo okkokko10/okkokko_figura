@@ -835,13 +835,48 @@ end
 
 -- require = Utils.performance.require
 
-function Utils.performance.report()
+function Utils.performance.report_init_log()
   log("init instructions:",Utils.performance._init_lengths)
 end
 
--- events.ENTITY_INIT:register(function ()
---   Utils.performance.report()
--- end)
+Utils.performance._timed = {}
+
+
+---comment
+---@param t any
+---@param k true|nil
+---@return true|nil
+function Utils.performance._timed_for(t,k)
+    if not k then
+      Utils.performance._timed[t] = -Utils.performance.getCurrentInstructions()
+      return true -- anything truthy would work
+    end
+    Utils.performance._timed[t] = Utils.performance._timed[t] + Utils.performance.getCurrentInstructions()
+end
+
+
+--- uses a trick with iterators
+--- times the function and records the timing at label when in a for-loop
+--[[
+```
+for _ in Utils.performance.timed_for"label" do
+  program()
+end  
+```
+]]
+---@param label string
+function Utils.performance.timed_for(label)
+  return Utils.performance._timed_for, label
+end
+
+
+local INIT_PERFORMANCE_REPORT = false
+
+if INIT_PERFORMANCE_REPORT then
+  events.ENTITY_INIT:register(function ()
+    Utils.performance.report_init_log()
+  end)
+end
 
 
 ---fixes an issue with `loadstring`

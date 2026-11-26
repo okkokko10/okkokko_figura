@@ -373,6 +373,27 @@ function InsertText.dimensions(textHierarchy,noScale)
 
 end
 
+-- idea: change offset to be added to local_pos
+-- idea: some transformations only apply to extra?
+-- idea: baking?
+-- idea: onInit, onRender -- onRender runs each frame or when the part is updated?
+-- idea: properties to apply to all children. includes onInit
+-- make rows, columns a list of children, unwrapped on init, maybe into a binary tree?
+-- make as much like Text Component Format as possible
+-- is it a good idea that the inputed tables are mutated to make the TextHierarchy?
+-- 
+-- right justification. bottom justification. expand to fill space?
+-- text wrap at some edge?
+-- vertical text?
+-- support for collapsible lists?
+-- collapsibility yes, but
+-- lists and other variable-shape things could be done by having them as a model?
+-- maybe have the arbitrary part dimension table and also update callbacks so when the list-model dimensions change the whole also resizes? 
+-- setDimensions method so width and height are not manually modified, and changes are propagated.
+-- setOffset.
+-- update() to clear the dimensions of self and ancestors to force them to recalculate them (but not from other branches)
+
+
 
 
 ---@class TextHierarchy.RenderState
